@@ -3,7 +3,7 @@
 Base para criar **aplicativos para PocketBook (e-readers Linux ARM) em Go**, com uma
 biblioteca de componentes visuais desenhada do zero em gráficos vetoriais
 ([`fogleman/gg`](https://github.com/fogleman/gg)), ícone que se registra sozinho e build
-reproduzível em Docker. Faça um fork para começar novos apps.
+reproduzível em Docker. Faça um fork para começar novos apps. Otimizada para um hardware limitado com no máximo 1G de ram.
 
 O app de exemplo (`cmd/hello`) é uma vitrine com todos os componentes, em 4 páginas
 (**Entradas**, **Escolhas**, **Dados**, **Calendário**) navegadas por uma barra de menus.
@@ -12,10 +12,10 @@ O app de exemplo (`cmd/hello`) é uma vitrine com todos os componentes, em 4 pá
 
 ## Documentação completa
 
-| | |
-|---|---|
+|                  |                                                                                                                                                                                                                                                                               |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 🇧🇷 **Português** | [docs/pt-br](docs/pt-br/README.md): [primeiros passos](docs/pt-br/01-primeiros-passos.md) · [instalação](docs/pt-br/02-instalacao.md) · [build](docs/pt-br/03-build-e-versionamento.md) · [componentes](docs/pt-br/06-componentes.md) · [receitas](docs/pt-br/08-receitas.md) |
-| 🇬🇧 **English** | [docs/en](docs/en/README.md): [getting started](docs/en/01-getting-started.md) · [installation](docs/en/02-installation.md) · [build](docs/en/03-build-and-versioning.md) · [components](docs/en/06-components.md) · [recipes](docs/en/08-recipes.md) |
+| 🇬🇧 **English**   | [docs/en](docs/en/README.md): [getting started](docs/en/01-getting-started.md) · [installation](docs/en/02-installation.md) · [build](docs/en/03-build-and-versioning.md) · [components](docs/en/06-components.md) · [recipes](docs/en/08-recipes.md)                         |
 
 Guia passo a passo, referência de todos os componentes (com o desenho de cada um), receitas de telas completas, como criar
 componentes próprios, testes e solução de problemas. Todo código das páginas vem de [`examples/`](examples) (testado).
@@ -33,26 +33,30 @@ componentes próprios, testes e solução de problemas. Todo código das página
 
 ### Funcionais
 
-| ID | Requisito |
-|---|---|
-| RF-01 | Cada elemento visual é um **objeto com propriedades parecidas com as do JavaScript** (`ID`, `ClassName`, `Style`, `Hidden`, `Disabled`, `Value`, `Checked`, `OnClick`, `OnChange`…), para que no futuro as telas sejam descritas em **HTML** e formatadas com **CSS**. |
-| RF-02 | Layout com **painel flex** (direction, wrap, grow, gap, justify, align) e **grid** (colunas px/`fr`, span, gap). |
-| RF-03 | Componentes: botão, combo-box, check-box, radio-button, switch, menu bar, input texto, input numérico (máscara, `stepUp`/`stepDown`), input de busca (botão de lupa), text-area, data-table, gauge/progress-bar, slider de tamanho configurável, chips, calendário, card e dropdown. |
-| RF-04 | **O toque cai exatamente sobre o elemento desenhado** (desenho e toque usam as mesmas coordenadas) e os alvos têm tamanho mínimo confortável. |
-| RF-05 | Entrada de texto usa o **teclado do sistema** do aparelho (numérico para campos numéricos). |
-| RF-06 | Design pensado para e-ink: alto contraste, bordas nítidas, sem animação, alvos de toque grandes. |
-| RF-07 | O app se **instala sozinho** (ícone e entrada no desktop) na primeira execução. |
-| RF-08 | Versionamento em `.version` (começa em `1.0.0`): o build incrementa o **BUILD**, tarefa concluída incrementa o **MINOR**, grande mudança incrementa o **MAJOR**. |
+| ID    | Requisito                                                                                                                                                                                                                                                                            |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| RF-01 | Cada elemento visual é um **objeto com propriedades parecidas com as do JavaScript** (`ID`, `ClassName`, `Style`, `Hidden`, `Disabled`, `Value`, `Checked`, `OnClick`, `OnChange`…), para que no futuro as telas sejam descritas em **HTML** e formatadas com **CSS**.               |
+| RF-02 | Layout com **painel flex** (direction, wrap, grow, gap, justify, align) e **grid** (colunas px/`fr`, span, gap).                                                                                                                                                                     |
+| RF-03 | Componentes: botão, combo-box, check-box, radio-button, switch, menu bar, input texto, input numérico (máscara, `stepUp`/`stepDown`), input de busca (botão de lupa), text-area, data-table, gauge/progress-bar, slider de tamanho configurável, chips, calendário, card e dropdown, modal centralizada ou fullscreen com opção de mostrar botoes ok, cancelar ou nenhum e botoes de maximizar, minimizar e fechar ou nenhum. |
+| RF-04 | **O toque cai exatamente sobre o elemento desenhado** (desenho e toque usam as mesmas coordenadas) e os alvos têm tamanho mínimo confortável.                                                                                                                                        |
+| RF-05 | Entrada de texto usa o **teclado do sistema** do aparelho (numérico para campos numéricos).                                                                                                                                                                                          |
+| RF-06 | Design pensado para e-ink: alto contraste, bordas nítidas, sem animação, alvos de toque grandes.                                                                                                                                                                                     |
+| RF-07 | O app se **instala sozinho** (ícone e entrada no desktop) na primeira execução.                                                                                                                                                                                                      |
+| RF-08 | Versionamento em `.version` (começa em `1.0.0`): o build incrementa o **BUILD**, tarefa concluída incrementa o **MINOR**, grande mudança incrementa o **MAJOR**.                                                                                                                     |
 
 ### Não funcionais
 
-| ID | Requisito |
-|---|---|
-| RNF-01 | SOLID aplicado com pragmatismo, código limpo, DRY e KISS. |
+| ID     | Requisito                                                                               |
+| ------ | --------------------------------------------------------------------------------------- |
+| RNF-01 | SOLID aplicado com pragmatismo, código limpo, DRY e KISS.                               |
 | RNF-02 | Análise estática no **SonarQube local** (`scripts/sonar.ps1`), sem code smells abertos. |
-| RNF-03 | Compatível com **Go 1.17** (toolchain do SDK do PocketBook): sem generics. |
-| RNF-04 | Lógica de UI testável no PC, sem aparelho (`go test ./...`, `cmd/preview`). |
-| RNF-05 | A UI escala para qualquer resolução (referência: 1404 px de largura, PB741). |
+| RNF-03 | Compatível com **Go 1.17** (toolchain do SDK do PocketBook): sem generics.              |
+| RNF-04 | Lógica de UI testável no PC, sem aparelho (`go test ./...`, `cmd/preview`).             |
+| RNF-05 | A UI escala para qualquer resolução (referência: 1404 px de largura, PB741).            |
+| RNF-06 | A UI deve ser otimizada para rodar em um hardware de 1g ram                             |
+| RNF-07 | Evite antipatterns, pastas desorganizadas, dupicação de código                          |
+| RNF-08 | Organize as pastas separando os projetos e dominios                                     |
+
 
 ## Tasks
 
@@ -103,6 +107,16 @@ Legenda: `[x]` concluída · `[ ]` pendente. Ao concluir uma task, o MINOR é in
 - [x] T34 Exemplos de código testados (`examples/`) e `tools/docsync`, que mantém a documentação igual ao código
 - [x] T35 Documentação completa em português (`docs/pt-br`) e inglês (`docs/en`): primeiros passos, instalação, build, componentes, receitas, componentes próprios, testes e solução de problemas
 
+**Ajustes**
+
+  - [ ] T36 A aba de dados demora muito a abrir, talvez por que o componente data table esteja muito pesado, ao navegar nos itens do data table, também demora muito a abrir, o aparelho tem apenas 1G de ram, acredito que todos os componentes devam ser otimizados.
+  - [ ] T37 As abas devem ser carregadas e descarregadas de forma lazy para evitar o uso intenso da memória ram de 1g apenas. 
+  - [ ] T38 O botão "Sobre" não mostra nada. Se não temos componente de modal, crie um e coloque o conteudo do sobre nela e siga o padrão de layout já estabelecido - modal centralizada com botão ok.
+  - [ ] T39 O slide button, quando eu arrasto, não atualiza, ele deveria ser draggable também.
+  - [ ] T40 Se possível, ao invés de redesenhar a tela por completo seria interessante redesenhar apenas o componente que está recebendo a interação.
+
+**Bugs**
+
 ## Backlog
 
 Ideias para próximas versões (ainda **não** feitas):
@@ -116,16 +130,17 @@ Ideias para próximas versões (ainda **não** feitas):
 - [ ] B07 Abas (tabs) e navegação por pilha de telas
 - [ ] B08 Slide-to-confirm (botão deslizante de confirmação)
 - [ ] B09 Remover o log de eventos de depuração (`DebugLog`) em builds de release
+- [ ] B10 (CAL) Especificar um app de calendário parecido com o google calendar usando go-pocketbook-base integrado e sincronizado com google, outlook, apple, importação e exportação de arquivos ical
 
 ## Versionamento
 
 Formato `MAJOR.MINOR.BUILD`, guardado em [`.version`](.version) (começa em `1.0.0`):
 
-| Quando | O que sobe | Como |
-|---|---|---|
-| Cada **build** | `BUILD` | automático em `build.ps1` / `make dist` |
-| **Task concluída** | `MINOR` (e `BUILD` volta a 0) | `make task-done` |
-| **Grande mudança** | `MAJOR` (`MINOR` e `BUILD` voltam a 0) | `make major` |
+| Quando             | O que sobe                             | Como                                    |
+| ------------------ | -------------------------------------- | --------------------------------------- |
+| Cada **build**     | `BUILD`                                | automático em `build.ps1` / `make dist` |
+| **Task concluída** | `MINOR` (e `BUILD` volta a 0)          | `make task-done`                        |
+| **Grande mudança** | `MAJOR` (`MINOR` e `BUILD` voltam a 0) | `make major`                            |
 
 ```sh
 go run ./tools/bumpversion build   # 1.2.3 -> 1.2.4
@@ -178,16 +193,16 @@ uma explicação, um exemplo e o comportamento ao toque.
 
 Todo elemento embute `Base`, que dá as propriedades de um elemento DOM:
 
-| JavaScript | Go | Observação |
-|---|---|---|
-| `id` · `className` | `ID` · `ClassName` | `Document.GetElementByID(id)` e `QuerySelectorAll(className)` |
-| `hidden` · `disabled` | `Hidden` · `Disabled` | oculto some do layout e do toque; desabilitado fica "apagado" e **não recebe toque** |
-| `onclick` | `OnClick` | borbulha para os ancestrais, como no navegador; `e.StopPropagation()` interrompe |
-| `onchange` · `oninput` | `OnChange` · `OnInput` (slider) | `func(e *widget.Event)`; `e.Target` é o elemento |
-| `style` | `Style` | nomes do CSS: `Display`, `FlexDirection`, `Gap`, `Padding`, `Margin`, `Width`, `Background`… |
-| `appendChild` · `removeChild` | `AppendChild` · `RemoveChild` | também `ClearChildren()` |
-| `value` · `checked` · `textContent` | `Value` · `Checked` · `Text` | conforme o componente |
-| `stepUp()` · `stepDown()` | `StepUp()` · `StepDown()` | no input numérico |
+| JavaScript                          | Go                              | Observação                                                                                   |
+| ----------------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------- |
+| `id` · `className`                  | `ID` · `ClassName`              | `Document.GetElementByID(id)` e `QuerySelectorAll(className)`                                |
+| `hidden` · `disabled`               | `Hidden` · `Disabled`           | oculto some do layout e do toque; desabilitado fica "apagado" e **não recebe toque**         |
+| `onclick`                           | `OnClick`                       | borbulha para os ancestrais, como no navegador; `e.StopPropagation()` interrompe             |
+| `onchange` · `oninput`              | `OnChange` · `OnInput` (slider) | `func(e *widget.Event)`; `e.Target` é o elemento                                             |
+| `style`                             | `Style`                         | nomes do CSS: `Display`, `FlexDirection`, `Gap`, `Padding`, `Margin`, `Width`, `Background`… |
+| `appendChild` · `removeChild`       | `AppendChild` · `RemoveChild`   | também `ClearChildren()`                                                                     |
+| `value` · `checked` · `textContent` | `Value` · `Checked` · `Text`    | conforme o componente                                                                        |
+| `stepUp()` · `stepDown()`           | `StepUp()` · `StepDown()`       | no input numérico                                                                            |
 
 Medidas em **pixels de design** (largura de referência 1404 px, a do PB741); a biblioteca escala
 para a tela real. O modelo de caixa é o `border-box` do CSS (`Width`/`Height` incluem borda e padding).
@@ -321,13 +336,13 @@ bar := widget.NewMenuBar(
 Um só componente, vários `Type`s. Tocar no campo abre o **teclado do sistema** (numérico nos campos
 numéricos); os botões laterais agem direto, sem teclado.
 
-| Tipo | Como criar | Extras |
-|---|---|---|
-| texto | `NewInput(placeholder)` | `Value`, `Placeholder`, `MaxLength`, `ReadOnly` |
-| senha | `in.Type = widget.TypePassword` | mostra `•••` |
-| numérico | `NewNumberInput(valor, casasDecimais)` | botões **−** e **+**, `Min`, `Max`, `Step`, `Prefix`, `Suffix`, `DecimalSeparator`, `StepUp()`, `StepDown()`, `Number()` |
-| máscara | `NewMaskedInput("(00) 00000-0000", digitos)` | `0` e `#` = um dígito, o resto é literal; `Value` guarda só os dígitos |
-| busca | `NewSearchInput(placeholder)` | botão de **lupa** (`OnSubmit`) e **limpar (×)** quando há texto |
+| Tipo     | Como criar                                   | Extras                                                                                                                   |
+| -------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| texto    | `NewInput(placeholder)`                      | `Value`, `Placeholder`, `MaxLength`, `ReadOnly`                                                                          |
+| senha    | `in.Type = widget.TypePassword`              | mostra `•••`                                                                                                             |
+| numérico | `NewNumberInput(valor, casasDecimais)`       | botões **−** e **+**, `Min`, `Max`, `Step`, `Prefix`, `Suffix`, `DecimalSeparator`, `StepUp()`, `StepDown()`, `Number()` |
+| máscara  | `NewMaskedInput("(00) 00000-0000", digitos)` | `0` e `#` = um dígito, o resto é literal; `Value` guarda só os dígitos                                                   |
+| busca    | `NewSearchInput(placeholder)`                | botão de **lupa** (`OnSubmit`) e **limpar (×)** quando há texto                                                          |
 
 ```go
 qty := widget.NewNumberInput(1, 0)
@@ -483,6 +498,7 @@ Com um SonarQube local em `http://localhost:9000` e um token em `SONAR_GLOBAL_TO
 ```powershell
 .\scripts\sonar.ps1      # Windows: testes com cobertura + scanner (Docker no WSL)
 ```
+
 ```sh
 scripts/sonar.sh         # Linux/WSL
 ```
