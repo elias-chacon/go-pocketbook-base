@@ -18,7 +18,7 @@ type Dropdown struct {
 // NewDropdown creates a drop-down button.
 func NewDropdown(text string, items ...MenuItem) *Dropdown {
 	d := &Dropdown{Text: text, Items: items}
-	d.init(d)
+	d.Init(d)
 	applyFieldStyle(&d.Style)
 	d.Style.Bold = true
 	return d
@@ -44,6 +44,6 @@ func (d *Dropdown) HandlePointer(e *PointerEvent) {
 		if d.Chosen.OnSelect != nil {
 			d.Chosen.OnSelect()
 		}
-		fire(d.OnSelect, d)
+		Fire(d.OnSelect, d)
 	})
 }

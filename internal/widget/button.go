@@ -25,7 +25,7 @@ type Button struct {
 // NewButton creates an outlined button.
 func NewButton(text string) *Button {
 	b := &Button{Text: text}
-	b.init(b)
+	b.Init(b)
 	b.Style.BorderRadius = Radius
 	b.Style.MinHeight = ControlHeight
 	b.Style.Padding = geom.XY(0, 32)

@@ -19,7 +19,7 @@ type Progress struct {
 // NewProgress creates a 0..100 progress bar.
 func NewProgress(value float64) *Progress {
 	p := &Progress{Value: value, Max: 100}
-	p.init(p)
+	p.Init(p)
 	p.Style.BorderColor, p.Style.BorderWidth, p.Style.BorderRadius = Ink, BorderThin, 22
 	p.Style.Background = Paper
 	return p
@@ -59,7 +59,7 @@ type Gauge struct {
 // NewGauge creates a gauge over [min, max].
 func NewGauge(min, max, value float64, unit string) *Gauge {
 	g := &Gauge{Min: min, Max: max, Value: value, Unit: unit, Thickness: 26}
-	g.init(g)
+	g.Init(g)
 	g.Style.Width = Px(380)
 	return g
 }

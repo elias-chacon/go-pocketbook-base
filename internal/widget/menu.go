@@ -33,7 +33,7 @@ type menuList struct {
 
 func newMenuList(items []MenuItem, selected int, onPick func(int)) *menuList {
 	m := &menuList{items: items, selected: selected, onPick: onPick}
-	m.init(m)
+	m.Init(m)
 	s := &m.Style
 	s.Background, s.BorderColor, s.BorderWidth, s.BorderRadius = Paper, Ink, BorderThin, Radius
 	s.Padding = geom.All(6)

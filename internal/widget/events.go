@@ -37,7 +37,9 @@ func (e *Event) StopPropagation() { e.stopped = true }
 // Handler is a JavaScript-style event callback.
 type Handler func(e *Event)
 
-func fire(h Handler, target Widget) {
+// Fire calls h with an Event for target (a no-op when h is nil). Custom elements
+// use it to run their OnChange-style callbacks.
+func Fire(h Handler, target Widget) {
 	if h != nil {
 		h(&Event{Target: target})
 	}

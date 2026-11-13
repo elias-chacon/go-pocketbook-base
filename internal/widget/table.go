@@ -44,7 +44,7 @@ const (
 // NewTable creates a table showing pageSize rows per page.
 func NewTable(pageSize int, columns ...TableColumn) *Table {
 	t := &Table{Columns: columns, PageSize: pageSize, Selected: -1, SortCol: -1}
-	t.init(t)
+	t.Init(t)
 	t.Style.BorderColor, t.Style.BorderWidth, t.Style.BorderRadius = Ink, BorderThin, Radius
 	t.Style.Background = Paper
 	return t
@@ -253,7 +253,7 @@ func (t *Table) clickRow(p geom.Point) {
 		pos := t.Page*t.PageSize + k
 		if t.rowRect(k).Contains(p) && pos < len(order) {
 			t.Selected = order[pos]
-			fire(t.OnSelect, t)
+			Fire(t.OnSelect, t)
 			return
 		}
 	}

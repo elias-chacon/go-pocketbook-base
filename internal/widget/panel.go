@@ -8,7 +8,7 @@ type Panel struct{ Base }
 // NewPanel creates a block container with the given children.
 func NewPanel(children ...Widget) *Panel {
 	p := &Panel{}
-	p.init(p)
+	p.Init(p)
 	for _, c := range children {
 		p.AppendChild(c)
 	}

@@ -29,7 +29,7 @@ type Toggle struct {
 
 func newToggle(kind ToggleKind, label string, checked bool) *Toggle {
 	t := &Toggle{Kind: kind, Label: label, Checked: checked}
-	t.init(t)
+	t.Init(t)
 	t.Style.MinHeight = 72
 	return t
 }
@@ -128,7 +128,7 @@ func (t *Toggle) HandlePointer(e *PointerEvent) {
 	default:
 		t.Checked = !t.Checked
 	}
-	fire(t.OnChange, t)
+	Fire(t.OnChange, t)
 }
 
 // uncheckGroup clears the other radios that share this one's Name.

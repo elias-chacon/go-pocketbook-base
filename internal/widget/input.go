@@ -45,7 +45,7 @@ type Input struct {
 
 func newInput(t InputType, placeholder string) *Input {
 	in := &Input{Type: t, Placeholder: placeholder, Step: 1}
-	in.init(in)
+	in.Init(in)
 	applyFieldStyle(&in.Style)
 	return in
 }
@@ -117,7 +117,7 @@ func (in *Input) stepBy(dir float64) {
 		step = 1
 	}
 	in.SetNumber(in.Number() + dir*step)
-	fire(in.OnChange, in)
+	Fire(in.OnChange, in)
 	in.Invalidate()
 }
 
@@ -149,9 +149,9 @@ func (in *Input) adornments() []adornment {
 			add(gfx.IconMinus, false, in.StepDown)
 		}
 	case TypeSearch:
-		add(gfx.IconSearch, true, func() { fire(in.OnSubmit, in) })
+		add(gfx.IconSearch, true, func() { Fire(in.OnSubmit, in) })
 		if in.Value != "" {
-			add(gfx.IconClose, false, func() { in.Value = ""; fire(in.OnChange, in) })
+			add(gfx.IconClose, false, func() { in.Value = ""; Fire(in.OnChange, in) })
 		}
 	}
 	return out
@@ -248,9 +248,9 @@ func (in *Input) commit(text string) {
 	} else {
 		in.Value = truncateRunes(text, in.MaxLength)
 	}
-	fire(in.OnChange, in)
+	Fire(in.OnChange, in)
 	if in.Type == TypeSearch {
-		fire(in.OnSubmit, in)
+		Fire(in.OnSubmit, in)
 	}
 }
 

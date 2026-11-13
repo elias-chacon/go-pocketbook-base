@@ -22,7 +22,7 @@ type Slider struct {
 // NewSlider creates a slider from min to max with the given step.
 func NewSlider(min, max, step, value float64) *Slider {
 	s := &Slider{Min: min, Max: max, Step: step, ThumbSize: 56}
-	s.init(s)
+	s.Init(s)
 	s.SetValue(value)
 	return s
 }
@@ -71,10 +71,10 @@ func (s *Slider) HandlePointer(e *PointerEvent) {
 	switch e.Type {
 	case PointerDown, PointerMove:
 		s.setFromX(e.X)
-		fire(s.OnInput, s)
+		Fire(s.OnInput, s)
 	case PointerUp:
 		s.setFromX(e.X)
-		fire(s.OnChange, s)
+		Fire(s.OnChange, s)
 	}
 }
 

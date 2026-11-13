@@ -36,8 +36,9 @@ type Base struct {
 	doc      *Document
 }
 
-// init links the embedded Base to its outer widget; constructors must call it.
-func (b *Base) init(self Widget) { b.self = self }
+// Init links the embedded Base to its outer widget. Every constructor of a
+// custom element must call it (e.g. b.Init(b)) before the element is used.
+func (b *Base) Init(self Widget) { b.self = self }
 
 // Elem returns b itself (satisfies Widget).
 func (b *Base) Elem() *Base { return b }

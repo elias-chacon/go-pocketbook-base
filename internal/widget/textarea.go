@@ -20,7 +20,7 @@ type TextArea struct {
 // NewTextArea creates a text area showing rows lines.
 func NewTextArea(placeholder string, rows int) *TextArea {
 	t := &TextArea{Placeholder: placeholder, Rows: rows}
-	t.init(t)
+	t.Init(t)
 	applyFieldStyle(&t.Style)
 	t.Style.Padding = geom.XY(16, 22)
 	return t
@@ -59,7 +59,7 @@ func (t *TextArea) HandlePointer(e *PointerEvent) {
 		Done: func(text string, ok bool) {
 			if ok {
 				t.Value = truncateRunes(text, t.MaxLength)
-				fire(t.OnChange, t)
+				Fire(t.OnChange, t)
 			}
 		},
 	})

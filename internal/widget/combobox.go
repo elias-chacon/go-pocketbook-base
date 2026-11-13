@@ -20,7 +20,7 @@ type ComboBox struct {
 // NewComboBox creates a combo box with nothing selected.
 func NewComboBox(placeholder string, options ...Option) *ComboBox {
 	cb := &ComboBox{Options: options, Index: -1, Placeholder: placeholder}
-	cb.init(cb)
+	cb.Init(cb)
 	applyFieldStyle(&cb.Style)
 	return cb
 }
@@ -76,6 +76,6 @@ func (cb *ComboBox) HandlePointer(e *PointerEvent) {
 	}
 	openMenu(cb, items, cb.Index, cb.Bounds, cb.Bounds.W, func(i int) {
 		cb.Index = i
-		fire(cb.OnChange, cb)
+		Fire(cb.OnChange, cb)
 	})
 }

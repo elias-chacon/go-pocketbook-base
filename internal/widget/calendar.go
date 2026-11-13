@@ -49,7 +49,7 @@ const (
 // NewCalendar creates a calendar showing the month of selected (or today).
 func NewCalendar(selected time.Time) *Calendar {
 	c := &Calendar{Locale: LocaleEN, Today: time.Now(), Selected: selected}
-	c.init(c)
+	c.Init(c)
 	ref := selected
 	if ref.IsZero() {
 		ref = c.Today
@@ -162,7 +162,7 @@ func (c *Calendar) HandlePointer(e *PointerEvent) {
 			if c.cellRect(i).Contains(p) {
 				c.Selected = day
 				c.Year, c.Month = day.Year(), day.Month()
-				fire(c.OnChange, c)
+				Fire(c.OnChange, c)
 				return
 			}
 		}

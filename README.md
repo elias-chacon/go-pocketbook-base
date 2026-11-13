@@ -90,6 +90,7 @@ Legenda: `[x]` concluída · `[ ]` pendente. Ao concluir uma task, o MINOR é in
 - [x] T31 README com requisitos e tasks
 - [x] T32 Slide button com 3 posições (esquerda · centro · direita) na demo e teste de encaixe
 - [x] T33 Documentação de cada componente no README, com o desenho gerado pelo código (`tools/docgen`)
+- [x] T34 Exemplos de código testados (`examples/`) e `tools/docsync`, que mantém a documentação igual ao código
 
 ## Backlog
 
@@ -138,6 +139,8 @@ internal/ui        ícone de lançamento
 internal/version   MAJOR.MINOR.BUILD
 tools/bumpversion  incrementa .version
 tools/docgen        gera os desenhos de cada componente (docs/components/*.png)
+tools/docsync       preenche os blocos de código de docs/ a partir de examples/ (e confere)
+examples/          exemplos testados usados na documentação (telas completas, um por componente, app novo)
 ```
 
 Decisões (SOLID/KISS/DRY, sem exageros):

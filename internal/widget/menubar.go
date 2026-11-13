@@ -22,7 +22,7 @@ type MenuBar struct {
 // NewMenuBar creates a menu bar.
 func NewMenuBar(menus ...*Menu) *MenuBar {
 	m := &MenuBar{Menus: menus}
-	m.init(m)
+	m.Init(m)
 	m.Style.Background, m.Style.MinHeight = Paper, 104
 	m.Style.Padding = geom.XY(10, 16)
 	return m

@@ -23,7 +23,7 @@ const (
 // NewChip creates a chip.
 func NewChip(label string) *Chip {
 	c := &Chip{Label: label}
-	c.init(c)
+	c.Init(c)
 	s := &c.Style
 	s.Background, s.BorderColor, s.BorderWidth, s.BorderRadius = Paper, Ink, BorderThin, chipH/2
 	s.MinHeight, s.Padding = chipH, geom.XY(0, 28)
@@ -75,7 +75,7 @@ func (c *Chip) HandlePointer(e *PointerEvent) {
 	}
 	if c.Closable && c.closeRect().Contains(geom.Point{X: e.X, Y: e.Y}) {
 		if c.OnClose != nil {
-			fire(c.OnClose, c)
+			Fire(c.OnClose, c)
 		} else if c.parent != nil {
 			c.parent.Elem().RemoveChild(c.self)
 		}
@@ -88,7 +88,7 @@ func (c *Chip) HandlePointer(e *PointerEvent) {
 		g.deselectAll()
 	}
 	c.Selected = !c.Selected
-	fire(c.OnChange, c)
+	Fire(c.OnChange, c)
 }
 
 // ChipGroup lays chips out in wrapping rows. With Exclusive only one chip can
@@ -101,7 +101,7 @@ type ChipGroup struct {
 // NewChipGroup creates a wrapping group of chips.
 func NewChipGroup(exclusive bool, chips ...*Chip) *ChipGroup {
 	g := &ChipGroup{Exclusive: exclusive}
-	g.init(g)
+	g.Init(g)
 	g.Style.Display, g.Style.FlexWrap, g.Style.Gap, g.Style.AlignItems = DisplayFlex, true, 16, AlignStart
 	for _, c := range chips {
 		g.AppendChild(c)

@@ -16,7 +16,7 @@ type Label struct {
 // NewLabel creates a label.
 func NewLabel(text string) *Label {
 	l := &Label{Text: text}
-	l.init(l)
+	l.Init(l)
 	return l
 }
 
