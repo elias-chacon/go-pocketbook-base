@@ -1,6 +1,8 @@
 package examples
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -262,5 +264,19 @@ func TestCustomWidgets(t *testing.T) {
 	}
 	if doc.TargetAt(badge.Bounds.Center()) == widget.Widget(badge) {
 		t.Error("a badge is display-only and must not capture touches")
+	}
+}
+
+func TestSavePNGWritesTheScreen(t *testing.T) {
+	doc, _ := newDoc(Hello(func() {}))
+	path := filepath.Join(t.TempDir(), "hello.png")
+	if err := SavePNG(doc, path); err != nil {
+		t.Fatal(err)
+	}
+	if fi, err := os.Stat(path); err != nil || fi.Size() < 1000 {
+		t.Errorf("png: %v size %v", err, fi)
+	}
+	if err := SavePNG(doc, filepath.Join(t.TempDir(), "missing", "x.png")); err == nil {
+		t.Error("a path that cannot be created must be an error")
 	}
 }

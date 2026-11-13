@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	samples "go-pocketbook-base/examples"
 	"go-pocketbook-base/internal/geom"
 	"go-pocketbook-base/internal/gfx"
 	"go-pocketbook-base/internal/widget"
@@ -72,6 +73,13 @@ func examples() []example {
 		{"chips", 640, 0, chipsExample, nil},
 		{"calendar", 640, 0, calendarExample, nil},
 		{"card", 640, 0, cardExample, nil},
+		{"custom", 640, 0, customRecipe, nil},
+		{"recipe-hello", 640, 0, func() widget.Widget { return samples.Hello(noAction) }, nil},
+		{"recipe-login", 640, 0, func() widget.Widget { return samples.NewLoginForm(noLogin).Root }, nil},
+		{"recipe-settings", 640, 0, func() widget.Widget { return samples.NewSettings().Root }, nil},
+		{"recipe-catalog", 760, 0, catalogRecipe, nil},
+		{"recipe-datepicker", 640, 0, datepickerRecipe, nil},
+		{"recipe-order", 640, 0, func() widget.Widget { return samples.NewOrderForm().Root }, nil},
 	}
 }
 
@@ -293,4 +301,39 @@ func cardExample() widget.Widget {
 	return widget.NewCard("Título do card", "Subtítulo opcional",
 		widget.NewLabel("Um card agrupa conteúdo relacionado: título, subtítulo, corpo e ações."),
 		widget.NewRow(14, ok, later))
+}
+
+func catalogRecipe() widget.Widget {
+	return samples.NewCatalog([][]string{
+		{"Dom Casmurro", "Machado de Assis", "256"}, {"Vidas Secas", "Graciliano Ramos", "176"},
+		{"Iracema", "José de Alencar", "160"}, {"Macunaíma", "Mário de Andrade", "224"},
+		{"O Cortiço", "Aluísio Azevedo", "320"},
+	}).Root
+}
+
+func datepickerRecipe() widget.Widget {
+	p := samples.NewDatePicker(time.Date(2026, 11, 18, 0, 0, 0, 0, time.UTC), noDate)
+	p.Calendar.Today = time.Date(2026, 11, 13, 0, 0, 0, 0, time.UTC)
+	return p.Root
+}
+
+func customRecipe() widget.Widget {
+	counter := samples.NewTapCounter()
+	counter.Count = 2
+	badge := samples.NewBadge(3)
+	return widget.NewRow(20, badge, counter)
+}
+
+// The pictures only show the screens, so their callbacks have nothing to do.
+
+func noAction() {
+	// Intentionally empty: a picture has nobody to notify.
+}
+
+func noLogin(string, bool) {
+	// Intentionally empty: a picture has nobody to sign in.
+}
+
+func noDate(time.Time) {
+	// Intentionally empty: a picture has nobody to notify.
 }

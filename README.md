@@ -10,6 +10,16 @@ O app de exemplo (`cmd/hello`) é uma vitrine com todos os componentes, em 4 pá
 
 > Versão atual: ver [`.version`](.version) · `MAJOR.MINOR.BUILD` (veja [Versionamento](#versionamento)).
 
+## Documentação completa
+
+| | |
+|---|---|
+| 🇧🇷 **Português** | [docs/pt-br](docs/pt-br/README.md): [primeiros passos](docs/pt-br/01-primeiros-passos.md) · [instalação](docs/pt-br/02-instalacao.md) · [build](docs/pt-br/03-build-e-versionamento.md) · [componentes](docs/pt-br/06-componentes.md) · [receitas](docs/pt-br/08-receitas.md) |
+| 🇬🇧 **English** | [docs/en](docs/en/README.md): [getting started](docs/en/01-getting-started.md) · [installation](docs/en/02-installation.md) · [build](docs/en/03-build-and-versioning.md) · [components](docs/en/06-components.md) · [recipes](docs/en/08-recipes.md) |
+
+Guia passo a passo, referência de todos os componentes (com o desenho de cada um), receitas de telas completas, como criar
+componentes próprios, testes e solução de problemas. Todo código das páginas vem de [`examples/`](examples) (testado).
+
 ## Sumário
 
 - [Requisitos](#requisitos) · [Tasks](#tasks) · [Backlog](#backlog)
@@ -91,6 +101,7 @@ Legenda: `[x]` concluída · `[ ]` pendente. Ao concluir uma task, o MINOR é in
 - [x] T32 Slide button com 3 posições (esquerda · centro · direita) na demo e teste de encaixe
 - [x] T33 Documentação de cada componente no README, com o desenho gerado pelo código (`tools/docgen`)
 - [x] T34 Exemplos de código testados (`examples/`) e `tools/docsync`, que mantém a documentação igual ao código
+- [x] T35 Documentação completa em português (`docs/pt-br`) e inglês (`docs/en`): primeiros passos, instalação, build, componentes, receitas, componentes próprios, testes e solução de problemas
 
 ## Backlog
 
