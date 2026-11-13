@@ -20,7 +20,7 @@ if [ -z "${SONAR_HOST_URL:-}" ]; then
 fi
 
 if command -v go >/dev/null 2>&1; then
-  go test -coverprofile=coverage.out ./... >/dev/null
+  go test -coverpkg=./... -coverprofile=coverage.out ./... >/dev/null
 fi
 
 echo "Analyzing against $SONAR_HOST_URL"

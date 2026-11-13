@@ -4,7 +4,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Join-Path $PSScriptRoot "..")
 if (-not $env:SONAR_GLOBAL_TOKEN) { throw "set SONAR_GLOBAL_TOKEN to a SonarQube token" }
 
-go test "-coverprofile=coverage.out" ./... | Out-Null
+go test "-coverpkg=./..." "-coverprofile=coverage.out" ./... | Out-Null
 if ($LASTEXITCODE) { throw "tests failed" }
 
 $env:WSLENV = "SONAR_GLOBAL_TOKEN/u"   # forward the token to WSL without printing it
