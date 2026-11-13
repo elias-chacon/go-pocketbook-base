@@ -1,3 +1,8 @@
-dist/
-preview.png
+
 *.app
+.scannerwork/
+coverage.out
+dist/
+foto-tela.jpeg
+preview*.png
+preview.png

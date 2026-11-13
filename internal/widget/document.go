@@ -1,0 +1,199 @@
+package widget
+
+import (
+	"image"
+
+	"go-pocketbook-base/internal/geom"
+	"go-pocketbook-base/internal/gfx"
+)
+
+// RefWidth is the design width in pixels (a PB741 screen). Everything is
+// described in these units and scaled to the real screen.
+const RefWidth = 1404.0
+
+// Document owns an element tree: it lays it out, paints it and routes touch.
+type Document struct {
+	W, H             float64 // design size
+	Scale            float64 // device pixels per design pixel
+	DeviceW, DeviceH int
+	Root             Widget
+	Keyboard         Keyboard
+	// OnInvalidate is called when the screen needs repainting (the device
+	// hooks it to InkView's Repaint).
+	OnInvalidate func()
+
+	popups     []Widget
+	popupOwner Widget // element that opened the popup (its chevron shows "open")
+	focus      Widget
+	capture    Widget
+	swallow    bool // the current touch only dismissed a popup
+}
+
+// NewDocument creates a document for a deviceW x deviceH screen.
+func NewDocument(deviceW, deviceH int) *Document {
+	scale := float64(deviceW) / RefWidth
+	return &Document{
+		W: RefWidth, H: float64(deviceH) / scale, Scale: scale,
+		DeviceW: deviceW, DeviceH: deviceH,
+	}
+}
+
+// SetRoot makes w the root element.
+func (d *Document) SetRoot(w Widget) {
+	d.Root = w
+	attach(w, d)
+}
+
+// Invalidate requests a repaint.
+func (d *Document) Invalidate() {
+	if d.OnInvalidate != nil {
+		d.OnInvalidate()
+	}
+}
+
+// Layout positions every element (and open popups keep their anchor).
+func (d *Document) Layout() {
+	if d.Root != nil {
+		layoutWidget(d.Root, geom.Rect{W: d.W, H: d.H})
+	}
+}
+
+// Render lays out and paints the document into a grayscale image.
+func (d *Document) Render() *image.Gray {
+	d.Layout()
+	c := gfx.NewCanvas(d.DeviceW, d.DeviceH, d.Scale)
+	c.Clear(Paper)
+	if d.Root != nil {
+		paintTree(c, d.Root)
+	}
+	for _, p := range d.popups {
+		paintTree(c, p)
+	}
+	return c.Image()
+}
+
+func paintTree(c *gfx.Canvas, w Widget) {
+	b := w.Elem()
+	if !b.Visible() {
+		return
+	}
+	paintBox(c, b)
+	w.Paint(c)
+	for _, k := range b.children {
+		paintTree(c, k)
+	}
+}
+
+// paintBox draws the background and border described by the element's Style.
+// A disabled element gets a washed-out border and fill.
+func paintBox(c *gfx.Canvas, b *Base) {
+	s := &b.Style
+	bg, border := s.Background, s.BorderColor
+	if b.Disabled {
+		border = Mid
+		if bg == Ink {
+			bg = Mid
+		}
+	}
+	c.FillRoundRect(b.Bounds, s.BorderRadius, bg)
+	c.StrokeRoundRect(b.Bounds, s.BorderRadius, s.BorderWidth, border)
+}
+
+// ---- queries (document.getElementById & friends) ----
+
+// Walk visits every element depth-first; fn returns false to stop.
+func (d *Document) Walk(fn func(Widget) bool) {
+	if d.Root != nil {
+		walk(d.Root, fn)
+	}
+}
+
+func walk(w Widget, fn func(Widget) bool) bool {
+	if !fn(w) {
+		return false
+	}
+	for _, k := range w.Elem().children {
+		if !walk(k, fn) {
+			return false
+		}
+	}
+	return true
+}
+
+// GetElementByID returns the element with the given ID, or nil.
+func (d *Document) GetElementByID(id string) Widget {
+	var found Widget
+	d.Walk(func(w Widget) bool {
+		if w.Elem().ID == id {
+			found = w
+		}
+		return found == nil
+	})
+	return found
+}
+
+// QuerySelectorAll returns the elements that have className.
+func (d *Document) QuerySelectorAll(className string) []Widget {
+	var out []Widget
+	d.Walk(func(w Widget) bool {
+		if w.Elem().ClassName == className {
+			out = append(out, w)
+		}
+		return true
+	})
+	return out
+}
+
+// ---- focus & keyboard ----
+
+// Focused returns the element being edited, or nil.
+func (d *Document) Focused() Widget { return d.focus }
+
+// RequestText opens the keyboard for owner; the owner is "focused" until done.
+func (d *Document) RequestText(owner Widget, req KeyboardRequest) {
+	if d.Keyboard == nil {
+		return
+	}
+	done := req.Done
+	req.Done = func(text string, ok bool) {
+		d.focus = nil
+		done(text, ok)
+		d.Invalidate()
+	}
+	d.focus = owner
+	d.Keyboard.Request(req)
+}
+
+// ---- popups (menus, drop-downs) ----
+
+// OpenPopup shows w (opened by owner) above the rest of the UI, below (or above, when there is
+// no room) anchor. A touch outside any popup closes them all.
+func (d *Document) OpenPopup(owner, w Widget, anchor geom.Rect, size geom.Size) {
+	d.popupOwner = owner
+	r := geom.Rect{X: anchor.X, Y: anchor.Bottom() + 6, W: size.W, H: size.H}
+	if r.Bottom() > d.H && anchor.Y-6-size.H >= 0 {
+		r.Y = anchor.Y - 6 - size.H
+	}
+	r.X = geom.Clamp(r.X, 0, geom.Max(0, d.W-r.W))
+	attach(w, d)
+	layoutWidget(w, r)
+	d.popups = append(d.popups, w)
+	d.Invalidate()
+}
+
+// ClosePopups closes every open popup.
+func (d *Document) ClosePopups() {
+	if len(d.popups) == 0 {
+		return
+	}
+	d.popups, d.popupOwner = nil, nil
+	d.Invalidate()
+}
+
+// HasPopup reports whether a popup is open.
+func (d *Document) HasPopup() bool { return len(d.popups) > 0 }
+
+// PopupOpenFor reports whether owner currently has a popup open.
+func (d *Document) PopupOpenFor(owner Widget) bool {
+	return d != nil && d.popupOwner == owner && d.HasPopup()
+}

@@ -13,6 +13,7 @@ package inkview
 #include "inkview.h"
 
 extern int main_handler(int t, int p1, int p2);
+extern void c_keyboard_handler(char *text);
 
 // Exported by libinkview but missing from the public header.
 void LeaveInkViewMain();
@@ -100,14 +101,13 @@ func goMainHandler(t, p1, p2 C.int) C.int {
 		app.Draw()
 		return 1
 	case C.EVT_KEYPRESS:
-		if app.Key(int(p1)) {
-			return 1
-		}
-	case C.EVT_POINTERUP, C.EVT_TOUCHUP:
-		// Some firmwares report taps as touch events, others as pointer events.
-		if app.Pointer(int(p1), int(p2)) {
-			return 1
-		}
+		return boolToInt(app.Key(int(p1)))
+	case C.EVT_POINTERDOWN:
+		return boolToInt(app.Pointer(PointerDown, int(p1), int(p2)))
+	case C.EVT_POINTERMOVE:
+		return boolToInt(app.Pointer(PointerMove, int(p1), int(p2)))
+	case C.EVT_POINTERUP:
+		return boolToInt(app.Pointer(PointerUp, int(p1), int(p2)))
 	case C.EVT_EXIT:
 		return 1
 	}
@@ -122,3 +122,56 @@ const (
 	KeyPrev = 0x18
 	KeyNext = 0x19
 )
+
+func boolToInt(b bool) C.int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// ---- system keyboard ----
+
+var (
+	kbDone  func(text string, ok bool)
+	kbBuf   *C.char
+	kbTitle *C.char
+)
+
+// OpenKeyboard opens InkView's on-screen keyboard. done receives the typed
+// text, or ok=false if the user cancelled. flags are KeyboardNormal/Numeric.
+func OpenKeyboard(title, initial string, maxLen, flags int, done func(text string, ok bool)) {
+	if maxLen <= 0 {
+		maxLen = 1024
+	}
+	releaseKeyboard()
+	kbDone = done
+	kbBuf = (*C.char)(C.calloc(C.size_t(maxLen+1), 1))
+	cInitial := C.CString(initial)
+	C.strncpy(kbBuf, cInitial, C.size_t(maxLen))
+	C.free(unsafe.Pointer(cInitial))
+	kbTitle = C.CString(title)
+	C.OpenKeyboard(kbTitle, kbBuf, C.int(maxLen), C.int(flags), C.iv_keyboardhandler(C.c_keyboard_handler))
+}
+
+func releaseKeyboard() {
+	if kbBuf != nil {
+		C.free(unsafe.Pointer(kbBuf))
+		C.free(unsafe.Pointer(kbTitle))
+		kbBuf, kbTitle = nil, nil
+	}
+}
+
+//export goKeyboardHandler
+func goKeyboardHandler(text *C.char) {
+	done := kbDone
+	kbDone = nil
+	s, ok := "", text != nil
+	if ok {
+		s = C.GoString(text)
+	}
+	releaseKeyboard()
+	if done != nil {
+		done(s, ok)
+	}
+}
