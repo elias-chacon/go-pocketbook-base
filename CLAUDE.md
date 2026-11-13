@@ -1,0 +1,59 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What this is
+
+A Go base for **PocketBook e-reader apps** (Linux ARM): a from-scratch vector widget library (`internal/widget`, drawn with `fogleman/gg`), a thin cgo binding to the reader's `libinkview` (`internal/inkview`), and an app that installs its own launcher icon on first run. Developed and tested on a **PB741 (InkPad Color 2, 1404x1872, firmware 6.x)**. The README and `docs/` are in Brazilian Portuguese / English; the code and comments are English.
+
+## Commands
+
+```sh
+go test ./...                                   # everything (run this before declaring anything done)
+go test ./internal/widget -run TestTable -v     # a single test / package
+go vet ./...                                    # also catches `unkeyed fields` on geom.Rect: use geom.R(x, y, w, h)
+go run ./cmd/preview                            # render the demo pages to preview-<n>.png (-page N, -w, -h)
+go run ./tools/docgen                           # redraw docs/components/*.png from the real widgets
+go run ./tools/docsync                          # refill code blocks in docs/ from examples/  (-check to only verify)
+go run ./tools/bumpversion build|minor|major    # edit .version
+.\build.ps1 [-App name]                         # Windows build -> dist/applications/<app>.app (bumps BUILD)
+make dist [APP=name]                            # same on Linux/macOS/WSL
+.\scripts\sonar.ps1                             # tests with -coverpkg + SonarQube scan (needs SONAR_GLOBAL_TOKEN)
+.\scripts\install.ps1 -Drive F:                 # copy the built .app to a USB-mounted reader
+```
+
+Only `internal/inkview` needs the device; on the desktop it compiles to stubs (build tags `linux && arm && cgo`), so all UI logic is testable on the PC. `cmd/hello` and `examples/newapp` only build for the reader, through Docker.
+
+## Architecture
+
+- **`internal/widget`** is the library. `Document` owns one element tree: `Layout()` -> `Render()` (grayscale `*image.Gray`) -> `HandlePointer()`. Every element embeds `Base` (ID, ClassName, Style, Hidden, Disabled, OnClick, Bounds...) and implements `Widget` (`Elem`, `Measure`, `Paint`); interactive ones also implement `PointerHandler`. One layout engine (`layout.go`) serves everything: a block is a vertical flex; measuring and arranging are pure functions over the tree. Custom elements outside the package must call `Base.Init(self)` and use `widget.Fire`.
+- **Coordinates are "design pixels"** (reference width 1404). `Document.Scale` converts to the real screen and touch is converted back, so drawing and touch share one space. Never offset or scale by hand.
+- **Touch** (`dispatch.go`): down picks the deepest interactive, non-disabled element; move/up go to it (slider drag); a click is synthesized on release inside it, then `OnClick` bubbles up the tree. Popups (`OpenPopup`) are drawn above and a touch outside only closes them. Text entry goes through the injected `Keyboard` interface (`FakeKeyboard` in tests/preview, InkView's keyboard on the device).
+- **`internal/gfx`** draws in design units (`Canvas`, fonts, text, icons); **`internal/geom`** is Rect/Point/Insets.
+- **`internal/demo`** is the showcase shared by `cmd/hello`, `cmd/preview` and tests. **`cmd/hello`** is only glue: InkView events -> `Document`, repaints coalesced via `OnInvalidate`.
+- **`internal/install`** self-registers the app on first run: writes 128x128 8-bit BMP icons and text-patches the desktop `view.json` (backup, JSON validation, atomic replace, idempotent, repairs old relative paths). Tested against a real firmware file in `testdata/`.
+- **`examples/`** is the source of every code sample in `docs/`; `tools/docsync` copies it into fenced blocks whose first line is `// examples/<file>` or `// examples/<file>#<Func>`, and `TestRepositoryDocsAreInSync` fails if a page is stale.
+
+## Non-obvious constraints
+
+- **Go 1.17 dialect** for anything that goes into the app (the Docker toolchain is 1.17.13): no generics, no `any`, no newer stdlib functions. Tools/tests run on newer Go but keep to 1.17 anyway.
+- **Disable the system panel** (`inkview.DisablePanel()` in Init): otherwise InkView offsets the canvas ~137 px and drawing looks shifted.
+- **Exit** must call both `CloseApp()` and `LeaveInkViewMain()`.
+- **Desktop entry** (`system/profiles/default/config/desktop/view.json`; `system/config` is a link): the `path` of `U_<app>` must be **absolute**, icons may be relative, and the key must also be in a group's `apps` array. The home screen only reloads it when the USB cable is unplugged.
+- **Fonts** (Go Regular/Bold) lack glyphs like "✓": draw an icon with `Canvas.Icon` instead.
+- **Layout gaps to know**: no scrolling, `Pct` only for width, one page must fit the screen (the demo test fails on overflow).
+- **Touch-accuracy rule**: a touch at the center of every interactive element must reach that element; `internal/demo/demo_test.go` and `examples/examples_test.go` enforce it, plus a 56 px minimum target.
+
+## Environment quirks (Windows + WSL)
+
+- Docker exists only inside WSL; `build.ps1` falls back to `wsl -e docker`. The user's PowerShell profile defines a broken `docker` function (drops arguments), so scripts only accept a real `docker` executable.
+- Git Bash rewrites `/mnt/d/...` paths passed to `wsl`: run WSL commands through `pwsh -File x.ps1`. In PowerShell quote `"-coverprofile=coverage.out"`.
+- Long multi-file shell heredocs sometimes fail to parse in the Bash tool; write files with the editor tools instead. Editing text files with `perl -pi` on UTF-8 content can double-encode it; use Node or the editor tools. Files checked out by Git are CRLF, so normalize `\r\n` before string matching.
+- SonarQube runs on the Windows host (`localhost:9000`, token in `SONAR_GLOBAL_TOKEN`); containers reach it through the WSL default-route IP (handled by the scripts).
+
+## Working rules for this repo (from the maintainer)
+
+- Versioning is `.version` = `MAJOR.MINOR.BUILD` (starts 1.0.0): every build bumps BUILD, a **finished task** bumps MINOR (BUILD -> 0), only big changes bump MAJOR. Tasks are the checkbox list in the README.
+- **When a task is finished**: review and update the docs (`docs/en` and `docs/pt-br`, README tasks/architecture/links, `docgen` pictures, `docsync` + `-check`), mark the task, bump MINOR, run tests (and Sonar when code changed; the goal is 0 smells, quality gate OK), then **commit without being asked**. Do not push. Commit messages end with the `Co-Authored-By` trailer.
+- **Never create git worktrees.**
+- Apply SOLID/KISS/DRY pragmatically. Say plainly when something is untested on the device, and ask before changing anything on a connected reader outside its `applications/` folder (diagnostic code must be announced and removed).
