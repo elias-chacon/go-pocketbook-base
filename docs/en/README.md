@@ -29,6 +29,7 @@
 | 9 | [Custom components](09-custom-components.md) | Create your own element |
 | 10 | [Testing](10-testing.md) | Test screens and touch without a device |
 | 11 | [Troubleshooting](11-troubleshooting.md) | Device quirks and common problems |
+| 12 | [Internationalization](12-internationalization.md) | pt-BR first, English fallback, JSON translations |
 
 ## Quick look
 

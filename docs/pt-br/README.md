@@ -31,6 +31,7 @@ Ele traz:
 | 9 | [Componentes próprios](09-componentes-proprios.md) | Criar o seu próprio elemento |
 | 10 | [Testes](10-testes.md) | Testar telas e toque sem o aparelho |
 | 11 | [Solução de problemas](11-solucao-de-problemas.md) | Particularidades do aparelho e problemas comuns |
+| 12 | [Internacionalização](12-internacionalizacao.md) | pt-BR primeiro, fallback em inglês, traduções em JSON |
 
 ## Uma olhada rápida
 

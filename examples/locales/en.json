@@ -1,0 +1,7 @@
+{
+  "greeting.title": "Hello!",
+  "greeting.hello": "Welcome, %s.",
+  "items": "You have %d items",
+  "language": "Language",
+  "farewell": "See you soon"
+}

@@ -43,6 +43,8 @@ componentes próprios, testes e solução de problemas. Todo código das página
 | RF-06 | Design pensado para e-ink: alto contraste, bordas nítidas, sem animação, alvos de toque grandes.                                                                                                                                                                                     |
 | RF-07 | O app se **instala sozinho** (ícone e entrada no desktop) na primeira execução.                                                                                                                                                                                                      |
 | RF-08 | Versionamento em `.version` (começa em `1.0.0`): o build incrementa o **BUILD**, tarefa concluída incrementa o **MINOR**, grande mudança incrementa o **MAJOR**.                                                                                                                     |
+| RF-09 | **i18n reutilizável** (`internal/i18n`): todo app é escrito em **pt-BR** e cai automaticamente para **en** (chave → idioma atual → en → pt-BR → a própria chave). |
+| RF-10 | **App Launcher e plugins**: os apps filhos vivem em `./apps/` (o `hello` é o blueprint) e seguem o mesmo contrato de empacotamento; o Launcher lista instalados, busca e baixa do GitHub (Releases) os disponíveis, executa os apps e tem configurações persistentes (grid, idioma, fundo). |
 
 ### Não funcionais
 
@@ -116,6 +118,16 @@ Legenda: `[x]` concluída · `[ ]` pendente. Ao concluir uma task, o MINOR é in
   - [x] T41 Componente de abas (`Tabs`) com política por aba: **lembrar** o estado dos campos (texto, número, paginação da tabela, data do calendário) num store compartilhado e leve, **recriar** do zero ou **manter** a árvore viva.
   - [x] T40 Se possível, ao invés de redesenhar a tela por completo seria interessante redesenhar apenas o componente que está recebendo a interação.
 
+**Launcher e plugins** (RF-09, RF-10; decisões: binários via GitHub Releases, "Installed" = apps do ecossistema com manifesto em `applications/.pbgo/`, `widget.Image` autorizado)
+
+- [x] T42 i18n reutilizável (`internal/i18n`): pt-BR primário, fallback automático para en, JSON embutido
+- [ ] T43 `widget.Image` + `Canvas.DrawImage` (ícones BMP do grid e imagem de fundo)
+- [ ] T44 `./apps/`: mover o `hello` para `apps/hello` como blueprint (ciclo de vida, empacotamento, manifesto `app.json`) e migrá-lo para i18n
+- [ ] T45 Launcher: grid dos apps instalados (ícone + título) e execução do app filho, com retorno ao Launcher
+- [ ] T46 Launcher: busca em tempo real com as seções `-- Installed --` e `-- Available --`
+- [ ] T47 Launcher: catálogo do GitHub (`apps/` do repositório + assets dos Releases), download e instalação com um clique
+- [ ] T48 Launcher: configurações persistentes (tamanho dos ícones e da grade, idioma, imagem de fundo)
+
 **Bugs**
 
 ## Backlog
@@ -158,6 +170,7 @@ cmd/hello          app do aparelho: liga InkView ↔ widget.Document (toque, tec
 cmd/preview        renderiza as páginas da demo em PNG (sem aparelho)
 internal/demo      vitrine de componentes (compartilhada por hello, preview e testes)
 internal/widget    componentes + layout flex/grid + toque + abas e estado + repintura parcial (a biblioteca)
+internal/i18n      traduções: pt-BR primário, fallback en (JSON embutido)
 internal/gfx       desenho vetorial: Canvas, fontes, texto, ícones, cores
 internal/geom      Rect, Point, Size, Insets
 internal/inkview   binding cgo mínimo da libinkview (eventos, blit, teclado)
