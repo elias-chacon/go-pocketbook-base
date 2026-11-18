@@ -98,6 +98,9 @@ func paintBox(c *gfx.Canvas, b *Base) {
 		}
 	}
 	c.FillRoundRect(b.Bounds, s.BorderRadius, bg)
+	if s.BackgroundImage != nil {
+		paintBackgroundImage(c, b)
+	}
 	c.StrokeRoundRect(b.Bounds, s.BorderRadius, s.BorderWidth, border)
 }
 
@@ -249,3 +252,14 @@ func (d *Document) PopupOpenFor(owner Widget) bool {
 
 // Modal returns the open modal, or nil.
 func (d *Document) Modal() *Modal { return d.modal }
+
+// paintBackgroundImage draws the element's BackgroundImage, cut to its rounded
+// corners when it has any.
+func paintBackgroundImage(c *gfx.Canvas, b *Base) {
+	s := &b.Style
+	if s.BorderRadius > 0 {
+		c.Clip(b.Bounds, s.BorderRadius)
+		defer c.ResetClip()
+	}
+	c.DrawImage(s.BackgroundImage, b.Bounds, s.BackgroundSize)
+}

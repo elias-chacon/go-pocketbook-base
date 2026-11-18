@@ -25,6 +25,7 @@ Every element has `Style` (a `widget.Style`). The names are the CSS ones.
 | `MinWidth`, `MinHeight` | pixels | `min-width`, `min-height` |
 | `Padding`, `Margin` | `geom.All(n)`, `geom.XY(vertical, horizontal)` or `geom.Insets{Top, Right, Bottom, Left}` | `padding`, `margin` |
 | `Background`, `Color`, `BorderColor` | `widget.Ink`, `Paper`, `Soft`, `Mid`, `Muted`, `Disabled`, `gfx.Gray(v)`, `gfx.RGB(r, g, b)`, `gfx.Hex("#222")` | `background`, `color`, `border-color` |
+| `BackgroundImage`, `BackgroundSize` | an `image.Image`, `gfx.FitCover/FitContain/FitFill` | `background-image`, `background-size` |
 | `BorderWidth`, `BorderRadius` | pixels | `border-width`, `border-radius` |
 | `FontSize`, `Bold`, `TextAlign` | pixels, bool, `gfx.AlignStart/Center/End` | `font-size`, `font-weight`, `text-align` |
 

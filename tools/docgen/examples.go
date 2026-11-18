@@ -6,6 +6,7 @@ import (
 	samples "go-pocketbook-base/examples"
 	"go-pocketbook-base/internal/geom"
 	"go-pocketbook-base/internal/gfx"
+	"go-pocketbook-base/internal/ui"
 	"go-pocketbook-base/internal/widget"
 )
 
@@ -73,6 +74,7 @@ func examples() []example {
 		{"chips", 640, 0, chipsExample, nil},
 		{"calendar", 640, 0, calendarExample, nil},
 		{"card", 640, 0, cardExample, nil},
+		{"image", 760, 0, imageExample, nil},
 		{"modal", 760, 0, modalExample, nil},
 		{"custom", 640, 0, customRecipe, nil},
 		{"recipe-hello", 640, 0, func() widget.Widget { return samples.Hello(noAction) }, nil},
@@ -293,6 +295,28 @@ func calendarExample() widget.Widget {
 	cal.Locale = widget.LocalePTBR
 	cal.Today = time.Date(2026, 11, 13, 0, 0, 0, 0, time.UTC)
 	return cal
+}
+
+// imageExample shows the same bitmap at its natural size and with each fit. A
+// column in a row takes the whole width unless it has one, so each gets its own.
+func imageExample() widget.Widget {
+	icon := ui.RenderIcon(128, false)
+	column := func(caption string, width float64, img *widget.Image) widget.Widget {
+		c := captioned(caption, img)
+		c.Elem().Style.Width = widget.Px(width)
+		return c
+	}
+	wide := func(caption string, fit gfx.Fit) widget.Widget {
+		img := widget.NewImage(icon)
+		img.Style.Width, img.Style.Height = widget.Px(170), widget.Px(96)
+		img.Style.BorderColor, img.Style.BorderWidth = widget.Mid, 2
+		img.Fit = fit
+		return column(caption, 170, img)
+	}
+	row := widget.NewRow(14, column("natural", 140, widget.NewImage(icon)),
+		wide("contain", gfx.FitContain), wide("cover", gfx.FitCover), wide("fill", gfx.FitFill))
+	row.Style.AlignItems = widget.AlignStart
+	return row
 }
 
 // modalExample draws the dialog inline (the library draws the same widget over

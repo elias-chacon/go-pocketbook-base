@@ -6,6 +6,8 @@
 package widget
 
 import (
+	"image"
+
 	"go-pocketbook-base/internal/geom"
 	"go-pocketbook-base/internal/gfx"
 )
@@ -102,12 +104,16 @@ type Style struct {
 	MinHeight         float64
 	Padding, Margin   geom.Insets
 	Background, Color gfx.Color
-	BorderColor       gfx.Color
-	BorderWidth       float64
-	BorderRadius      float64
-	FontSize          float64
-	Bold              bool
-	TextAlign         gfx.TextAlign
+	// BackgroundImage is drawn over Background (CSS background-image) and
+	// BackgroundSize says how it fits (Cover by default).
+	BackgroundImage image.Image
+	BackgroundSize  gfx.Fit
+	BorderColor     gfx.Color
+	BorderWidth     float64
+	BorderRadius    float64
+	FontSize        float64
+	Bold            bool
+	TextAlign       gfx.TextAlign
 }
 
 // boxInsets is the border plus padding: the space between the border box and the content.

@@ -121,7 +121,7 @@ Legenda: `[x]` concluída · `[ ]` pendente. Ao concluir uma task, o MINOR é in
 **Launcher e plugins** (RF-09, RF-10; decisões: binários via GitHub Releases, "Installed" = apps do ecossistema com manifesto em `applications/.pbgo/`, `widget.Image` autorizado)
 
 - [x] T42 i18n reutilizável (`internal/i18n`): pt-BR primário, fallback automático para en, JSON embutido
-- [ ] T43 `widget.Image` + `Canvas.DrawImage` (ícones BMP do grid e imagem de fundo)
+- [x] T43 `widget.Image` + `Canvas.DrawImage` (ícones BMP do grid e imagem de fundo)
 - [ ] T44 `./apps/`: mover o `hello` para `apps/hello` como blueprint (ciclo de vida, empacotamento, manifesto `app.json`) e migrá-lo para i18n
 - [ ] T45 Launcher: grid dos apps instalados (ícone + título) e execução do app filho, com retorno ao Launcher
 - [ ] T46 Launcher: busca em tempo real com as seções `-- Installed --` e `-- Available --`
@@ -476,6 +476,21 @@ mês vizinho (cinza) também navega até ele. O dia de hoje ganha um anel. Os no
 cal := widget.NewCalendar(time.Now())
 cal.Locale = widget.LocalePTBR
 cal.OnChange = func(e *widget.Event) { fmt.Println(cal.Selected) }
+```
+
+### Imagem
+
+![image](docs/components/image.png)
+
+Bitmap (`<img>`) com tamanho natural (1 pixel = 1 px de design), `Fit` (`FitContain`, `FitCover`, `FitFill`) e toque
+(`OnClick` faz dele um bloco de ícone). `gfx.LoadImage(caminho, maxW, maxH)` lê PNG/JPEG/GIF/BMP e **reduz** fotos grandes (o
+leitor tem 1 GB); `gfx.Resize` escala uma vez para o tamanho final. Para uma imagem atrás de um elemento inteiro:
+`Style.BackgroundImage` + `BackgroundSize`.
+
+```go
+logo := widget.NewImage(icone)
+logo.Fit = gfx.FitCover
+pagina.Style.BackgroundImage = papelDeParede
 ```
 
 ### Modal

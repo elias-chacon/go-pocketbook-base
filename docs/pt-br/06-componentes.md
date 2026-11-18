@@ -585,6 +585,57 @@ func CardExample() widget.Widget {
 }
 ```
 
+## Image
+
+![image](../components/image.png)
+
+Um bitmap (`<img>`): ícone de app, foto, logotipo. É desenhado dentro da caixa de conteúdo e, como qualquer elemento,
+pode ter tamanho com `Style.Width/Height` e receber toque (defina `OnClick`: uma imagem com um rótulo embaixo é um bloco
+de ícone).
+
+| | |
+|---|---|
+| Criar | `widget.NewImage(src)` — `src` é qualquer `image.Image` (pode ser `nil`: nada é desenhado) |
+| `Source` | a imagem; mude-a e a tela atualiza |
+| `Fit` | `gfx.FitContain` (padrão: a imagem inteira, centralizada), `gfx.FitCover` (preenche a caixa, corta o meio), `gfx.FitFill` (estica) |
+| Tamanho natural | um pixel da imagem = um pixel de design, reduzido (mantendo a proporção) quando mais larga que o espaço |
+| Carregar arquivo | `gfx.LoadImage(caminho, maxW, maxH)` lê PNG, JPEG, GIF e BMP e **reduz** o que for maior que `maxW` x `maxH`: uma foto de 12 megapixels são ~48 MB do 1 GB do leitor |
+| Escalar uma vez | `gfx.Resize(img, w, h, fit)` devolve a imagem já no tamanho final; desenhá-la de volta é uma cópia simples (use para fundos) |
+
+Para colocar uma imagem **atrás de um elemento inteiro** (uma página, um card) use o estilo `BackgroundImage` e
+`BackgroundSize` (`gfx.FitCover` por padrão), desenhado sobre o `Background` e recortado no `BorderRadius`:
+
+```go
+page.Style.BackgroundImage = papelDeParede // de gfx.LoadImage ou gfx.Resize
+```
+
+```go
+// examples/components.go#ImageExample
+// ImageExample shows a bitmap at its natural size, in a wide box with each fit
+// and as a tappable tile (an icon with OnClick). Load your own files with
+// gfx.LoadImage(path, maxW, maxH), which shrinks big pictures.
+func ImageExample() widget.Widget {
+	icon := ui.RenderIcon(128, false) // any image.Image works
+
+	natural := widget.NewImage(icon)
+
+	wide := func(fit gfx.Fit) *widget.Image {
+		img := widget.NewImage(icon)
+		img.Style.Width, img.Style.Height = widget.Px(150), widget.Px(90)
+		img.Style.BorderColor, img.Style.BorderWidth = widget.Mid, 2
+		img.Fit = fit // FitContain (default), FitCover or FitFill
+		return img
+	}
+
+	tile := widget.NewImage(icon)
+	tile.OnClick = func(e *widget.Event) { fmt.Println("icon tapped") }
+
+	row := widget.NewRow(16, natural, wide(gfx.FitContain), wide(gfx.FitCover), wide(gfx.FitFill), tile)
+	row.Style.FlexWrap = true // a row does not wrap by itself
+	return row
+}
+```
+
 ## Modal
 
 ![modal](../components/modal.png)
