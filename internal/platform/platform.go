@@ -24,6 +24,7 @@ import (
 	"go-pocketbook-base/internal/platform/application"
 	"go-pocketbook-base/internal/platform/domain"
 	"go-pocketbook-base/internal/platform/infrastructure/jsonfiles"
+	"go-pocketbook-base/internal/platform/infrastructure/process"
 	"go-pocketbook-base/internal/platform/infrastructure/reader"
 )
 
@@ -88,7 +89,23 @@ func Run(cfg Config, factory Factory) error {
 		Manifest: m, Lang: lang, Version: version.Value, Notice: notice,
 		Settings: settings, Apps: apps,
 	}
-	err = reader.Run(application.NewRuntime(env, factory, reader.Screen{}))
+	screen := &reader.Screen{}
+	err = reader.Run(application.NewRuntime(env, factory, screen))
 	reader.Logf("Run returned err=%v", err)
+	returnToLauncher(exe, screen.ClosedByApp(), os.Getenv(domain.LauncherEnv), process.Exec)
 	return err
+}
+
+// returnToLauncher starts the Launcher in place of this app when the Launcher
+// started it and the app asked to exit (see domain.ReturnTarget). A failure is
+// only logged: the app simply ends, as it would from the home screen.
+func returnToLauncher(self string, askedToExit bool, launcher string, exec func(path string, env []string) error) {
+	target := domain.ReturnTarget(launcher, self, askedToExit)
+	if target == "" {
+		return
+	}
+	reader.Logf("returning to the launcher: %s", target)
+	if err := exec(target, os.Environ()); err != nil {
+		reader.Logf("could not return to the launcher: %v", err)
+	}
 }

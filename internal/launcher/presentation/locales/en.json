@@ -1,0 +1,6 @@
+{
+  "home.title": "My apps",
+  "home.empty": "No apps installed yet.\nCopy an .app file to the applications folder of the reader and open it once: it shows up here.",
+  "home.page": "%d / %d",
+  "home.open.failed": "Could not open “%s”: %s"
+}

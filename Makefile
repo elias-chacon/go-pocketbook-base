@@ -3,7 +3,7 @@ IMAGE  ?= go-pocketbook-base-sdk
 DIST   := dist
 PKG    := go-pocketbook-base/internal/kernel/version
 
-.PHONY: all image app dist preview test sonar task-done major clean
+.PHONY: all image app dist dist-all preview test sonar task-done major clean
 all: dist
 
 image:            ## build the SDK + Go toolchain docker image
@@ -16,6 +16,11 @@ app: image        ## cross-compile the .app (linux/arm, cgo + libinkview)
 		build -ldflags=-X=$(PKG).Value=$$v -o $(DIST)/applications/$(APP).app ./apps/$(APP)
 
 dist: app         ## single file to copy to the device: dist/applications/$(APP).app
+
+dist-all: image   ## every app of apps/ (one version bump): dist/applications/<id>.app
+	v=$(go run ./tools/bumpversion build) && echo "Version: $v" && \
+	for a in $(ls apps); do [ -d apps/$a ] && docker run --rm -v "$(CURDIR)":/app -v pbgo-cache:/gopath $(IMAGE) \
+		build -ldflags=-X=$(PKG).Value=$v -o $(DIST)/applications/$a.app ./apps/$a; done
 
 task-done:        ## a task was finished: MINOR+1 (BUILD restarts at 0)
 	go run ./tools/bumpversion minor

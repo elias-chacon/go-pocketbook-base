@@ -15,7 +15,7 @@ import (
 
 // The adapter implements the application's and the domain's ports.
 var (
-	_ application.Screen      = Screen{}
+	_ application.Screen      = (*Screen)(nil)
 	_ widget.Keyboard         = Keyboard{}
 	_ domain.DesktopRegistrar = DesktopRegistrar{}
 	_ inkview.App             = (*Adapter)(nil)
@@ -83,16 +83,23 @@ func TestTheAdapterDrivesTheRuntimeWithTranslatedEvents(t *testing.T) {
 
 func TestTheDeviceOutputsAreHarmlessOffDevice(t *testing.T) {
 	img := image.NewGray(image.Rect(0, 0, 10, 10))
-	Screen{}.Show(img)
-	Screen{}.ShowRect(img, image.Rect(0, 0, 5, 5))
-	Screen{}.RequestRepaint()
-	Screen{}.Close()
+	screen := &Screen{}
+	screen.Show(img)
+	screen.ShowRect(img, image.Rect(0, 0, 5, 5))
+	screen.RequestRepaint()
+	if screen.ClosedByApp() {
+		t.Error("nobody closed it yet")
+	}
+	screen.Close()
+	if !screen.ClosedByApp() {
+		t.Error("Close is the app asking to leave")
+	}
 	Keyboard{}.Request(widget.KeyboardRequest{Kind: widget.KeyboardNumeric})
 	Keyboard{}.Request(widget.KeyboardRequest{})
 	SetLogFile(filepath.Join(t.TempDir(), "x.log"))
 	Logf("hello %d", 1)
 	SetLogFile("")
-	if err := Run(application.NewRuntime(application.Env{}, nil, Screen{})); err != inkview.ErrNotOnDevice {
+	if err := Run(application.NewRuntime(application.Env{}, nil, &Screen{})); err != inkview.ErrNotOnDevice {
 		t.Errorf("off-device Run = %v", err)
 	}
 	if IconPath("/mnt/ext1", "hello") != filepath.Join("/mnt/ext1", "applications", "icons", "hello.bmp") {

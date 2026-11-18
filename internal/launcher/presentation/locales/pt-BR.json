@@ -1,0 +1,6 @@
+{
+  "home.title": "Meus aplicativos",
+  "home.empty": "Nenhum aplicativo instalado ainda.\nCopie um arquivo .app para a pasta applications do aparelho e abra-o uma vez: ele aparece aqui.",
+  "home.page": "%d / %d",
+  "home.open.failed": "Não foi possível abrir “%s”: %s"
+}

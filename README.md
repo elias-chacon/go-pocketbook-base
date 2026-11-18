@@ -124,7 +124,7 @@ Legenda: `[x]` concluída · `[ ]` pendente. Ao concluir uma task, o MINOR é in
 - [x] T43 `widget.Image` + `Canvas.DrawImage` (ícones BMP do grid e imagem de fundo)
 - [x] T44 `./apps/`: mover o `hello` para `apps/hello` como blueprint (ciclo de vida, empacotamento, manifesto `app.json`) e migrá-lo para i18n
 - [x] T49 Reorganização por domínios (DDD): contextos `kernel`, `toolkit`, `device`, `localization`, `platform` (domain · application · infrastructure) e `showcase`; `apps/` como raízes de composição; `examples/` por contexto; regra de dependência verificada por teste (`internal/architecture`). Feita antes do Launcher para que o código novo já nasça no lugar certo.
-- [ ] T45 Launcher: grid dos apps instalados (ícone + título) e execução do app filho, com retorno ao Launcher
+- [ ] T45 Launcher: grid dos apps instalados (ícone + título) e execução do app filho, com retorno ao Launcher. **Feito no código; falta validar no aparelho** (executar o filho por `execve` e voltar).
 - [ ] T46 Launcher: busca em tempo real com as seções `-- Installed --` e `-- Available --`
 - [ ] T47 Launcher: catálogo do GitHub (`apps/` do repositório + assets dos Releases), download e instalação com um clique
 - [ ] T48 Launcher: configurações persistentes (tamanho dos ícones e da grade, idioma, imagem de fundo)
@@ -181,6 +181,7 @@ internal/
     application                casos de uso: Runtime (ciclo de vida), FirstRun (registro na 1ª execução)
     infrastructure             adaptadores: jsonfiles (arquivos JSON), reader (InkView, teclado, desktop)
     platform.go                fachada/raiz de composição: o único import de um app
+  launcher/                  o App Launcher: domain (Tile, Grid), application (Home), infrastructure (processlauncher), presentation (telas)
   showcase/                  o conteúdo do app hello (vitrine de componentes)
   architecture/              o mapa e a regra de dependência, como código e teste
 examples/                    amostras testadas da documentação, por contexto:

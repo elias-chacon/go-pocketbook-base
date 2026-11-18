@@ -41,25 +41,32 @@ func PointerOf(kind inkview.PointerKind) widget.PointerType {
 	return widget.PointerDown
 }
 
-// Screen is the application.Screen of the reader's panel.
-type Screen struct{}
+// Screen is the application.Screen of the reader's panel. It remembers whether
+// the app asked to close (as opposed to the system closing it with Home).
+type Screen struct{ closed bool }
 
 // Show implements application.Screen.
-func (Screen) Show(img *image.Gray) {
+func (*Screen) Show(img *image.Gray) {
 	b := img.Bounds()
 	inkview.Blit(img.Pix, b.Dx(), b.Dy(), img.Stride)
 }
 
 // ShowRect implements application.Screen.
-func (Screen) ShowRect(img *image.Gray, r image.Rectangle) {
+func (*Screen) ShowRect(img *image.Gray, r image.Rectangle) {
 	inkview.BlitRect(img.Pix, img.Stride, r.Min.X, r.Min.Y, r.Dx(), r.Dy())
 }
 
 // RequestRepaint implements application.Screen.
-func (Screen) RequestRepaint() { inkview.Repaint() }
+func (*Screen) RequestRepaint() { inkview.Repaint() }
 
 // Close implements application.Screen.
-func (Screen) Close() { inkview.Exit() }
+func (s *Screen) Close() {
+	s.closed = true
+	inkview.Exit()
+}
+
+// ClosedByApp reports whether the app itself asked to close.
+func (s *Screen) ClosedByApp() bool { return s.closed }
 
 // Keyboard is the system keyboard of the reader (a widget.Keyboard).
 type Keyboard struct{}

@@ -1,0 +1,12 @@
+{
+  "id": "launcher",
+  "title": {
+    "pt-BR": "Launcher",
+    "en": "Launcher"
+  },
+  "description": {
+    "pt-BR": "Lista, busca, instala e executa os aplicativos do ecossistema.",
+    "en": "Lists, searches, installs and runs the apps of the ecosystem."
+  },
+  "group": "@General"
+}

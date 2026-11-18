@@ -21,6 +21,12 @@
 //	                infrastructure  adapters of the ports: jsonfiles, reader
 //	              plus the package platform itself, the composition root that
 //	              wires them and the one import an app needs.
+//	launcher      the App Launcher, the second context of the ecosystem. Same layers:
+//	                domain          Tile, Grid, paging and the AppLauncher port
+//	                application     the Home use case: list the tiles, open one
+//	                infrastructure  processlauncher (starts an app by replacing the process)
+//	                presentation    the screens, built from the toolkit's widgets
+//	              It depends on the platform only for its vocabulary (InstalledApp).
 //	showcase      the content of the hello app: every widget on four pages.
 //
 // Outside internal/: apps/ (one composition root per app, free to wire any
@@ -67,6 +73,12 @@ const (
 	applicationDir    = platformDir + "/application"
 	infrastructureDir = platformDir + "/infrastructure"
 	showcaseDir       = "internal/showcase"
+	launcherDir       = "internal/launcher"
+	launcherDomain    = launcherDir + "/domain"
+	launcherApp       = launcherDir + "/application"
+	launcherInfra     = launcherDir + "/infrastructure"
+	launcherUI        = launcherDir + "/presentation"
+	processDir        = infrastructureDir + "/process"
 	architectureDir   = "internal/architecture"
 	examplesDir       = "examples"
 )
@@ -84,13 +96,18 @@ var Rules = []Rule{
 	// The package platform itself: the composition root of the context.
 	{platformDir, []string{kernelDir, localizationDir, platformDir}},
 	{showcaseDir, []string{kernelDir, localizationDir, toolkitDir, showcaseDir}},
+	// The Launcher: its own vocabulary, and the platform's only through the domain.
+	{launcherDomain, []string{kernelDir, localizationDir, domainDir, launcherDomain}},
+	{launcherApp, []string{kernelDir, localizationDir, domainDir, launcherDomain, launcherApp}},
+	{launcherInfra, []string{kernelDir, domainDir, processDir, launcherDomain, launcherApp, launcherInfra}},
+	{launcherUI, []string{kernelDir, localizationDir, toolkitDir, launcherDomain, launcherApp, launcherUI}},
 	{architectureDir, nil},
 	{examplesDir, []string{kernelDir, localizationDir, toolkitDir, showcaseDir, examplesDir}},
 }
 
 // Contexts are the folders allowed directly under internal/. A new one must be
 // added here (and to the documentation above) on purpose.
-var Contexts = []string{"architecture", "device", "kernel", "localization", "platform", "showcase", "toolkit"}
+var Contexts = []string{"architecture", "device", "kernel", "launcher", "localization", "platform", "showcase", "toolkit"}
 
 // within reports whether dir is base or a folder below it.
 func within(dir, base string) bool { return dir == base || strings.HasPrefix(dir, base+"/") }

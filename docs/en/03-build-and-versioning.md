@@ -13,6 +13,7 @@ Go 1.17. You never install the SDK by hand.
 ```powershell
 .\build.ps1                 # Windows: builds ./apps/hello
 .\build.ps1 -App myapp      # builds ./apps/myapp
+.\build.ps1 -All            # builds every app of ./apps (one version bump)
 ```
 ```sh
 make dist                   # Linux / macOS / WSL

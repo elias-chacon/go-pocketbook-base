@@ -34,6 +34,7 @@ Ele traz:
 | 12 | [Internacionalização](12-internacionalizacao.md) | pt-BR primeiro, fallback em inglês, traduções em JSON |
 | 13 | [Apps e o contrato](13-apps-e-o-contrato.md) | `apps/<id>`, o manifesto, o ciclo de vida, o `apps/hello` como blueprint |
 | 14 | [Arquitetura (DDD)](14-arquitetura.md) | contextos delimitados, camadas, linguagem ubíqua, a regra de dependência |
+| 15 | [O Launcher](15-launcher.md) | a tela inicial dos apps: grade de instalados, executar um app e voltar |
 
 ## Uma olhada rápida
 

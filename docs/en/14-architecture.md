@@ -15,6 +15,7 @@ rule are written as code in `internal/architecture`; this page explains them.
 | **device** | the e-reader as an outside system (anti-corruption layer) | `inkview` (cgo binding), `desktop` (home screen registration) | kernel, toolkit |
 | **localization** | languages | `i18n` (pt-BR first, English fallback) | kernel |
 | **platform** | what an app of the project *is* | `domain` · `application` · `infrastructure` · the facade `platform` | kernel, localization, toolkit, device |
+| **launcher** | the App Launcher ([chapter 15](15-launcher.md)) | `domain` · `application` · `infrastructure` · `presentation` | kernel, localization, toolkit, and the platform's domain for its vocabulary |
 | **showcase** | the content of the hello app | `showcase` | kernel, localization, toolkit |
 
 Outside `internal/`: `apps/<id>` are **composition roots** (one per app: they wire the contexts together and may use
@@ -97,7 +98,7 @@ examples/harness/       what the samples and their tests share: Screen, SavePNG,
 - **An app:** `cp -r apps/hello apps/<id>` ([Apps and the contract](13-apps-and-the-contract.md)); the contract test checks it.
 - **A context:** create `internal/<name>/` with the layers it needs (`domain`, `application`, `infrastructure`, and a
   presentation layer for screens), add its rules to `architecture.Rules` and the folder to `architecture.Contexts`, and
-  describe it in the documentation of `internal/architecture`. The Launcher will be one: `internal/launcher`, with
+  describe it in the documentation of `internal/architecture`. The Launcher is one: `internal/launcher`, with
   `apps/launcher` as its composition root.
 
 [← Apps and the contract](13-apps-and-the-contract.md) · [Index](README.md)

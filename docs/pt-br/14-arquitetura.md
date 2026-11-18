@@ -15,6 +15,7 @@ mapa e a regra estão escritos como código em `internal/architecture`; esta pá
 | **device** | o leitor como sistema externo (camada anticorrupção) | `inkview` (binding cgo), `desktop` (registro na tela inicial) | kernel, toolkit |
 | **localization** | idiomas | `i18n` (pt-BR primeiro, fallback em inglês) | kernel |
 | **platform** | o que um app do projeto *é* | `domain` · `application` · `infrastructure` · a fachada `platform` | kernel, localization, toolkit, device |
+| **launcher** | o App Launcher ([capítulo 15](15-launcher.md)) | `domain` · `application` · `infrastructure` · `presentation` | kernel, localization, toolkit, e o domínio da plataforma para o vocabulário |
 | **showcase** | o conteúdo do app hello | `showcase` | kernel, localization, toolkit |
 
 Fora do `internal/`: os `apps/<id>` são **raízes de composição** (um por app: ligam os contextos e podem usar qualquer
@@ -96,7 +97,7 @@ examples/harness/       o que as amostras e seus testes compartilham: Screen, Sa
 - **Um app:** `cp -r apps/hello apps/<id>` ([Apps e o contrato](13-apps-e-o-contrato.md)); o teste de contrato o confere.
 - **Um contexto:** crie `internal/<nome>/` com as camadas de que precisar (`domain`, `application`, `infrastructure` e uma
   camada de apresentação para telas), acrescente as regras dele em `architecture.Rules` e a pasta em
-  `architecture.Contexts`, e descreva-o na documentação de `internal/architecture`. O Launcher será um: o
+  `architecture.Contexts`, e descreva-o na documentação de `internal/architecture`. O Launcher é um: o
   `internal/launcher`, com o `apps/launcher` como raiz de composição.
 
 [← Apps e o contrato](13-apps-e-o-contrato.md) · [Índice](README.md)

@@ -13,6 +13,7 @@ corrigido. Você nunca instala o SDK à mão.
 ```powershell
 .\build.ps1                 # Windows: compila ./apps/hello
 .\build.ps1 -App meuapp     # compila ./apps/meuapp
+.\build.ps1 -All            # compila todos os apps de ./apps (um único incremento de versão)
 ```
 ```sh
 make dist                   # Linux / macOS / WSL
