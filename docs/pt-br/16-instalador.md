@@ -62,6 +62,5 @@ tar.gz, copia os `<id>.app` crus (o Launcher baixa estes) e escreve o `SHA256SUM
 O workflow `.github/workflows/release.yml` faz tudo isso quando uma tag `vMAJOR.MINOR.BUILD` é enviada (a tag deve ser igual a
 `.version`) e publica os arquivos na Release do GitHub.
 
-> **Estado.** O `go run ./tools/release` foi executado no PC: o executável do Windows mostra o ícone do Launcher e o instalador
-> instala numa pasta com a forma de um leitor (`-drive`). Ainda não foi executado contra um leitor de verdade pelo cabo, e o
-> workflow de release ainda não rodou no GitHub.
+> **Estado.** Verificado no Windows com um leitor de verdade: o executável mostra o ícone do Launcher, acha o leitor e instala
+> (e registra) os apps. Ainda não verificados: o workflow de release no GitHub e os instaladores de Linux e macOS.

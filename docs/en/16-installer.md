@@ -62,6 +62,5 @@ or tar.gz, copies the raw `<id>.app` files (the Launcher downloads those) and wr
 The workflow `.github/workflows/release.yml` does all of this when a tag `vMAJOR.MINOR.BUILD` is pushed (the tag must equal
 `.version`) and publishes the files on the GitHub Release.
 
-> **Status.** `go run ./tools/release` was run on the PC: the Windows executable shows the Launcher's icon and the installer
-> installs on a folder shaped like a reader (`-drive`). It has not been run against a real reader through the cable, and the
-> release workflow has not run on GitHub yet.
+> **Status.** Verified on Windows with a real reader: the executable shows the Launcher's icon, finds the reader and installs
+> (and registers) the apps. Not verified yet: the release workflow on GitHub, and the Linux and macOS builds.
