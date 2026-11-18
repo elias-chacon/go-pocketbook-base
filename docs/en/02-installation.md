@@ -40,8 +40,6 @@ one step further and the app **installs its own icon**.
    .\scripts\install.ps1 -Drive F: -App myapp   # your own app
    ```
 
-   The script also **registers** the app from the PC (icons, the `view.json` entry, the record for the Launcher), so
-   the icon is there as soon as you unplug the cable. If you copy the `.app` by hand, registration happens on the first run (below).
 
 4. Eject the reader safely.
 

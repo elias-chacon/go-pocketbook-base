@@ -27,6 +27,15 @@
 //	                infrastructure  processlauncher (starts an app by replacing the process)
 //	                presentation    the screens, built from the toolkit's widgets
 //	              It depends on the platform only for its vocabulary (InstalledApp).
+//	installer     the installer for people, the third context: put the apps on a
+//	              PocketBook connected to the computer (cmd/pbinstaller). Layers:
+//	                domain          Reader, Package, Outcome and the ports
+//	                application     the Install use case
+//	                infrastructure  drives (find the reader), embedded (the apps inside
+//	                                the executable), readerfs (write to the reader), locale
+//	                presentation    the console conversation
+//	              It does not depend on the platform: the composition root hands it
+//	              the registration (platform.RegisterOnDrive).
 //	showcase      the content of the hello app: every widget on four pages.
 //
 // Outside internal/: apps/ (one composition root per app, free to wire any
@@ -62,6 +71,14 @@ type Rule struct {
 	Allow []string // directories the packages may import, each with everything below it
 }
 
+// The names of the layers, the same in every context.
+const (
+	domainLayer         = "/domain"
+	applicationLayer    = "/application"
+	infrastructureLayer = "/infrastructure"
+	presentationLayer   = "/presentation"
+)
+
 // The directories the rule talks about (module-relative).
 const (
 	kernelDir         = "internal/kernel"
@@ -69,15 +86,20 @@ const (
 	toolkitDir        = "internal/toolkit"
 	deviceDir         = "internal/device"
 	platformDir       = "internal/platform"
-	domainDir         = platformDir + "/domain"
-	applicationDir    = platformDir + "/application"
-	infrastructureDir = platformDir + "/infrastructure"
+	domainDir         = platformDir + domainLayer
+	applicationDir    = platformDir + applicationLayer
+	infrastructureDir = platformDir + infrastructureLayer
 	showcaseDir       = "internal/showcase"
 	launcherDir       = "internal/launcher"
-	launcherDomain    = launcherDir + "/domain"
-	launcherApp       = launcherDir + "/application"
-	launcherInfra     = launcherDir + "/infrastructure"
-	launcherUI        = launcherDir + "/presentation"
+	launcherDomain    = launcherDir + domainLayer
+	launcherApp       = launcherDir + applicationLayer
+	launcherInfra     = launcherDir + infrastructureLayer
+	launcherUI        = launcherDir + presentationLayer
+	installerDir      = "internal/installer"
+	installerDomain   = installerDir + domainLayer
+	installerApp      = installerDir + applicationLayer
+	installerInfra    = installerDir + infrastructureLayer
+	installerUI       = installerDir + presentationLayer
 	processDir        = infrastructureDir + "/process"
 	architectureDir   = "internal/architecture"
 	examplesDir       = "examples"
@@ -101,13 +123,18 @@ var Rules = []Rule{
 	{launcherApp, []string{kernelDir, localizationDir, domainDir, launcherDomain, launcherApp}},
 	{launcherInfra, []string{kernelDir, domainDir, processDir, launcherDomain, launcherApp, launcherInfra}},
 	{launcherUI, []string{kernelDir, localizationDir, toolkitDir, launcherDomain, launcherApp, launcherUI}},
+	// The Installer: its own vocabulary only; the platform reaches it through the composition root.
+	{installerDomain, []string{kernelDir, installerDomain}},
+	{installerApp, []string{kernelDir, installerDomain, installerApp}},
+	{installerInfra, []string{kernelDir, installerDomain, installerInfra}},
+	{installerUI, []string{kernelDir, localizationDir, installerDomain, installerApp, installerUI}},
 	{architectureDir, nil},
 	{examplesDir, []string{kernelDir, localizationDir, toolkitDir, showcaseDir, examplesDir}},
 }
 
 // Contexts are the folders allowed directly under internal/. A new one must be
 // added here (and to the documentation above) on purpose.
-var Contexts = []string{"architecture", "device", "kernel", "launcher", "localization", "platform", "showcase", "toolkit"}
+var Contexts = []string{"architecture", "device", "installer", "kernel", "launcher", "localization", "platform", "showcase", "toolkit"}
 
 // within reports whether dir is base or a folder below it.
 func within(dir, base string) bool { return dir == base || strings.HasPrefix(dir, base+"/") }

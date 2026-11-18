@@ -56,6 +56,6 @@ initial of the title).
 .\scripts\install.ps1 -Drive F: -All    # copies them to the reader
 ```
 
-`install.ps1` copies the apps **and registers them** (icons, the `view.json` entry and the record the Launcher reads: `tools/register`). Eject, **unplug the cable** and the icons show on the home screen; open the Launcher and it lists the others. An app copied by hand still registers itself on its first run.
+Each app registers itself the first time it runs (open it once from the *Applications* list), or use the [installer](16-installer.md), which registers them all while it copies. Then open the Launcher: it lists the others.
 
 [← Architecture (DDD)](14-architecture.md) · [Index](README.md)

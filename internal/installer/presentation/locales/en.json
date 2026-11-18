@@ -1,0 +1,14 @@
+{
+  "title": "PocketBook Go apps installer (version %s)",
+  "searching": "Looking for your PocketBook…",
+  "no.reader": "No PocketBook was found.\n\n  1. Connect the reader to the computer with the USB cable.\n  2. On the reader, choose the PC connection mode (\"PC Link\") when it asks.\n  3. Wait for the reader to show up as a drive and run this program again.",
+  "reader.using": "Reader found: %s",
+  "choose": "More than one reader was found. Type the number of the one to use:",
+  "choose.invalid": "Invalid choice, try again.",
+  "app.ok": "  [ok]    %s",
+  "app.failed": "  [error] %s: %s",
+  "error.generic": "Could not install: %s",
+  "done": "Done! Now eject the reader safely and unplug the USB cable.\nThe apps are in the reader's Applications list, in the General group: open the Launcher.",
+  "done.partial": "Some apps were not installed (see the messages above). The others are ready.",
+  "press.enter": "Press Enter to close."
+}

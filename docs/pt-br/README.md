@@ -35,6 +35,7 @@ Ele traz:
 | 13 | [Apps e o contrato](13-apps-e-o-contrato.md) | `apps/<id>`, o manifesto, o ciclo de vida, o `apps/hello` como blueprint |
 | 14 | [Arquitetura (DDD)](14-arquitetura.md) | contextos delimitados, camadas, linguagem ubíqua, a regra de dependência |
 | 15 | [O Launcher](15-launcher.md) | a tela inicial dos apps: grade de instalados, executar um app e voltar |
+| 16 | [O instalador e as releases](16-instalador.md) | o programa para o usuário final (Windows/Linux/macOS), como uma release é feita |
 
 ## Uma olhada rápida
 

@@ -1,0 +1,54 @@
+# Publishes a release when a tag vMAJOR.MINOR.BUILD is pushed (it must equal .version):
+#   - dist/applications/<id>.app  the apps for the reader (the Launcher downloads these)
+#   - pbgo-installer_<version>_<os>_<arch>.zip|.tar.gz  the installer for people
+#   - SHA256SUMS
+# See docs/en/16-installer.md. This workflow has not been run yet.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22" # the tools and the installer; the apps are built by the SDK image (Go 1.17)
+
+      - name: The tag must be the version of the code
+        run: |
+          version="$(tr -d '\r\n' < .version)"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "tag $GITHUB_REF_NAME does not match .version ($version)"; exit 1
+          fi
+
+      - name: Tests
+        run: go test ./...
+
+      - name: Build the apps for the reader (SDK image)
+        run: |
+          version="$(tr -d '\r\n' < .version)"
+          docker build -t go-pocketbook-base-sdk docker
+          mkdir -p dist/applications
+          for dir in apps/*/; do
+            app="$(basename "$dir")"
+            [ -f "apps/$app/main.go" ] || continue
+            docker run --rm -v "$PWD":/app -v pbgo-cache:/gopath go-pocketbook-base-sdk \
+              build "-ldflags=-X=go-pocketbook-base/internal/kernel/version.Value=$version" \
+              -o "dist/applications/$app.app" "./apps/$app"
+          done
+
+      - name: Installer for Windows, Linux and macOS
+        run: go run ./tools/release
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" release/* --title "$GITHUB_REF_NAME" --generate-notes

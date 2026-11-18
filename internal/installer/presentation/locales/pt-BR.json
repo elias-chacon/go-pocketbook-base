@@ -1,0 +1,14 @@
+{
+  "title": "Instalador de aplicativos PocketBook Go (versão %s)",
+  "searching": "Procurando o leitor PocketBook…",
+  "no.reader": "Nenhum PocketBook foi encontrado.\n\n  1. Conecte o leitor ao computador pelo cabo USB.\n  2. No leitor, escolha o modo de conexão com o PC (\"Link com PC\" / \"PC Link\") quando ele perguntar.\n  3. Espere o leitor aparecer como uma unidade e execute este programa de novo.",
+  "reader.using": "Leitor encontrado: %s",
+  "choose": "Mais de um leitor foi encontrado. Digite o número do que você quer usar:",
+  "choose.invalid": "Opção inválida, tente de novo.",
+  "app.ok": "  [ok]   %s",
+  "app.failed": "  [erro] %s: %s",
+  "error.generic": "Não foi possível instalar: %s",
+  "done": "Pronto! Agora ejete o leitor com segurança e desconecte o cabo USB.\nOs aplicativos aparecem na lista de Aplicativos do leitor, no grupo General: abra o Launcher.",
+  "done.partial": "Alguns aplicativos não foram instalados (veja as mensagens acima). Os outros estão prontos.",
+  "press.enter": "Pressione Enter para fechar."
+}
