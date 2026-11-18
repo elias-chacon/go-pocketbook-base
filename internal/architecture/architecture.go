@@ -22,8 +22,8 @@
 //	              plus the package platform itself, the composition root that
 //	              wires them and the one import an app needs.
 //	launcher      the App Launcher, the second context of the ecosystem. Same layers:
-//	                domain          Tile, Grid, paging and the AppLauncher port
-//	                application     the Home use case: list the tiles, open one
+//	                domain          Tile, Grid, paging, search matching, the AppLauncher and Catalog ports
+//	                application     the Home use case (list the tiles, open one) and Search (installed + available)
 //	                infrastructure  processlauncher (starts an app by replacing the process)
 //	                presentation    the screens, built from the toolkit's widgets
 //	              It depends on the platform only for its vocabulary (InstalledApp).

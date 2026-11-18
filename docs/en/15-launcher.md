@@ -5,8 +5,8 @@
 `apps/launcher` is the App Launcher of the ecosystem: the home screen of the apps built on this base. It is an app like any
 other (it follows the [contract](13-apps-and-the-contract.md)) and the composition root of the `internal/launcher` context.
 
-> **Status.** The home screen (the grid of installed apps) and running an app are done. Search with the
-> *Installed / Available* sections, the GitHub catalog and the settings screen come next.
+> **Status.** The home screen (the grid of installed apps), running an app and the search are done. The GitHub catalog (what
+> fills *Available*) and the settings screen come next.
 
 ## What it does today
 
@@ -15,6 +15,10 @@ other (it follows the [contract](13-apps-and-the-contract.md)) and the compositi
 - Tapping a tile **runs the app**. The left and right keys turn the page (the arrows at the bottom do too).
 - When the app asks to exit (the *Exit* menu, a Back key) the reader **comes back to the Launcher**; Home always goes to the
   system's home screen.
+- A **search field** filters in real time (as the text changes) by title, description and id, ignoring case and accents. While
+  searching, the answer has two sections: `-- Installed --` (the matching tiles, 3 rows per page) and `-- Available --` (the
+  apps of the catalog that match and are not installed, up to 4 rows and "… and N more"). Without a catalog (or without
+  network) the second section says why and the installed ones still answer.
 - Texts in Portuguese (pt-BR) with English as the fallback, in the language chosen in the shared settings.
 
 ## How an app is run, and how it comes back
@@ -36,8 +40,8 @@ Launcher ──exec──► app          (PBGO_LAUNCHER=/…/launcher.app)
 
 | Layer | Package | Holds |
 |---|---|---|
-| domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (translated, sorted ignoring case and accents), `Grid` and paging, the `AppLauncher` port |
-| application | `internal/launcher/application` | `Home`: the tiles of the installed apps, and opening one |
+| domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (translated, sorted ignoring case and accents), `Grid` and paging, `Matches`/`FilterTiles`/`FilterListings`, `Listing`, `SearchResult`, the `AppLauncher` and `Catalog` ports |
+| application | `internal/launcher/application` | `Home`: the tiles of the installed apps, and opening one; `Search`: installed and available apps for a query |
 | infrastructure | `internal/launcher/infrastructure/processlauncher` | starts an app by replacing the process |
 | presentation | `internal/launcher/presentation` | the home screen, from the toolkit's widgets (`Image`, `Grid`, `Label`…) |
 | composition root | `apps/launcher` | wires the platform to the context; loads the BMP icons |

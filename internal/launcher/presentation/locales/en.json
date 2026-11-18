@@ -2,5 +2,12 @@
   "home.title": "My apps",
   "home.empty": "No apps installed yet.\nCopy an .app file to the applications folder of the reader and open it once: it shows up here.",
   "home.page": "%d / %d",
-  "home.open.failed": "Could not open “%s”: %s"
+  "home.open.failed": "Could not open “%s”: %s",
+  "search.placeholder": "Search apps…",
+  "search.installed": "-- Installed --",
+  "search.available": "-- Available --",
+  "search.none": "No results for “%s”.",
+  "search.nocatalog": "The online catalog is not configured yet.",
+  "search.offline": "Catalog unavailable: %s",
+  "search.more": "… and %d more"
 }

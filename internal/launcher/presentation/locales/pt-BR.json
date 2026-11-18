@@ -2,5 +2,12 @@
   "home.title": "Meus aplicativos",
   "home.empty": "Nenhum aplicativo instalado ainda.\nCopie um arquivo .app para a pasta applications do aparelho e abra-o uma vez: ele aparece aqui.",
   "home.page": "%d / %d",
-  "home.open.failed": "Não foi possível abrir “%s”: %s"
+  "home.open.failed": "Não foi possível abrir “%s”: %s",
+  "search.placeholder": "Buscar aplicativos…",
+  "search.installed": "-- Instalados --",
+  "search.available": "-- Disponíveis --",
+  "search.none": "Nenhum resultado para “%s”.",
+  "search.nocatalog": "O catálogo online ainda não está configurado.",
+  "search.offline": "Catálogo indisponível: %s",
+  "search.more": "… e mais %d"
 }

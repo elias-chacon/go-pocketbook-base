@@ -5,8 +5,8 @@
 O `apps/launcher` é o App Launcher do ecossistema: a tela inicial dos apps feitos sobre esta base. É um app como os outros
 (segue o [contrato](13-apps-e-o-contrato.md)) e a raiz de composição do contexto `internal/launcher`.
 
-> **Estado.** A tela inicial (a grade de apps instalados) e a execução de um app estão prontas. A busca com as seções
-> *Installed / Available*, o catálogo do GitHub e a tela de configurações vêm a seguir.
+> **Estado.** A tela inicial (a grade de apps instalados), a execução de um app e a busca estão prontas. O catálogo do GitHub
+> (o que preenche *Disponíveis*) e a tela de configurações vêm a seguir.
 
 ## O que faz hoje
 
@@ -15,6 +15,10 @@ O `apps/launcher` é o App Launcher do ecossistema: a tela inicial dos apps feit
 - Tocar num bloco **executa o app**. As teclas esquerda e direita viram a página (as setas de baixo também).
 - Quando o app pede para sair (o menu *Sair*, uma tecla Voltar) o leitor **volta ao Launcher**; o Home sempre vai para a tela
   inicial do sistema.
+- Um **campo de busca** filtra em tempo real (a cada mudança do texto) por título, descrição e id, sem ligar para maiúsculas e
+  acentos. Ao buscar, a resposta tem duas seções: `-- Instalados --` (os blocos que combinam, 3 linhas por página) e
+  `-- Disponíveis --` (os apps do catálogo que combinam e ainda não estão instalados, até 4 linhas e "… e mais N"). Sem catálogo
+  (ou sem rede) a segunda seção diz o motivo e os instalados continuam respondendo.
 - Textos em português (pt-BR) com inglês como fallback, no idioma escolhido nas configurações compartilhadas.
 
 ## Como um app é executado, e como volta
@@ -35,8 +39,8 @@ Launcher ──exec──► app          (PBGO_LAUNCHER=/…/launcher.app)
 
 | Camada | Pacote | Guarda |
 |---|---|---|
-| domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (traduzido, ordenado sem ligar para maiúsculas e acentos), `Grid` e paginação, a porta `AppLauncher` |
-| application | `internal/launcher/application` | `Home`: os blocos dos apps instalados e a abertura de um |
+| domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (traduzido, ordenado sem ligar para maiúsculas e acentos), `Grid` e paginação, `Matches`/`FilterTiles`/`FilterListings`, `Listing`, `SearchResult`, as portas `AppLauncher` e `Catalog` |
+| application | `internal/launcher/application` | `Home`: os blocos dos apps instalados e a abertura de um; `Search`: apps instalados e disponíveis para uma busca |
 | infrastructure | `internal/launcher/infrastructure/processlauncher` | inicia um app substituindo o processo |
 | presentation | `internal/launcher/presentation` | a tela inicial, com os widgets do toolkit (`Image`, `Grid`, `Label`…) |
 | raiz de composição | `apps/launcher` | liga a plataforma ao contexto; carrega os ícones BMP |

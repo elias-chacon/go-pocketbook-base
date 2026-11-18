@@ -190,11 +190,11 @@ func TestAFullDefaultPageFitsTheScreen(t *testing.T) {
 		t.Fatalf("a default page holds 20 tiles, got %d", len(tiles(h)))
 	}
 	root := h.Doc.Root.Elem()
-	footer := root.Children()[2].Elem().Bounds
+	footer := root.Children()[3].Elem().Bounds
 	if footer.Bottom() > h.Doc.H+0.01 {
 		t.Errorf("the footer is pushed off the screen: %.0f > %.0f", footer.Bottom(), h.Doc.H)
 	}
-	body := root.Children()[1].Elem().Bounds
+	body := root.Children()[2].Elem().Bounds
 	for _, w := range tiles(h) {
 		if b := w.Elem().Bounds; b.Bottom() > body.Bottom()+0.01 || b.Right() > h.Doc.W+0.01 {
 			t.Errorf("tile %s overflows: %+v (body bottom %.0f)", w.Elem().ID, b, body.Bottom())
