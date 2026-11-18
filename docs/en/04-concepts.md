@@ -82,6 +82,33 @@ img := doc.Render() // *image.Gray, device-sized; save it as a PNG or blit it to
 The look is grayscale on purpose: high contrast, crisp borders, no animation. The colors are
 `widget.Ink` (black), `Paper` (white), `Soft`, `Mid`, `Muted` and `Disabled` (grays).
 
+## Repainting only what changed
+
+A full paint takes about a second on the reader, but a tap usually changes one small thing, so the glue calls
+`doc.Update()` instead of `doc.Render()`:
+
+1. it lays the document out and takes a **snapshot** of every element (its fields and its bounds);
+2. it compares the snapshot with the previous one: every element that differs (or appeared, or disappeared)
+   marks its old and new bounds as **dirty**;
+3. it repaints only the dirty areas, into a small canvas, and patches them into the last frame;
+4. it returns a `Frame`: the complete image plus the list of changed rectangles, so only those are sent to the panel.
+
+Your code does not announce anything: setting `cb.Checked = true` or `label.Text = "..."` in a handler is enough,
+exactly as with a full repaint. The result matches a full `Render()` (a test taps every element of every page and
+compares), so this is purely an optimization.
+
+The whole screen is repainted when more than 40% of it changed (a page switch), after the system keyboard, when the
+system asks for a redraw on its own, and by the glue every 10 partial updates (a full e-ink refresh clears ghosting).
+`doc.ResetFrame()` forces it.
+
+Things to know when you write your own elements:
+
+- Everything that changes how an element looks must be in the element's **fields** (or in `Document` state like
+  focus). State kept behind a pointer is invisible to the snapshot: implement `StateSignature() string` to describe it
+  (`MenuBar` does).
+- An element may paint at most 8 design px outside its `Bounds`.
+- The snapshot prints every field, so a table with thousands of rows makes each update slower.
+
 ## From touch to callbacks
 
 Touch goes through `doc.HandlePointer(phase, x, y)` with three phases: **down**, **move** and **up**.
@@ -119,7 +146,7 @@ keyboard closes.
 | InkView event | What the glue does |
 |---|---|
 | start | turn the system panel off, read the screen size, build the document |
-| show | `doc.Render()` and copy the image to the screen |
+| show | `doc.Update()` and send only the changed areas to the screen (`examples/newapp`: `doc.Render()` and the whole image) |
 | touch down / move / up | `doc.HandlePointer(...)` |
 | Back key | close a popup, or leave the app |
 

@@ -114,7 +114,7 @@ Legenda: `[x]` concluída · `[ ]` pendente. Ao concluir uma task, o MINOR é in
   - [ ] T38 O botão "Sobre" não mostra nada. Se não temos componente de modal, crie um e coloque o conteudo do sobre nela e siga o padrão de layout já estabelecido - modal centralizada com botão ok.
   - [ ] T39 O slide button, quando eu arrasto, não atualiza, ele deveria ser draggable também.
   - [x] T41 Componente de abas (`Tabs`) com política por aba: **lembrar** o estado dos campos (texto, número, paginação da tabela, data do calendário) num store compartilhado e leve, **recriar** do zero ou **manter** a árvore viva.
-  - [ ] T40 Se possível, ao invés de redesenhar a tela por completo seria interessante redesenhar apenas o componente que está recebendo a interação.
+  - [x] T40 Se possível, ao invés de redesenhar a tela por completo seria interessante redesenhar apenas o componente que está recebendo a interação.
 
 **Bugs**
 
@@ -124,7 +124,7 @@ Ideias para próximas versões (ainda **não** feitas):
 
 - [ ] B01 Parser de **HTML** que gera a árvore de elementos (`<div>`, `<button>`, `<input type=…>`…)
 - [ ] B02 Parser de **CSS** (seletores por tag, `.classe`, `#id`; cascata e herança)
-- [ ] B03 Atualização parcial da tela (`PartialUpdate`) para interações mais rápidas
+- [x] B03 Atualização parcial da tela (`PartialUpdate`) para interações mais rápidas (feita na T40)
 - [ ] B04 Container com rolagem (scroll) e `overflow`
 - [ ] B05 Tratar rotação (`EVT_ORIENTATION`)
 - [ ] B06 Diálogo/modal e toast
@@ -157,7 +157,7 @@ A versão é gravada no binário por `-ldflags -X …/internal/version.Value` e 
 cmd/hello          app do aparelho: liga InkView ↔ widget.Document (toque, teclado, repaint)
 cmd/preview        renderiza as páginas da demo em PNG (sem aparelho)
 internal/demo      vitrine de componentes (compartilhada por hello, preview e testes)
-internal/widget    componentes + layout flex/grid + toque + abas e estado (a biblioteca)
+internal/widget    componentes + layout flex/grid + toque + abas e estado + repintura parcial (a biblioteca)
 internal/gfx       desenho vetorial: Canvas, fontes, texto, ícones, cores
 internal/geom      Rect, Point, Size, Insets
 internal/inkview   binding cgo mínimo da libinkview (eventos, blit, teclado)
@@ -529,7 +529,7 @@ Desenvolvido e testado em um **PocketBook PB741-N-WW** (InkPad Color 2): 7,8", 1
 - Com o painel do sistema ligado (padrão), o InkView reserva 137 px e desloca o canvas; o app chama
   `inkview.DisablePanel()` no início para a tela inteira ser do app.
 - O `path` de `U_<app>` no `view.json` precisa ser **absoluto**; ícones podem ser relativos.
-- Desempenho (medido no PB741, tela cheia): a conversão RGBA→cinza com `draw.Draw` levava 2,7 s por frame e o `Clip` do `gg` alocava 10 MB por texto; hoje um frame leva ~0,9–1,5 s (desenho vetorial) + ~0,1 s de blit. Repintar só o que mudou (T40) é o próximo ganho.
+- Desempenho (medido no PB741, tela cheia): a conversão RGBA→cinza com `draw.Draw` levava 2,7 s por frame e o `Clip` do `gg` alocava 10 MB por texto; uma tela completa leva ~1,5 s (desenho vetorial) + ~0,1 s de blit, mas `Document.Update` repinta só o que mudou: um toque pequeno custa 0,1–0,4 s e uma tabela ~0,6 s. O custo fixo da detecção de mudança é ~0,1 s (layout + retrato dos elementos).
 - O app grava `applications/hello.log` (eventos) para depuração; remova a linha `DebugLog` em release.
 
 ## Licença

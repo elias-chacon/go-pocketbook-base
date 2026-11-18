@@ -90,6 +90,27 @@ func Blit(pix []byte, w, h, stride int) {
 	C.FullUpdate()
 }
 
+// BlitRect draws only the rectangle (x, y, w, h) of an 8-bit grayscale buffer
+// (stride bytes per row, the whole screen) and refreshes just that part of the
+// e-ink panel: much faster than Blit for a small change.
+func BlitRect(pix []byte, stride, x, y, w, h int) {
+	hdr := C.size_t(unsafe.Sizeof(C.ibitmap{}))
+	mem := C.malloc(hdr + C.size_t(w*h))
+	defer C.free(mem)
+
+	bm := (*C.ibitmap)(mem)
+	bm.width = C.ushort(w)
+	bm.height = C.ushort(h)
+	bm.depth = 8
+	bm.scanline = C.ushort(w)
+	for row := 0; row < h; row++ {
+		C.memcpy(unsafe.Pointer(uintptr(mem)+uintptr(hdr)+uintptr(row*w)), unsafe.Pointer(&pix[(y+row)*stride+x]), C.size_t(w))
+	}
+
+	C.DrawBitmap(C.int(x), C.int(y), bm)
+	C.PartialUpdate(C.int(x), C.int(y), C.int(w), C.int(h))
+}
+
 //export goMainHandler
 func goMainHandler(t, p1, p2 C.int) C.int {
 	logEvent(int(t), int(p1), int(p2))

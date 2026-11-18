@@ -28,6 +28,11 @@ type Document struct {
 	capture    Widget
 	swallow    bool        // the current touch only dismissed a popup
 	canvas     *gfx.Canvas // reused between frames: a screen-size RGBA is 10 MB
+
+	// partial repaint (see Update)
+	frame     *image.Gray
+	snap      map[Widget]snap
+	forceFull bool
 }
 
 // NewDocument creates a document for a deviceW x deviceH screen.
@@ -62,18 +67,7 @@ func (d *Document) Layout() {
 // Render lays out and paints the document into a grayscale image.
 func (d *Document) Render() *image.Gray {
 	d.Layout()
-	if d.canvas == nil {
-		d.canvas = gfx.NewCanvas(d.DeviceW, d.DeviceH, d.Scale)
-	}
-	c := d.canvas
-	c.Clear(Paper)
-	if d.Root != nil {
-		paintTree(c, d.Root)
-	}
-	for _, p := range d.popups {
-		paintTree(c, p)
-	}
-	return c.Image()
+	return d.paintFull()
 }
 
 func paintTree(c *gfx.Canvas, w Widget) {
@@ -161,6 +155,7 @@ func (d *Document) RequestText(owner Widget, req KeyboardRequest) {
 	done := req.Done
 	req.Done = func(text string, ok bool) {
 		d.focus = nil
+		d.forceFull = true // the system keyboard drew over the screen
 		done(text, ok)
 		d.Invalidate()
 	}

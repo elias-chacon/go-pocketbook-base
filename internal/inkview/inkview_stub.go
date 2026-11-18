@@ -48,6 +48,11 @@ func Blit(pix []byte, w, h, stride int) {
 	// No framebuffer to draw into.
 }
 
+// BlitRect does nothing off-device.
+func BlitRect(pix []byte, stride, x, y, w, h int) {
+	// No framebuffer to draw into.
+}
+
 // OpenKeyboard does nothing off-device (tests use widget.FakeKeyboard).
 func OpenKeyboard(title, initial string, maxLen, flags int, done func(string, bool)) {
 	// No system keyboard on the desktop.

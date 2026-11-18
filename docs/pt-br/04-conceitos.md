@@ -81,6 +81,33 @@ img := doc.Render() // *image.Gray, do tamanho do aparelho; salve como PNG ou en
 O visual é em tons de cinza de propósito: alto contraste, bordas nítidas, sem animação. As cores são `widget.Ink`
 (preto), `Paper` (branco), `Soft`, `Mid`, `Muted` e `Disabled` (cinzas).
 
+## Repintar só o que mudou
+
+Pintar a tela toda leva cerca de um segundo no leitor, mas um toque costuma mudar uma coisa pequena; por isso a cola
+chama `doc.Update()` em vez de `doc.Render()`:
+
+1. ele faz o layout e tira um **retrato** de cada elemento (os campos e os limites);
+2. compara o retrato com o anterior: todo elemento que mudou (ou apareceu, ou sumiu) marca os limites antigos e novos como
+   **sujos**;
+3. repinta só as áreas sujas, num canvas pequeno, e as cola no último frame;
+4. devolve um `Frame`: a imagem completa mais a lista de retângulos alterados, e só eles são enviados ao painel.
+
+Seu código não precisa avisar nada: basta fazer `cb.Checked = true` ou `label.Text = "..."` num handler, exatamente como
+com a repintura completa. O resultado confere com um `Render()` completo (um teste toca todos os elementos de todas as
+páginas e compara), então é só uma otimização.
+
+A tela inteira é repintada quando mais de 40% dela mudou (troca de página), depois do teclado do sistema, quando o sistema
+pede um redesenho por conta própria, e pela cola a cada 10 atualizações parciais (um refresh completo do e-ink limpa o
+ghosting). `doc.ResetFrame()` força isso.
+
+O que saber ao escrever seus próprios elementos:
+
+- Tudo que muda a aparência de um elemento precisa estar nos **campos** dele (ou no estado do `Document`, como o foco).
+  Estado guardado atrás de um ponteiro é invisível ao retrato: implemente `StateSignature() string` para descrevê-lo
+  (o `MenuBar` faz isso).
+- Um elemento pode pintar no máximo 8 px de design fora dos seus `Bounds`.
+- O retrato imprime todos os campos, então uma tabela com milhares de linhas deixa cada atualização mais lenta.
+
 ## Do toque aos callbacks
 
 O toque entra por `doc.HandlePointer(fase, x, y)` com três fases: **down** (encostou), **move** (arrastou) e **up**
@@ -118,7 +145,7 @@ Um campo em edição fica *focado* (borda mais grossa) até o teclado fechar.
 | Evento do InkView | O que a cola faz |
 |---|---|
 | início | desliga o painel do sistema, lê o tamanho da tela, monta o documento |
-| exibir | `doc.Render()` e copia a imagem para a tela |
+| exibir | `doc.Update()` e envia à tela só as áreas que mudaram (`examples/newapp`: `doc.Render()` e a imagem inteira) |
 | toque down / move / up | `doc.HandlePointer(...)` |
 | tecla Voltar | fecha um popup, ou sai do app |
 

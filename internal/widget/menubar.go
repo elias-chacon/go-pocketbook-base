@@ -1,6 +1,9 @@
 package widget
 
 import (
+	"fmt"
+	"strings"
+
 	"go-pocketbook-base/internal/geom"
 	"go-pocketbook-base/internal/gfx"
 )
@@ -26,6 +29,15 @@ func NewMenuBar(menus ...*Menu) *MenuBar {
 	m.Style.Background, m.Style.MinHeight = Paper, 104
 	m.Style.Padding = geom.XY(10, 16)
 	return m
+}
+
+// StateSignature implements signer: the menus are behind pointers.
+func (m *MenuBar) StateSignature() string {
+	var sb strings.Builder
+	for _, mn := range m.Menus {
+		fmt.Fprintf(&sb, "%s|%t|%d;", mn.Label, mn.Selected, len(mn.Items))
+	}
+	return sb.String()
 }
 
 const menuGap = 8.0

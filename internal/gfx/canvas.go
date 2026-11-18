@@ -39,9 +39,10 @@ const capHalf = 0.36
 // Canvas draws in design units; scale converts them to device pixels, so the
 // same screen description renders at any resolution.
 type Canvas struct {
-	dc    *gg.Context
-	rgba  *image.RGBA
-	scale float64
+	dc     *gg.Context
+	rgba   *image.RGBA
+	scale  float64
+	ox, oy float64 // device position of the canvas's top-left corner (see NewCanvasAt)
 
 	// clip state (see Clip): the mask buffer and rasterizer are allocated on
 	// first use and reused, so clipping costs only the clipped area.
@@ -54,6 +55,17 @@ type Canvas struct {
 func NewCanvas(w, h int, scale float64) *Canvas {
 	rgba := image.NewRGBA(image.Rect(0, 0, w, h))
 	return &Canvas{dc: gg.NewContextForRGBA(rgba), rgba: rgba, scale: scale}
+}
+
+// NewCanvasAt creates a canvas of w x h device pixels that is a window onto the
+// screen starting at device pixel (ox, oy): drawing a widget at its screen
+// position lands in the right place inside the window, pixel for pixel as it
+// would in a full-screen canvas. Used to repaint only the part that changed.
+func NewCanvasAt(w, h int, scale float64, ox, oy int) *Canvas {
+	c := NewCanvas(w, h, scale)
+	c.ox, c.oy = float64(ox), float64(oy)
+	c.dc.Translate(-c.ox, -c.oy) // shapes and text; not applied by hand in Clip and clippedString
+	return c
 }
 
 // Size is the canvas size in device pixels.
@@ -186,7 +198,7 @@ func (c *Canvas) Clip(r geom.Rect, radius float64) {
 		c.mask = image.NewAlpha(image.Rect(0, 0, w, h))
 		c.ras = raster.NewRasterizer(w, h)
 	}
-	x, y, rw, rh := c.s(r.X), c.s(r.Y), c.s(r.W), c.s(r.H)
+	x, y, rw, rh := c.s(r.X)-c.ox, c.s(r.Y)-c.oy, c.s(r.W), c.s(r.H)
 	c.ras.Clear()
 	c.ras.UseNonZeroWinding = true
 	c.ras.AddPath(roundRectPath(x, y, rw, rh, c.s(radius)))
@@ -251,7 +263,8 @@ func (c *Canvas) Text(s string, r geom.Rect, ts TextStyle) {
 	}
 	baseline := c.s(r.Y+r.H/2) + capHalf*size
 	if !c.clip.Empty() {
-		c.clippedString(face, s, x, baseline, w, ts.Color)
+		// The scratch image has no translation, so apply the window offset here.
+		c.clippedString(face, s, x-c.ox, baseline-c.oy, w, ts.Color)
 		return
 	}
 	c.dc.SetFontFace(face)

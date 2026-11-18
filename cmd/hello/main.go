@@ -23,10 +23,15 @@ const (
 
 // app connects InkView events to the widget document.
 type app struct {
-	notice  string
-	demo    *demo.App
-	pending bool // a repaint is already queued
+	notice   string
+	demo     *demo.App
+	pending  bool // a repaint is already queued
+	partials int  // partial panel updates since the last full one
 }
+
+// fullRefreshEvery forces a full (flashing) panel refresh after this many
+// partial ones, to clear the ghosting that fast e-ink updates leave behind.
+const fullRefreshEvery = 10
 
 // Init turns the system panel off so the canvas is the whole screen (with the
 // panel on, InkView offsets the canvas and the drawing is not centered), then
@@ -54,11 +59,27 @@ func (a *app) requestRepaint() {
 	}
 }
 
+// Draw repaints only what changed (Document.Update) and sends just those
+// areas to the panel. A draw the system asked for (not ours) may mean something
+// covered the screen, so it repaints everything.
 func (a *app) Draw() {
+	if !a.pending {
+		a.demo.Doc.ResetFrame()
+	}
 	a.pending = false
-	img := a.demo.Doc.Render()
-	b := img.Bounds()
-	inkview.Blit(img.Pix, b.Dx(), b.Dy(), img.Stride)
+
+	f := a.demo.Doc.Update()
+	img := f.Image
+	if f.Full || a.partials >= fullRefreshEvery {
+		b := img.Bounds()
+		inkview.Blit(img.Pix, b.Dx(), b.Dy(), img.Stride)
+		a.partials = 0
+	} else if len(f.Rects) > 0 {
+		for _, r := range f.Rects {
+			inkview.BlitRect(img.Pix, img.Stride, r.Min.X, r.Min.Y, r.Dx(), r.Dy())
+		}
+		a.partials++
+	}
 }
 
 // Key: Back closes an open popup, otherwise leaves the app.

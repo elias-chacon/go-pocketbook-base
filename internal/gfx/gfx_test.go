@@ -143,3 +143,36 @@ func TestShapesIgnoreTransparentColors(t *testing.T) {
 		t.Error("a transparent color must not draw")
 	}
 }
+
+// A window must be bigger than the area you keep: the rasterizer does not
+// anti-alias a shape correctly where it crosses the canvas edge (the Document
+// pads its windows and discards the padding).
+func TestCanvasWindowMatchesTheSameAreaOfAFullCanvas(t *testing.T) {
+	const pad = 12
+	draw := func(c *Canvas, clipped bool) {
+		c.Clear(Gray(255))
+		c.FillRoundRect(geom.R(20, 10, 120, 60), 12, Gray(40))
+		c.StrokeRoundRect(geom.R(30, 20, 100, 40), 8, 3, Gray(200))
+		if clipped {
+			c.Clip(geom.R(40, 25, 60, 30), 6)
+		}
+		c.Text("Hello", geom.R(30, 20, 100, 40), TextStyle{Size: 22, Color: Gray(255), Align: AlignCenter})
+		c.ResetClip()
+	}
+	for _, clipped := range []bool{false, true} {
+		full := NewCanvas(200, 100, 1)
+		draw(full, clipped)
+		win := NewCanvasAt(90+2*pad, 50+2*pad, 1, 35-pad, 15-pad)
+		draw(win, clipped)
+
+		fi, wi := full.Image(), win.Image()
+		for y := 0; y < 50; y++ {
+			for x := 0; x < 90; x++ {
+				a, b := int(fi.GrayAt(35+x, 15+y).Y), int(wi.GrayAt(pad+x, pad+y).Y)
+				if a-b > 8 || b-a > 8 {
+					t.Fatalf("clipped=%v: window pixel (%d,%d) = %d, full canvas = %d", clipped, x, y, b, a)
+				}
+			}
+		}
+	}
+}
