@@ -112,7 +112,7 @@ Legenda: `[x]` concluída · `[ ]` pendente. Ao concluir uma task, o MINOR é in
   - [x] T36 A aba de dados demora muito a abrir, talvez por que o componente data table esteja muito pesado, ao navegar nos itens do data table, também demora muito a abrir, o aparelho tem apenas 1G de ram, acredito que todos os componentes devam ser otimizados.
   - [x] T37 As abas devem ser carregadas e descarregadas de forma lazy para evitar o uso intenso da memória ram de 1g apenas. 
   - [x] T38 O botão "Sobre" não mostra nada. Se não temos componente de modal, crie um e coloque o conteudo do sobre nela e siga o padrão de layout já estabelecido - modal centralizada com botão ok.
-  - [ ] T39 O slide button, quando eu arrasto, não atualiza, ele deveria ser draggable também.
+  - [x] T39 O slide button, quando eu arrasto, não atualiza, ele deveria ser draggable também.
   - [x] T41 Componente de abas (`Tabs`) com política por aba: **lembrar** o estado dos campos (texto, número, paginação da tabela, data do calendário) num store compartilhado e leve, **recriar** do zero ou **manter** a árvore viva.
   - [x] T40 Se possível, ao invés de redesenhar a tela por completo seria interessante redesenhar apenas o componente que está recebendo a interação.
 
