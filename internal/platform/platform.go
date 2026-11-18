@@ -52,6 +52,9 @@ const (
 	KeyMenu     = application.KeyMenu
 )
 
+// DefaultRoot is the user storage of the reader (what RegisterOnDrive takes on the reader itself).
+const DefaultRoot = application.DefaultRoot
+
 // ParseManifest decodes and validates an app.json.
 func ParseManifest(data []byte) (Manifest, error) { return domain.ParseManifest(data) }
 

@@ -9,5 +9,8 @@
   "search.none": "No results for “%s”.",
   "search.nocatalog": "The online catalog is not configured yet.",
   "search.offline": "Catalog unavailable: %s",
-  "search.more": "… and %d more"
+  "search.more": "… and %d more",
+  "install.downloading": "Downloading “%s”…",
+  "install.done": "“%s” installed. It is now under Installed.",
+  "install.failed": "Could not install “%s”: %s"
 }

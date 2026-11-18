@@ -39,6 +39,10 @@ type Env struct {
 	Settings domain.SettingsStore
 	// Apps lists the apps installed on this reader.
 	Apps domain.AppRegistry
+	// Flush paints the pending changes right now. An app that is about to block
+	// (a download) calls it first so the screen says why; normally the platform
+	// repaints by itself once the handler returns.
+	Flush func()
 }
 
 // App is what an app gives the platform: the screen.

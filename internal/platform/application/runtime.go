@@ -31,6 +31,7 @@ func NewRuntime(env Env, factory Factory, screen Screen) *Runtime {
 func (r *Runtime) Start(width, height int, keyboard widget.Keyboard) {
 	r.env.Width, r.env.Height, r.env.Keyboard = width, height, keyboard
 	r.env.Exit = r.screen.Close
+	r.env.Flush = r.flush
 	r.app = r.factory(r.env)
 	r.doc = r.app.Document()
 	r.doc.OnInvalidate = r.requestRepaint
@@ -42,6 +43,12 @@ func (r *Runtime) requestRepaint() {
 		r.pending = true
 		r.screen.RequestRepaint()
 	}
+}
+
+// flush paints now what has changed (see Env.Flush).
+func (r *Runtime) flush() {
+	r.pending = true
+	r.Draw()
 }
 
 // Draw repaints only what changed (Document.Update) and sends just those areas

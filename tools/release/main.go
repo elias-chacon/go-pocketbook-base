@@ -63,6 +63,11 @@ func run() error {
 			return err
 		}
 		files = append(files, id+".app")
+		// the manifest next to it: the Launcher lists the catalog from the pair
+		if err := copyFile(filepath.Join("apps", id, "app.json"), filepath.Join(outDir, id+".json")); err != nil {
+			return err
+		}
+		files = append(files, id+".json")
 	}
 
 	windowsIcon()

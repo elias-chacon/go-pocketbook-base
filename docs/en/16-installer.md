@@ -57,7 +57,7 @@ go run ./tools/release    # stages the payload and builds the installers into ./
 `tools/release` copies each `dist/applications/<id>.app` and its `apps/<id>/app.json` into `cmd/pbinstaller/payload`, builds the
 installer for Windows (amd64), Linux (amd64) and macOS (amd64, arm64) with the version in the binary, gives the Windows one the
 Launcher's icon (`tools/release/syso.go` writes the Windows resource file itself, so nothing is downloaded), packs each as a zip
-or tar.gz, copies the raw `<id>.app` files (the Launcher downloads those) and writes `SHA256SUMS`.
+or tar.gz, copies the raw `<id>.app` files and their `<id>.json` manifests (the Launcher's catalog lists and downloads those) and writes `SHA256SUMS`.
 
 The workflow `.github/workflows/release.yml` does all of this when a tag `vMAJOR.MINOR.BUILD` is pushed (the tag must equal
 `.version`) and publishes the files on the GitHub Release.

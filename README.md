@@ -127,7 +127,7 @@ Legenda: `[x]` concluída · `[ ]` pendente. Ao concluir uma task, o MINOR é in
 - [x] T45 Launcher: grid dos apps instalados (ícone + título) e execução do app filho, com retorno ao Launcher (`execve`, validado no aparelho). Cada app registra o próprio ícone e o `view.json` na primeira execução.
 - [x] T46 Launcher: busca em tempo real com as seções `-- Installed --` e `-- Available --` (validada no aparelho: campo, teclado e ×). A porta `Catalog` ainda não tem adaptador: a seção *Disponíveis* diz que o catálogo não está configurado até a T47.
 - [ ] T50 Instalador para o usuário final (`cmd/pbinstaller`, contexto `internal/installer`): executável em Go para Windows, Linux e macOS com ícone, que acha o leitor, copia os apps embutidos e registra os ícones; faz parte da release (`tools/release` + `.github/workflows/release.yml`, SHA256SUMS). **Validado no Windows com o leitor real (ícone do `.exe`, achar o leitor, copiar e registrar).** Falta a primeira release no GitHub (workflow) e testar em Linux/macOS.
-- [ ] T47 Launcher: catálogo do GitHub (`apps/` do repositório + assets dos Releases), download e instalação com um clique
+- [ ] T47 Launcher: catálogo do GitHub (assets `<id>.app` + `<id>.json` da última Release, não a pasta `apps/`, já que o repositório só tem código-fonte), download e instalação com um clique. **Feito no código e nos testes (servidor HTTP de teste); falta validar no aparelho: Wi-Fi, DNS, certificados HTTPS e uma Release publicada.**
 - [ ] T48 Launcher: configurações persistentes (tamanho dos ícones e da grade, idioma, imagem de fundo)
 
 **Bugs**

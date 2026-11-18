@@ -5,8 +5,8 @@
 `apps/launcher` is the App Launcher of the ecosystem: the home screen of the apps built on this base. It is an app like any
 other (it follows the [contract](13-apps-and-the-contract.md)) and the composition root of the `internal/launcher` context.
 
-> **Status.** The home screen (the grid of installed apps), running an app and the search are done. The GitHub catalog (what
-> fills *Available*) and the settings screen come next.
+> **Status.** The home screen, running an app, the search and the GitHub catalog with one-tap install are done in code (the
+> catalog and the download are not verified on the reader yet). The settings screen comes next.
 
 ## What it does today
 
@@ -19,6 +19,11 @@ other (it follows the [contract](13-apps-and-the-contract.md)) and the compositi
   searching, the answer has two sections: `-- Installed --` (the matching tiles, 3 rows per page) and `-- Available --` (the
   apps of the catalog that match and are not installed, up to 4 rows and "… and N more"). Without a catalog (or without
   network) the second section says why and the installed ones still answer.
+- **Install with one tap.** The *Available* rows come from the **latest GitHub Release** of the repository (`elias-chacon/go-pocketbook-base`):
+  every app is published as `<id>.app` + `<id>.json`, and the catalog lists the pairs whose manifest follows the contract. Tapping a
+  row shows *Downloading…*, downloads the `.app` into `applications/`, checks its size, registers it on the home screen (with the
+  default icon: the app draws its own only if it is run, and the home screen keeps the first icon) and moves it to *Installed*.
+  The list is kept for 5 minutes. It needs Wi-Fi on; without it (or without a release) the section shows the error.
 - Texts in Portuguese (pt-BR) with English as the fallback, in the language chosen in the shared settings.
 
 ## How an app is run, and how it comes back
@@ -40,9 +45,11 @@ Launcher ──exec──► app          (PBGO_LAUNCHER=/…/launcher.app)
 
 | Layer | Package | Holds |
 |---|---|---|
-| domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (translated, sorted ignoring case and accents), `Grid` and paging, `Matches`/`FilterTiles`/`FilterListings`, `Listing`, `SearchResult`, the `AppLauncher` and `Catalog` ports |
+| domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (translated, sorted ignoring case and accents), `Grid` and paging, `Matches`/`FilterTiles`/`FilterListings`, `Listing`, `SearchResult`, the `AppLauncher`, `Catalog` and `Installer` ports |
 | application | `internal/launcher/application` | `Home`: the tiles of the installed apps, and opening one; `Search`: installed and available apps for a query |
 | infrastructure | `internal/launcher/infrastructure/processlauncher` | starts an app by replacing the process |
+| | `…/infrastructure/github` | the `Catalog`: the latest release's `<id>.app` + `<id>.json` pairs (cached 5 min) |
+| | `…/infrastructure/appinstaller` | the `Installer`: download through a temporary file, check the size, register |
 | presentation | `internal/launcher/presentation` | the home screen, from the toolkit's widgets (`Image`, `Grid`, `Label`…) |
 | composition root | `apps/launcher` | wires the platform to the context; loads the BMP icons |
 

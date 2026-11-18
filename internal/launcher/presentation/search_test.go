@@ -167,3 +167,79 @@ func TestASearchPageFitsTheScreenAndKeepsPaging(t *testing.T) {
 	// every tile can be touched at its center
 	tap(h.Doc, tiles(h)[0])
 }
+
+type installer struct {
+	err       error
+	installed []string
+	onInstall func()
+}
+
+func (i *installer) Install(l domain.Listing) error {
+	i.installed = append(i.installed, l.ID)
+	if i.onInstall != nil {
+		i.onInstall()
+	}
+	return i.err
+}
+
+func installHome(inst *installer, flushed *int) (*Home, *registry) {
+	reg := &registry{apps: apps(1)}
+	h := NewHome(Config{
+		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"),
+		Catalog:   catalog{list: listings(2)},
+		Installer: inst,
+		Flush:     func() { *flushed++ },
+		Home:      application.Home{Apps: reg, Launcher: &launcher{}, SelfID: "launcher"},
+		IconFor:   func(domain.Tile) image.Image { return image.NewGray(image.Rect(0, 0, 128, 128)) },
+	})
+	return h, reg
+}
+
+func TestTappingAnAvailableAppDownloadsItAndMovesItToInstalled(t *testing.T) {
+	flushed := 0
+	inst := &installer{}
+	h, reg := installHome(inst, &flushed)
+	inst.onInstall = func() {
+		if !strings.Contains(texts(h), "Baixando “Web 00”…") {
+			t.Error("the screen says it is downloading before the download blocks")
+		}
+		reg.apps = append(reg.apps, apps(1)[0]) // what registering does: the app appears in the registry
+		reg.apps[1].ID = "web00"
+		reg.apps[1].Title = map[string]string{"pt-BR": "Web 00"}
+	}
+	h.Search("web")
+	h.Doc.Layout()
+	tap(h.Doc, find(h, "avail-web00"))
+
+	if len(inst.installed) != 1 || inst.installed[0] != "web00" || flushed != 1 {
+		t.Fatalf("installed %v, flushed %d", inst.installed, flushed)
+	}
+	h.Doc.Layout()
+	if find(h, "app-web00") == nil || find(h, "avail-web00") != nil || find(h, "avail-web01") == nil {
+		t.Error("web00 is installed now; web01 is still available")
+	}
+	if !strings.Contains(texts(h), "“Web 00” instalado") {
+		t.Errorf("the result is told: %s", texts(h))
+	}
+}
+
+func TestAFailedInstallIsToldAndTheListsStayAsTheyWere(t *testing.T) {
+	flushed := 0
+	h, _ := installHome(&installer{err: errors.New("sem rede")}, &flushed)
+	h.Search("web")
+	h.Doc.Layout()
+	tap(h.Doc, find(h, "avail-web01"))
+	h.Doc.Layout()
+	if !strings.Contains(texts(h), "Não foi possível instalar “Web 01”: sem rede") || find(h, "avail-web01") == nil {
+		t.Errorf("%s", texts(h))
+	}
+}
+
+func TestWithoutAnInstallerTheRowsOnlyShow(t *testing.T) {
+	h := searchHome(1, catalog{list: listings(1)})
+	h.Search("web")
+	h.Doc.Layout()
+	if row := find(h, "avail-web00"); row == nil || row.Elem().OnClick != nil {
+		t.Error("a row without an installer is not tappable")
+	}
+}

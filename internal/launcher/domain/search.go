@@ -11,12 +11,21 @@ type Listing struct {
 	Title       string
 	Description string
 	Version     string
+	URL         string // where the <id>.app is downloaded from
+	Size        int64  // its size in bytes (0 when unknown)
+	Manifest    []byte // the app.json, kept to register the app once installed
 }
 
 // Catalog is the port to the apps that exist but may not be installed (the
 // repository's releases). It returns the listings in lang.
 type Catalog interface {
 	List(lang string) ([]Listing, error)
+}
+
+// Installer is the port that downloads and installs an app of the catalog on
+// this reader (its file and its registration on the home screen).
+type Installer interface {
+	Install(l Listing) error
 }
 
 // ErrNoCatalog is the error of a Launcher that has no catalog configured.

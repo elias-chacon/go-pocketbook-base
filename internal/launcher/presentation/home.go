@@ -39,7 +39,12 @@ type Config struct {
 	Home          application.Home
 	Grid          domain.Grid
 	// Catalog lists the apps that can be installed (nil: the search only knows the installed ones).
-	Catalog  domain.Catalog
+	Catalog domain.Catalog
+	// Installer installs an app of the catalog when its row is tapped (nil: the rows only show).
+	Installer domain.Installer
+	// Flush paints pending changes now; it is called before a download blocks the
+	// screen so the message is seen (nil: no flush).
+	Flush    func()
 	IconSize float64 // 0 = DefaultIconSize
 	// IconFor loads the icon of a tile (nil results draw nothing); the composition
 	// root decides where icons come from and what to show when one is missing.
@@ -290,5 +295,24 @@ func (h *Home) listing(l domain.Listing) widget.Widget {
 	row.ID = "avail-" + l.ID
 	row.Style.Padding = geom.XY(14, 20)
 	row.Style.BorderColor, row.Style.BorderWidth, row.Style.BorderRadius = widget.Mid, 2, widget.Radius
+	if h.cfg.Installer != nil {
+		row.OnClick = func(*widget.Event) { h.install(l) }
+	}
 	return row
+}
+
+// install downloads and installs an app of the catalog. The download blocks, so
+// the screen says so first; afterwards the lists are rebuilt and the app moves
+// from Available to Installed.
+func (h *Home) install(l domain.Listing) {
+	h.say(h.cfg.Tr.T("install.downloading", l.Title))
+	if h.cfg.Flush != nil {
+		h.cfg.Flush()
+	}
+	if err := h.cfg.Installer.Install(l); err != nil {
+		h.say(h.cfg.Tr.T("install.failed", l.Title, err.Error()))
+		return
+	}
+	h.Refresh()
+	h.say(h.cfg.Tr.T("install.done", l.Title))
 }

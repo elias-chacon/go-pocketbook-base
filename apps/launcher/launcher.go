@@ -2,15 +2,27 @@ package main
 
 import (
 	"image"
+	"net/http"
 	"os"
+	"time"
 
 	"go-pocketbook-base/internal/launcher/application"
 	"go-pocketbook-base/internal/launcher/domain"
+	"go-pocketbook-base/internal/launcher/infrastructure/appinstaller"
+	"go-pocketbook-base/internal/launcher/infrastructure/github"
 	"go-pocketbook-base/internal/launcher/infrastructure/processlauncher"
 	"go-pocketbook-base/internal/launcher/presentation"
 	"go-pocketbook-base/internal/platform"
 	"go-pocketbook-base/internal/toolkit/gfx"
 	"go-pocketbook-base/internal/toolkit/widget"
+)
+
+// The repository whose latest release is the catalog of apps.
+const (
+	repoOwner = "elias-chacon"
+	repoName  = "go-pocketbook-base"
+	// httpTimeout bounds every request: a download of a few megabytes over Wi-Fi.
+	httpTimeout = 60 * time.Second
 )
 
 // iconEdge is the size of the icons the launcher asks for (they are written at 128).
@@ -25,6 +37,8 @@ func newLauncher(env platform.Env) platform.App {
 	if err != nil {
 		self = "" // an app started by us then cannot find its way back: it just ends
 	}
+	client := &http.Client{Timeout: httpTimeout}
+	catalog := &github.Catalog{Client: client, Owner: repoOwner, Repo: repoName}
 	return &launcher{home: presentation.NewHome(presentation.Config{
 		Width: env.Width, Height: env.Height, Keyboard: env.Keyboard,
 		Tr:   presentation.NewTranslator(env.Lang),
@@ -36,7 +50,19 @@ func newLauncher(env platform.Env) platform.App {
 		},
 		IconFor: iconFor,
 		Notice:  env.Notice,
+		Catalog: catalog, Installer: appinstaller.Installer{
+			Client: client, Root: platform.DefaultRoot, Register: register,
+		},
+		Flush: env.Flush,
 	})}
+}
+
+// register puts a downloaded app on the home screen with the platform's own
+// registration. Its icon is the default one (the initial of the title): the app
+// is not run here, so it cannot draw its own.
+func register(root string, l domain.Listing) error {
+	_, err := platform.RegisterOnDrive(root, l.Manifest, nil, l.Version)
+	return err
 }
 
 // Document implements platform.App.

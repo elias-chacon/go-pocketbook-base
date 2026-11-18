@@ -5,8 +5,8 @@
 O `apps/launcher` é o App Launcher do ecossistema: a tela inicial dos apps feitos sobre esta base. É um app como os outros
 (segue o [contrato](13-apps-e-o-contrato.md)) e a raiz de composição do contexto `internal/launcher`.
 
-> **Estado.** A tela inicial (a grade de apps instalados), a execução de um app e a busca estão prontas. O catálogo do GitHub
-> (o que preenche *Disponíveis*) e a tela de configurações vêm a seguir.
+> **Estado.** A tela inicial, a execução de um app, a busca e o catálogo do GitHub com instalação por toque estão prontos no
+> código (o catálogo e o download ainda não foram verificados no leitor). A tela de configurações vem a seguir.
 
 ## O que faz hoje
 
@@ -19,6 +19,11 @@ O `apps/launcher` é o App Launcher do ecossistema: a tela inicial dos apps feit
   acentos. Ao buscar, a resposta tem duas seções: `-- Instalados --` (os blocos que combinam, 3 linhas por página) e
   `-- Disponíveis --` (os apps do catálogo que combinam e ainda não estão instalados, até 4 linhas e "… e mais N"). Sem catálogo
   (ou sem rede) a segunda seção diz o motivo e os instalados continuam respondendo.
+- **Instalação com um toque.** As linhas de *Disponíveis* vêm da **última Release do GitHub** do repositório
+  (`elias-chacon/go-pocketbook-base`): cada app é publicado como `<id>.app` + `<id>.json`, e o catálogo lista os pares cujo manifesto
+  segue o contrato. Tocar numa linha mostra *Baixando…*, baixa o `.app` para `applications/`, confere o tamanho, registra na tela
+  inicial (com o ícone padrão: o app só desenha o próprio se for executado, e a tela inicial mantém o primeiro ícone) e o move
+  para *Instalados*. A lista fica guardada por 5 minutos. Precisa do Wi-Fi ligado; sem ele (ou sem release) a seção mostra o erro.
 - Textos em português (pt-BR) com inglês como fallback, no idioma escolhido nas configurações compartilhadas.
 
 ## Como um app é executado, e como volta
@@ -39,9 +44,11 @@ Launcher ──exec──► app          (PBGO_LAUNCHER=/…/launcher.app)
 
 | Camada | Pacote | Guarda |
 |---|---|---|
-| domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (traduzido, ordenado sem ligar para maiúsculas e acentos), `Grid` e paginação, `Matches`/`FilterTiles`/`FilterListings`, `Listing`, `SearchResult`, as portas `AppLauncher` e `Catalog` |
+| domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (traduzido, ordenado sem ligar para maiúsculas e acentos), `Grid` e paginação, `Matches`/`FilterTiles`/`FilterListings`, `Listing`, `SearchResult`, as portas `AppLauncher`, `Catalog` e `Installer` |
 | application | `internal/launcher/application` | `Home`: os blocos dos apps instalados e a abertura de um; `Search`: apps instalados e disponíveis para uma busca |
 | infrastructure | `internal/launcher/infrastructure/processlauncher` | inicia um app substituindo o processo |
+| | `…/infrastructure/github` | o `Catalog`: os pares `<id>.app` + `<id>.json` da última release (guardados por 5 min) |
+| | `…/infrastructure/appinstaller` | o `Installer`: baixa por um arquivo temporário, confere o tamanho, registra |
 | presentation | `internal/launcher/presentation` | a tela inicial, com os widgets do toolkit (`Image`, `Grid`, `Label`…) |
 | raiz de composição | `apps/launcher` | liga a plataforma ao contexto; carrega os ícones BMP |
 
