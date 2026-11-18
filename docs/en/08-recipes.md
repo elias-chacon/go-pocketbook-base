@@ -344,11 +344,12 @@ func (f *OrderForm) recalculate() {
 
 ## Navigation between pages with the menu bar
 
-A menu bar on top and a body below that **swaps pages**. Each menu has an `OnSelect` that clears the body and
-appends the chosen page; `Selected` draws the current page's menu filled.
+`widget.Tabs` is a menu bar on top and a body below that **swaps pages**. Only the current page is kept in memory;
+what the user typed or chose is saved in the tabs' store and put back when the page is shown again, **for elements that
+have an `ID`** (a tab can instead be `TabRebuild` — starts fresh — or `TabKeepAlive` — keeps the whole tree).
 
-What to notice: pages are built once and kept (so what you typed is still there when you come back); the body
-has `FlexGrow = 1` to take everything below the bar; this function returns a whole `Document`.
+What to notice: `Tabs.Body` is where you set the padding (it already takes everything below the bar); passwords are never
+remembered; this function returns a whole `Document`.
 
 ```go
 // examples/navigation.go
@@ -359,44 +360,34 @@ import (
 	"go-pocketbook-base/internal/widget"
 )
 
-// NewPagedApp builds a whole application: a menu bar that switches between the
-// Login, Settings and Catalog pages. Pass the screen size and the keyboard.
+// NewPagedApp builds a whole application: tabs that switch between the Login,
+// Settings and Catalog pages. Only the current page lives in memory; what the
+// user typed or chose is kept in the Tabs store and put back when the page is
+// shown again (every element that must be remembered has an ID).
 func NewPagedApp(width, height int, kb widget.Keyboard) *widget.Document {
 	books := [][]string{
 		{"Dom Casmurro", "Machado de Assis", "256"},
 		{"Vidas Secas", "Graciliano Ramos", "176"},
 		{"Iracema", "José de Alencar", "160"},
 	}
-	pages := []struct {
-		title   string
-		content widget.Widget
-	}{
-		{"Login", NewLoginForm(func(string, bool) {}).Root},
-		{"Settings", NewSettings().Root},
-		{"Catalog", NewCatalog(books).Root},
-	}
-
-	body := widget.NewColumn(0)
-	body.Style.FlexGrow = 1 // the page takes everything below the bar
-	body.Style.Padding = geom.All(28)
-
-	bar := widget.NewMenuBar()
-	show := func(i int) {
-		body.ClearChildren()
-		body.AppendChild(pages[i].content)
-		for j, m := range bar.Menus {
-			m.Selected = j == i // the current page is drawn filled
-		}
-	}
-	for i, p := range pages {
-		i := i
-		bar.Menus = append(bar.Menus, &widget.Menu{Label: p.title, OnSelect: func() { show(i) }})
-	}
+	tabs := widget.NewTabs(nil,
+		&widget.Tab{Title: "Login", Build: func() widget.Widget {
+			f := NewLoginForm(func(string, bool) {})
+			f.User.ID, f.Remember.ID = "user", "remember" // the password is never remembered
+			return f.Root
+		}},
+		&widget.Tab{Title: "Settings", Build: func() widget.Widget {
+			s := NewSettings()
+			s.WiFi.ID, s.Brightness.ID, s.Language.ID, s.Topics.ID = "wifi", "brightness", "language", "topics"
+			return s.Root
+		}},
+		// TabKeepAlive keeps the whole page (and its data) in memory instead.
+		&widget.Tab{Title: "Catalog", Mode: widget.TabKeepAlive, Build: func() widget.Widget { return NewCatalog(books).Root }})
+	tabs.Body.Style.Padding = geom.All(28) // the body already takes everything below the bar
 
 	doc := widget.NewDocument(width, height)
 	doc.Keyboard = kb
-	doc.SetRoot(widget.NewColumn(0, bar, body))
-	show(0)
+	doc.SetRoot(tabs)
 	return doc
 }
 ```

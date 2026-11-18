@@ -24,17 +24,15 @@ type App struct {
 	Doc *widget.Document
 
 	cfg     Config
+	tabs    *widget.Tabs
 	menu    *widget.MenuBar
 	body    *widget.Panel
 	message *widget.Label
 	touch   *widget.Label
-	pages   []page
-	current int
-}
 
-type page struct {
-	title string
-	root  widget.Widget
+	// refresh updates content derived from restored values; the page that
+	// needs it sets it while it is built (see widget.Tab.Restored).
+	refresh func()
 }
 
 // New builds the demo for a deviceW x deviceH screen.
@@ -51,64 +49,58 @@ func New(deviceW, deviceH int, cfg Config) *App {
 	a.touch.Style.TextAlign = gfx.AlignEnd
 	a.message.Style.FlexGrow, a.touch.Style.FlexGrow = 1, 1
 
-	a.pages = []page{
-		{"Entradas", a.inputsPage()},
-		{"Escolhas", a.choicesPage()},
-		{"Dados", a.dataPage()},
-		{"Calendário", a.calendarPage()},
+	// Each page is dropped when another is shown; its typed values, table page,
+	// selected date... are kept in the Tabs store (a few bytes) and put back.
+	build := func(f func() widget.Widget) func() widget.Widget {
+		return func() widget.Widget { a.refresh = nil; return f() }
 	}
-	a.menu = widget.NewMenuBar(a.menus()...)
+	restored := func() {
+		if a.refresh != nil {
+			a.refresh()
+		}
+	}
+	a.tabs = widget.NewTabs(nil,
+		&widget.Tab{Title: "Entradas", Build: build(a.inputsPage), Restored: restored},
+		&widget.Tab{Title: "Escolhas", Build: build(a.choicesPage), Restored: restored},
+		&widget.Tab{Title: "Dados", Build: build(a.dataPage), Restored: restored},
+		&widget.Tab{Title: "Calendário", Build: build(a.calendarPage), Restored: restored})
+	a.menu, a.body = a.tabs.Bar, a.tabs.Body
 	a.menu.ID = "menubar"
-
-	a.body = widget.NewColumn(0)
-	a.body.Style.FlexGrow = 1
+	a.menu.Menus = append(a.menu.Menus, a.moreMenu())
 	a.body.Style.Padding = pagePadding
+	a.tabs.Style.FlexGrow = 1
 
 	footer := widget.NewRow(24, a.message, a.touch)
 	footer.Style.Padding = footerPadding
 	footer.Style.BorderColor, footer.Style.BorderWidth = widget.Mid, 0
 
-	root := widget.NewColumn(0, a.menu, a.body, footer)
+	root := widget.NewColumn(0, a.tabs, footer)
 	root.ID, root.Style.Background = "root", widget.Paper
 	root.OnClick = a.trackTouch
 	a.Doc.SetRoot(root)
-	a.ShowPage(0)
 	return a
 }
 
-// ShowPage switches to page i.
-func (a *App) ShowPage(i int) {
-	a.current = i
-	a.body.ClearChildren()
-	a.body.AppendChild(a.pages[i].root)
-	for j, m := range a.menu.Menus[:len(a.pages)] {
-		m.Selected = j == i
-	}
-	a.Doc.ClosePopups()
-}
+// ShowPage switches to page i (see widget.Tabs.Show).
+func (a *App) ShowPage(i int) { a.tabs.Show(i) }
 
 // Pages returns the page titles.
 func (a *App) Pages() []string {
-	out := make([]string, len(a.pages))
-	for i, p := range a.pages {
-		out[i] = p.title
+	out := make([]string, a.tabs.Count())
+	for i := range out {
+		out[i] = a.menu.Menus[i].Label
 	}
 	return out
 }
 
-func (a *App) menus() []*widget.Menu {
-	var out []*widget.Menu
-	for i, p := range a.pages {
-		i := i
-		out = append(out, &widget.Menu{Label: p.title, OnSelect: func() { a.ShowPage(i) }})
-	}
-	return append(out, &widget.Menu{Label: "Mais", Items: []widget.MenuItem{
+func (a *App) moreMenu() *widget.Menu {
+	return &widget.Menu{Label: "Mais", Items: []widget.MenuItem{
 		{Label: "Sobre", Icon: gfx.IconSearch, OnSelect: func() {
 			a.say(fmt.Sprintf("go-pocketbook-base v%s — componentes vetoriais em Go", a.cfg.Version))
 		}},
 		{Separator: true},
 		{Label: "Sair", Icon: gfx.IconClose, OnSelect: a.exit},
-	}})
+	}}
 }
 
 func (a *App) exit() {

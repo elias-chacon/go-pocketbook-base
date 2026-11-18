@@ -92,6 +92,27 @@ func TestTextEllipsisAndClip(t *testing.T) {
 	}
 }
 
+func TestTextUnderClipIsCutAndClipIsReusable(t *testing.T) {
+	c := NewCanvas(200, 60, 1)
+	for round := 0; round < 2; round++ { // the second round proves ResetClip left no stale mask
+		c.Clear(Gray(255))
+		c.Clip(geom.R(0, 0, 100, 60), 0)
+		c.Text("WWWWWWWWWW", geom.R(0, 0, 200, 60), TextStyle{Size: 30, Color: Gray(0)})
+		c.ResetClip()
+		img := c.Image()
+		if !inked(img, geom.R(0, 0, 100, 60)) {
+			t.Fatalf("round %d: text must show inside the clip", round)
+		}
+		if inked(img, geom.R(101, 0, 99, 60)) {
+			t.Fatalf("round %d: text must be cut at the clip edge", round)
+		}
+		c.Text("W", geom.R(150, 0, 50, 60), TextStyle{Size: 30, Color: Gray(0)}) // no clip any more
+		if !inked(c.Image(), geom.R(150, 0, 50, 60)) {
+			t.Fatalf("round %d: drawing after ResetClip must not be masked", round)
+		}
+	}
+}
+
 func TestEveryIconDrawsSomething(t *testing.T) {
 	kinds := []IconKind{IconCheck, IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight,
 		IconPlus, IconMinus, IconClose, IconMenu, IconSearch, IconCalendar}

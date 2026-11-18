@@ -109,10 +109,11 @@ Legenda: `[x]` concluída · `[ ]` pendente. Ao concluir uma task, o MINOR é in
 
 **Ajustes**
 
-  - [ ] T36 A aba de dados demora muito a abrir, talvez por que o componente data table esteja muito pesado, ao navegar nos itens do data table, também demora muito a abrir, o aparelho tem apenas 1G de ram, acredito que todos os componentes devam ser otimizados.
-  - [ ] T37 As abas devem ser carregadas e descarregadas de forma lazy para evitar o uso intenso da memória ram de 1g apenas. 
+  - [x] T36 A aba de dados demora muito a abrir, talvez por que o componente data table esteja muito pesado, ao navegar nos itens do data table, também demora muito a abrir, o aparelho tem apenas 1G de ram, acredito que todos os componentes devam ser otimizados.
+  - [x] T37 As abas devem ser carregadas e descarregadas de forma lazy para evitar o uso intenso da memória ram de 1g apenas. 
   - [ ] T38 O botão "Sobre" não mostra nada. Se não temos componente de modal, crie um e coloque o conteudo do sobre nela e siga o padrão de layout já estabelecido - modal centralizada com botão ok.
   - [ ] T39 O slide button, quando eu arrasto, não atualiza, ele deveria ser draggable também.
+  - [x] T41 Componente de abas (`Tabs`) com política por aba: **lembrar** o estado dos campos (texto, número, paginação da tabela, data do calendário) num store compartilhado e leve, **recriar** do zero ou **manter** a árvore viva.
   - [ ] T40 Se possível, ao invés de redesenhar a tela por completo seria interessante redesenhar apenas o componente que está recebendo a interação.
 
 **Bugs**
@@ -156,7 +157,7 @@ A versão é gravada no binário por `-ldflags -X …/internal/version.Value` e 
 cmd/hello          app do aparelho: liga InkView ↔ widget.Document (toque, teclado, repaint)
 cmd/preview        renderiza as páginas da demo em PNG (sem aparelho)
 internal/demo      vitrine de componentes (compartilhada por hello, preview e testes)
-internal/widget    componentes + layout flex/grid + despacho de toque (a biblioteca)
+internal/widget    componentes + layout flex/grid + toque + abas e estado (a biblioteca)
 internal/gfx       desenho vetorial: Canvas, fontes, texto, ícones, cores
 internal/geom      Rect, Point, Size, Insets
 internal/inkview   binding cgo mínimo da libinkview (eventos, blit, teclado)
@@ -327,6 +328,21 @@ abre um submenu com `Items`. `Selected` desenha o item atual preenchido.
 bar := widget.NewMenuBar(
     &widget.Menu{Label: "Entradas", Selected: true, OnSelect: func() { mostrar(0) }},
     &widget.Menu{Label: "Mais", Items: []widget.MenuItem{{Label: "Sair", OnSelect: sair}}})
+```
+
+### Abas (Tabs)
+
+Barra de menus com páginas. Só a página atual fica na memória (o aparelho tem 1 GB); por aba, `Mode` escolhe o que fazer
+com a página ao sair: `TabRemember` (padrão) descarta a árvore mas **guarda o estado** dos campos num `Store` (alguns
+bytes) e o devolve ao voltar; `TabRebuild` recomeça do zero; `TabKeepAlive` mantém a árvore viva. São lembrados texto e
+número, check/radio/switch, combo, slider, chips, dia e mês do calendário e página/ordenação/seleção da tabela, **para
+elementos com `ID`** (senhas nunca). `Store` é uma interface: dá para guardar em arquivo. Detalhes em
+[docs/pt-br](docs/pt-br/06-componentes.md).
+
+```go
+tabs := widget.NewTabs(nil,
+    &widget.Tab{Title: "Entradas", Build: entradas},                      // lembra (padrão)
+    &widget.Tab{Title: "Dados", Build: dados, Mode: widget.TabKeepAlive}) // mantém a árvore
 ```
 
 ### Input (texto, senha, numérico, máscara e busca)
@@ -513,6 +529,7 @@ Desenvolvido e testado em um **PocketBook PB741-N-WW** (InkPad Color 2): 7,8", 1
 - Com o painel do sistema ligado (padrão), o InkView reserva 137 px e desloca o canvas; o app chama
   `inkview.DisablePanel()` no início para a tela inteira ser do app.
 - O `path` de `U_<app>` no `view.json` precisa ser **absoluto**; ícones podem ser relativos.
+- Desempenho (medido no PB741, tela cheia): a conversão RGBA→cinza com `draw.Draw` levava 2,7 s por frame e o `Clip` do `gg` alocava 10 MB por texto; hoje um frame leva ~0,9–1,5 s (desenho vetorial) + ~0,1 s de blit. Repintar só o que mudou (T40) é o próximo ganho.
 - O app grava `applications/hello.log` (eventos) para depuração; remova a linha `DebugLog` em release.
 
 ## Licença

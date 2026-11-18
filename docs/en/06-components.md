@@ -196,6 +196,65 @@ func MenuBarExample() widget.Widget {
 }
 ```
 
+## Tabs
+
+A menu bar of pages plus the area that shows the current one. Only the current page is in memory (the reader
+has 1 GB of RAM); what happens to the others is a **per-tab choice**:
+
+| `Mode` | What it does | Memory |
+|---|---|---|
+| `TabRemember` (default) | drops the page but keeps the **state** of its elements and puts it back when the page is rebuilt | a few bytes per element |
+| `TabRebuild` | drops the page and its state: it starts fresh every time | none |
+| `TabKeepAlive` | keeps the whole page tree (use it for pages that are expensive to build) | the whole page |
+
+What is remembered (elements that implement `widget.Stateful`, **only if they have an `ID`**): the text of
+`Input` and `TextArea` (never passwords), `Checked` of check-box, radio and switch, the combo-box choice, the
+slider value, which chips are selected, the calendar's selected day and month, and the table's page, sort and
+selection. *Data* (a table's `Rows`, a combo's `Options`) is not state: your `Build` function provides it again.
+
+| | |
+|---|---|
+| Create | `widget.NewTabs(store, &widget.Tab{Title, Build, Mode}...)` — `store` may be `nil` (in-memory) |
+| `Tab` | `Title`, `Build func() Widget`, `Mode`, `ID` (scopes the saved state), `Restored func()` (refresh labels derived from values) |
+| Fields | `Bar` (the `MenuBar`: append extra menus to `Bar.Menus`), `Body` (style the padding here), `Store`, `OnChange` |
+| Methods | `Show(i)`, `Current()`, `Page()`, `Count()`, `Save()` |
+| Custom store | implement `widget.Store` (`Get`/`Set`) to keep the state in a file |
+| Custom state | make your own element implement `Stateful` (`SaveState() string`, `LoadState(string)`) |
+
+```go
+// examples/navigation.go#NewPagedApp
+// NewPagedApp builds a whole application: tabs that switch between the Login,
+// Settings and Catalog pages. Only the current page lives in memory; what the
+// user typed or chose is kept in the Tabs store and put back when the page is
+// shown again (every element that must be remembered has an ID).
+func NewPagedApp(width, height int, kb widget.Keyboard) *widget.Document {
+	books := [][]string{
+		{"Dom Casmurro", "Machado de Assis", "256"},
+		{"Vidas Secas", "Graciliano Ramos", "176"},
+		{"Iracema", "José de Alencar", "160"},
+	}
+	tabs := widget.NewTabs(nil,
+		&widget.Tab{Title: "Login", Build: func() widget.Widget {
+			f := NewLoginForm(func(string, bool) {})
+			f.User.ID, f.Remember.ID = "user", "remember" // the password is never remembered
+			return f.Root
+		}},
+		&widget.Tab{Title: "Settings", Build: func() widget.Widget {
+			s := NewSettings()
+			s.WiFi.ID, s.Brightness.ID, s.Language.ID, s.Topics.ID = "wifi", "brightness", "language", "topics"
+			return s.Root
+		}},
+		// TabKeepAlive keeps the whole page (and its data) in memory instead.
+		&widget.Tab{Title: "Catalog", Mode: widget.TabKeepAlive, Build: func() widget.Widget { return NewCatalog(books).Root }})
+	tabs.Body.Style.Padding = geom.All(28) // the body already takes everything below the bar
+
+	doc := widget.NewDocument(width, height)
+	doc.Keyboard = kb
+	doc.SetRoot(tabs)
+	return doc
+}
+```
+
 ## Text input and password
 
 ![input](../components/input.png)

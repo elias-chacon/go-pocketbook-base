@@ -6,43 +6,33 @@ import (
 	"go-pocketbook-base/internal/widget"
 )
 
-// NewPagedApp builds a whole application: a menu bar that switches between the
-// Login, Settings and Catalog pages. Pass the screen size and the keyboard.
+// NewPagedApp builds a whole application: tabs that switch between the Login,
+// Settings and Catalog pages. Only the current page lives in memory; what the
+// user typed or chose is kept in the Tabs store and put back when the page is
+// shown again (every element that must be remembered has an ID).
 func NewPagedApp(width, height int, kb widget.Keyboard) *widget.Document {
 	books := [][]string{
 		{"Dom Casmurro", "Machado de Assis", "256"},
 		{"Vidas Secas", "Graciliano Ramos", "176"},
 		{"Iracema", "José de Alencar", "160"},
 	}
-	pages := []struct {
-		title   string
-		content widget.Widget
-	}{
-		{"Login", NewLoginForm(func(string, bool) {}).Root},
-		{"Settings", NewSettings().Root},
-		{"Catalog", NewCatalog(books).Root},
-	}
-
-	body := widget.NewColumn(0)
-	body.Style.FlexGrow = 1 // the page takes everything below the bar
-	body.Style.Padding = geom.All(28)
-
-	bar := widget.NewMenuBar()
-	show := func(i int) {
-		body.ClearChildren()
-		body.AppendChild(pages[i].content)
-		for j, m := range bar.Menus {
-			m.Selected = j == i // the current page is drawn filled
-		}
-	}
-	for i, p := range pages {
-		i := i
-		bar.Menus = append(bar.Menus, &widget.Menu{Label: p.title, OnSelect: func() { show(i) }})
-	}
+	tabs := widget.NewTabs(nil,
+		&widget.Tab{Title: "Login", Build: func() widget.Widget {
+			f := NewLoginForm(func(string, bool) {})
+			f.User.ID, f.Remember.ID = "user", "remember" // the password is never remembered
+			return f.Root
+		}},
+		&widget.Tab{Title: "Settings", Build: func() widget.Widget {
+			s := NewSettings()
+			s.WiFi.ID, s.Brightness.ID, s.Language.ID, s.Topics.ID = "wifi", "brightness", "language", "topics"
+			return s.Root
+		}},
+		// TabKeepAlive keeps the whole page (and its data) in memory instead.
+		&widget.Tab{Title: "Catalog", Mode: widget.TabKeepAlive, Build: func() widget.Widget { return NewCatalog(books).Root }})
+	tabs.Body.Style.Padding = geom.All(28) // the body already takes everything below the bar
 
 	doc := widget.NewDocument(width, height)
 	doc.Keyboard = kb
-	doc.SetRoot(widget.NewColumn(0, bar, body))
-	show(0)
+	doc.SetRoot(tabs)
 	return doc
 }

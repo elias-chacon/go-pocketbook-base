@@ -2,6 +2,7 @@ package demo
 
 import (
 	"testing"
+	"time"
 
 	"go-pocketbook-base/internal/geom"
 	"go-pocketbook-base/internal/widget"
@@ -56,7 +57,7 @@ func TestNothingOverflowsTheScreenOrCoversTheFooter(t *testing.T) {
 	for i, title := range app.Pages() {
 		app.ShowPage(i)
 		d.Layout()
-		footer := d.Root.Elem().Children()[2].Elem().Bounds
+		footer := d.Root.Elem().Children()[1].Elem().Bounds
 		if footer.Bottom() > d.H+0.01 {
 			t.Errorf("%s: the footer is pushed off the screen (bottom %.0f > %.0f): the page is too tall", title, footer.Bottom(), d.H)
 		}
@@ -94,23 +95,23 @@ func TestMenuBarSwitchesPagesAndExits(t *testing.T) {
 	app.Doc.Layout()
 
 	tapPoint(app, bar.MenuRect(2).Center()) // "Dados"
-	if app.current != 2 || !bar.Menus[2].Selected || bar.Menus[0].Selected {
-		t.Fatalf("current=%d selected flags wrong", app.current)
+	if app.tabs.Current() != 2 || !bar.Menus[2].Selected || bar.Menus[0].Selected {
+		t.Fatalf("current=%d selected flags wrong", app.tabs.Current())
 	}
 	if byID(t, app, "table-books") == nil {
 		t.Fatal("the Dados page must be shown")
 	}
 
-	tapPoint(app, bar.MenuRect(len(app.pages)).Center()) // "Mais" opens its menu
+	tapPoint(app, bar.MenuRect(app.tabs.Count()).Center()) // "Mais" opens its menu
 	if !app.Doc.HasPopup() {
 		t.Fatal("Mais must open a popup")
 	}
 	// the last row is "Sair"
-	pop := app.Doc.TargetAt(geom.Point{X: bar.MenuRect(len(app.pages)).X + 20, Y: bar.Bounds.Bottom() + 6 + 76 + 26 + 76/2 + 6})
+	pop := app.Doc.TargetAt(geom.Point{X: bar.MenuRect(app.tabs.Count()).X + 20, Y: bar.Bounds.Bottom() + 6 + 76 + 26 + 76/2 + 6})
 	if pop == nil {
 		t.Fatal("no popup row under the touch")
 	}
-	tapPoint(app, geom.Point{X: bar.MenuRect(len(app.pages)).X + 20, Y: bar.Bounds.Bottom() + 6 + 6 + 76 + 26 + 76/2})
+	tapPoint(app, geom.Point{X: bar.MenuRect(app.tabs.Count()).X + 20, Y: bar.Bounds.Bottom() + 6 + 6 + 76 + 26 + 76/2})
 	if !exited {
 		t.Error("“Sair” must call Exit")
 	}
@@ -149,4 +150,35 @@ func TestEveryPageRendersAtOtherResolutions(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestDemoRemembersValuesAcrossTabs(t *testing.T) {
+	app, _ := newApp(nil)
+	byID(t, app, "input-name").(*widget.Input).Value = "Ana"
+	byID(t, app, "input-qty").(*widget.Input).Value = "7"
+
+	app.ShowPage(2) // Dados
+	tbl := byID(t, app, "table-books").(*widget.Table)
+	tbl.Page, tbl.SortCol = 1, 2
+	app.ShowPage(3) // Calendário
+	cal := byID(t, app, "calendar").(*widget.Calendar)
+	cal.Selected = time.Date(2026, 5, 20, 0, 0, 0, 0, time.Local)
+	app.ShowPage(1) // Escolhas
+	app.ShowPage(0)
+
+	if byID(t, app, "input-name").(*widget.Input).Value != "Ana" || byID(t, app, "input-qty").(*widget.Input).Value != "7" {
+		t.Error("typed values must come back when returning to the tab")
+	}
+	app.ShowPage(2)
+	if tbl := byID(t, app, "table-books").(*widget.Table); tbl.Page != 1 || tbl.SortCol != 2 {
+		t.Errorf("table page/sort lost: %d %d", tbl.Page, tbl.SortCol)
+	}
+	app.ShowPage(3)
+	if got := byID(t, app, "calendar").(*widget.Calendar).Selected.Format("2006-01-02"); got != "2026-05-20" {
+		t.Errorf("date lost: %s", got)
+	}
+	if got := app.Doc.GetElementByID("calendar"); got == nil {
+		t.Fatal("calendar missing")
+	}
+	app.Doc.Layout()
 }

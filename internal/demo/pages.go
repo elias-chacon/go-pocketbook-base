@@ -105,6 +105,7 @@ func (a *App) choicesPage() widget.Widget {
 
 func (a *App) chips() widget.Widget {
 	multi := widget.NewChipGroup(false)
+	multi.ID = "chips-multi"
 	for i, l := range []string{"Ficção", "Ciência", "História"} {
 		c := widget.NewChip(l)
 		c.ID, c.Selected = fmt.Sprintf("chip-%d", i+1), i == 0
@@ -112,6 +113,7 @@ func (a *App) chips() widget.Widget {
 		multi.AppendChild(c)
 	}
 	order := widget.NewChipGroup(true)
+	order.ID = "chips-order"
 	for i, l := range []string{"Título", "Autor", "Data"} {
 		c := widget.NewChip(l)
 		c.ID, c.Selected = fmt.Sprintf("chip-order-%d", i+1), i == 0
@@ -119,6 +121,7 @@ func (a *App) chips() widget.Widget {
 		order.AppendChild(c)
 	}
 	tags := widget.NewChipGroup(false)
+	tags.ID = "chips-tags"
 	for i, l := range []string{"#leitura", "#e-ink"} {
 		c := widget.NewChip(l)
 		c.ID, c.Closable = fmt.Sprintf("chip-tag-%d", i+1), true
@@ -135,6 +138,7 @@ func (a *App) sliders() widget.Widget {
 	basic.ID, basic.Style.FlexGrow = "slider-basic", 1
 	basic.OnInput = func(e *widget.Event) { val.Text = fmt.Sprintf("%.0f", basic.Value) }
 	basic.OnChange = func(e *widget.Event) { a.say("Volume: %.0f", basic.Value) }
+	a.refresh = func() { val.Text = fmt.Sprintf("%.0f", basic.Value) }
 
 	thin := widget.NewSlider(0, 10, 1, 3)
 	thin.ID, thin.ThumbSize, thin.Style.Width = "slider-small", 40, widget.Px(300)
@@ -228,6 +232,7 @@ func (a *App) calendarPage() widget.Widget {
 		chosen.Text = fmt.Sprintf("%02d/%02d/%d", cal.Selected.Day(), int(cal.Selected.Month()), cal.Selected.Year())
 	}
 	describe()
+	a.refresh = describe
 	cal.OnChange = func(e *widget.Event) { describe(); a.say("Data: %s", chosen.Text) }
 
 	jump := func(label string, f func()) *widget.Button {

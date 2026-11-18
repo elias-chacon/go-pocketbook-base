@@ -26,7 +26,8 @@ type Document struct {
 	popupOwner Widget // element that opened the popup (its chevron shows "open")
 	focus      Widget
 	capture    Widget
-	swallow    bool // the current touch only dismissed a popup
+	swallow    bool        // the current touch only dismissed a popup
+	canvas     *gfx.Canvas // reused between frames: a screen-size RGBA is 10 MB
 }
 
 // NewDocument creates a document for a deviceW x deviceH screen.
@@ -61,7 +62,10 @@ func (d *Document) Layout() {
 // Render lays out and paints the document into a grayscale image.
 func (d *Document) Render() *image.Gray {
 	d.Layout()
-	c := gfx.NewCanvas(d.DeviceW, d.DeviceH, d.Scale)
+	if d.canvas == nil {
+		d.canvas = gfx.NewCanvas(d.DeviceW, d.DeviceH, d.Scale)
+	}
+	c := d.canvas
 	c.Clear(Paper)
 	if d.Root != nil {
 		paintTree(c, d.Root)
