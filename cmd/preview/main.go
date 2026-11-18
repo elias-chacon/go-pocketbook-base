@@ -12,9 +12,9 @@ import (
 	"log"
 	"os"
 
-	"go-pocketbook-base/internal/demo"
-	"go-pocketbook-base/internal/version"
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/kernel/version"
+	"go-pocketbook-base/internal/showcase"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 	out := flag.String("o", "", "output file (default preview-<page>.png)")
 	flag.Parse()
 
-	app := demo.New(*w, *h, demo.Config{Version: version.Value, Keyboard: &widget.FakeKeyboard{}})
+	app := showcase.New(*w, *h, showcase.Config{Version: version.Value, Keyboard: &widget.FakeKeyboard{}})
 	pages := []int{*pageIdx}
 	if *pageIdx < 0 {
 		pages = pages[:0]
@@ -42,7 +42,7 @@ func main() {
 	}
 }
 
-func write(name string, app *demo.App) {
+func write(name string, app *showcase.App) {
 	f, err := os.Create(name)
 	if err != nil {
 		log.Fatal(err)

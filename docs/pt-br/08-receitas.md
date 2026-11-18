@@ -8,8 +8,8 @@ Telas completas que você pode copiar e adaptar. Cada uma é um arquivo real em 
 > **Como usar uma receita.** Crie a tela, coloque-a num documento e dê um teclado ao documento:
 >
 > ```go
-> login := examples.NewLoginForm(func(user string, remember bool) { /* entrou */ })
-> doc := examples.Screen(1404, 1872, deviceKeyboard{}, login.Root)
+> login := recipes.NewLoginForm(func(user string, remember bool) { /* entrou */ })
+> doc := harness.Screen(1404, 1872, deviceKeyboard{}, login.Root)
 > ```
 >
 > No leitor, o `Screen` e o teclado vêm do seu `main` (veja `apps/hello`); em testes e previews use
@@ -26,10 +26,10 @@ O que observar: os campos são `*widget.Input` comuns guardados na struct, entã
 `Hidden` em vez de adicionar e remover elementos; o card põe tudo numa coluna que estica na largura.
 
 ```go
-// examples/login.go
-package examples
+// examples/recipes/login.go
+package recipes
 
-import "go-pocketbook-base/internal/widget"
+import "go-pocketbook-base/internal/toolkit/widget"
 
 // LoginForm is a sign-in screen with validation.
 type LoginForm struct {
@@ -88,13 +88,13 @@ O que observar: o slider tem `FlexGrow = 1`, então ocupa a largura que o rótul
 rótulo enquanto o botão se move; `SetValue("pt")` escolhe a opção inicial do combo pelo valor.
 
 ```go
-// examples/settings.go
-package examples
+// examples/recipes/settings.go
+package recipes
 
 import (
 	"fmt"
 
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // Settings is a preferences screen that mixes a switch, a slider, a
@@ -151,14 +151,14 @@ campo roda na lupa ou no OK do teclado, e o `OnChange` também dispara quando o 
 restaura a lista completa; `Table.Selected` indexa as `Rows` **exibidas**.
 
 ```go
-// examples/catalog.go
-package examples
+// examples/recipes/catalog.go
+package recipes
 
 import (
 	"strings"
 
-	"go-pocketbook-base/internal/gfx"
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/toolkit/gfx"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // Catalog is a searchable, sortable table with a detail card.
@@ -220,13 +220,13 @@ O que observar: levar o calendário a outro mês exige definir `Year` e `Month` 
 significa "sem data" e o rótulo avisa isso.
 
 ```go
-// examples/datepicker.go
-package examples
+// examples/recipes/datepicker.go
+package recipes
 
 import (
 	"time"
 
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // DatePicker is a calendar with the chosen date written below it and a
@@ -279,14 +279,14 @@ O que observar: três campos compartilham um único `OnChange`; `Number()` lê o
 dígitos a máscara pede; `DecimalSeparator = ","` mostra preços brasileiros enquanto o valor continua sendo um número normal.
 
 ```go
-// examples/order.go
-package examples
+// examples/recipes/order.go
+package recipes
 
 import (
 	"fmt"
 	"strings"
 
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // OrderForm shows numeric fields with − / + buttons, a digit mask and a total
@@ -348,12 +348,12 @@ O que observar: `Tabs.Body` é onde se ajusta o padding (ele já ocupa tudo abai
 função devolve um `Document` inteiro.
 
 ```go
-// examples/navigation.go
-package examples
+// examples/recipes/navigation.go
+package recipes
 
 import (
-	"go-pocketbook-base/internal/geom"
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/kernel/geom"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // NewPagedApp builds a whole application: tabs that switch between the Login,
@@ -395,11 +395,11 @@ O `apps/hello` é o blueprint para começar um app de verdade. O `main` dele é 
 ```go
 // apps/hello/main.go#main
 func main() {
-	err := appkit.Run(appkit.Config{
+	err := platform.Run(platform.Config{
 		Manifest: manifest,
-		// An app may draw its own launcher icon; without Icon the kit draws one
-		// from the title (appkit.DefaultIcon).
-		Icon: func(size int, focused bool) image.Image { return ui.RenderIcon(size, focused) },
+		// An app may draw its own launcher icon; without Icon the platform draws one
+		// from the title (platform.DefaultIcon).
+		Icon: func(size int, focused bool) image.Image { return showcase.RenderIcon(size, focused) },
 	}, newHello)
 	if err != nil {
 		log.Fatal(err)
@@ -407,27 +407,27 @@ func main() {
 }
 ```
 
-e a tela é montada por uma fábrica que o kit chama quando já sabe o tamanho da tela:
+e a tela é montada por uma fábrica que a plataforma chama quando já sabe o tamanho da tela:
 
 ```go
 // apps/hello/hello.go#newHello
-// newHello is the appkit.Factory: the kit calls it once the screen size is
-// known, with everything the app may need in env.
-func newHello(env appkit.Env) appkit.App {
-	return &hello{demo: demo.New(env.Width, env.Height, demo.Config{
+// newHello is the platform.Factory: the platform calls it once the screen size
+// is known, with everything the app may need in env.
+func newHello(env platform.Env) platform.App {
+	return &hello{demo: showcase.New(env.Width, env.Height, showcase.Config{
 		Version:  env.Version,
 		Keyboard: env.Keyboard,
 		Exit:     env.Exit,
 		Notice:   env.Notice,
 		Lang:     env.Lang,
 		// The language chosen here becomes the language of every app.
-		OnLangChange: func(lang string) { _ = appkit.SaveSettings(env.Root, appkit.Settings{Lang: lang}) },
+		OnLangChange: func(lang string) { _ = env.Settings.Save(platform.Settings{Lang: lang}) },
 	})}
 }
 ```
 
 O resto (toque, teclas, teclado do sistema, repintura parcial, registro na primeira execução) é o
-`internal/appkit`. Copie a pasta para `apps/<id>`, troque o `app.json` e a tela, e compile com
+`internal/platform`. Copie a pasta para `apps/<id>`, troque o `app.json` e a tela, e compile com
 `.\build.ps1 -App <id>`. O contrato inteiro está em [Apps e o contrato](13-apps-e-o-contrato.md).
 
 ## Pequenos padrões

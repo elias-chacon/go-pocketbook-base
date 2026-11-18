@@ -3,7 +3,7 @@
 [← Solução de problemas](11-solucao-de-problemas.md) · [Índice](README.md)
 
 Todo app deste projeto é escrito em **português do Brasil (pt-BR)** e cai automaticamente para o **inglês (en)**, pelo
-pacote reutilizável `internal/i18n`. Um texto que um idioma não traduz nunca fica em branco: vem do inglês, depois do
+pacote reutilizável `internal/localization/i18n`. Um texto que um idioma não traduz nunca fica em branco: vem do inglês, depois do
 português e, por último, aparece a própria chave (assim uma tradução esquecida fica visível).
 
 ## As regras
@@ -34,14 +34,14 @@ intacto, então um `%` literal é seguro.
 ## Usando
 
 ```go
-// examples/i18n.go
-package examples
+// examples/translation/translation.go
+package translation
 
 import (
 	"embed"
 
-	"go-pocketbook-base/internal/i18n"
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/localization/i18n"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 //go:embed locales/*.json

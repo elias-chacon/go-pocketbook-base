@@ -49,13 +49,13 @@ resolution.
 A screen is a tree of elements. This is the smallest useful one:
 
 ```go
-// examples/hello.go
-package examples
+// examples/recipes/hello.go
+package recipes
 
 import (
 	"fmt"
 
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // Hello is the smallest useful screen: a card with a message and a button.
@@ -77,12 +77,12 @@ func Hello(onClose func()) widget.Widget {
 touch:
 
 ```go
-// examples/screen.go
-package examples
+// examples/harness/screen.go
+package harness
 
 import (
-	"go-pocketbook-base/internal/geom"
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/kernel/geom"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // Screen puts content inside a padded page and returns a ready-to-render
@@ -104,21 +104,21 @@ func Screen(width, height int, kb widget.Keyboard, content widget.Widget) *widge
 Render it to a PNG without any device:
 
 ```go
-doc := examples.Screen(1404, 1872, nil, examples.Hello(func() {}))
-if err := examples.SavePNG(doc, "hello.png"); err != nil {
+doc := harness.Screen(1404, 1872, nil, recipes.Hello(func() {}))
+if err := harness.SavePNG(doc, "hello.png"); err != nil {
 	log.Fatal(err)
 }
 ```
 
 ```go
-// examples/preview.go
-package examples
+// examples/harness/preview.go
+package harness
 
 import (
 	"image/png"
 	"os"
 
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // SavePNG renders the document and writes it to a PNG file: the quickest way
@@ -150,7 +150,7 @@ func SavePNG(doc *widget.Document, path string) error {
    ```
 
    In `apps/myapp` change `app.json` (the `id` must be `myapp`, the name of the folder), delete what you do not
-   need of `hello.go` and build your own screen in `newHello`. The kit already forwards touch, the hardware keys
+   need of `hello.go` and build your own screen in `newHello`. The platform already forwards touch, the hardware keys
    and the system keyboard to your document, registers the icon on the first run and repaints only what changed
    (see [Apps and the contract](13-apps-and-the-contract.md)).
 

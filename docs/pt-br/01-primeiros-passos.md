@@ -48,13 +48,13 @@ tamanho da tela do PB741. Use `-page 2` para uma página só e `-w 758 -h 1024` 
 Uma tela é uma árvore de elementos. Esta é a menor que já serve para algo:
 
 ```go
-// examples/hello.go
-package examples
+// examples/recipes/hello.go
+package recipes
 
 import (
 	"fmt"
 
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // Hello is the smallest useful screen: a card with a message and a button.
@@ -76,12 +76,12 @@ O `Screen` coloca a tela numa página com margem e devolve um `Document`, que sa
 toque:
 
 ```go
-// examples/screen.go
-package examples
+// examples/harness/screen.go
+package harness
 
 import (
-	"go-pocketbook-base/internal/geom"
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/kernel/geom"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // Screen puts content inside a padded page and returns a ready-to-render
@@ -103,21 +103,21 @@ func Screen(width, height int, kb widget.Keyboard, content widget.Widget) *widge
 Gere um PNG sem precisar de aparelho:
 
 ```go
-doc := examples.Screen(1404, 1872, nil, examples.Hello(func() {}))
-if err := examples.SavePNG(doc, "hello.png"); err != nil {
+doc := harness.Screen(1404, 1872, nil, recipes.Hello(func() {}))
+if err := harness.SavePNG(doc, "hello.png"); err != nil {
 	log.Fatal(err)
 }
 ```
 
 ```go
-// examples/preview.go
-package examples
+// examples/harness/preview.go
+package harness
 
 import (
 	"image/png"
 	"os"
 
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // SavePNG renders the document and writes it to a PNG file: the quickest way
@@ -149,7 +149,7 @@ func SavePNG(doc *widget.Document, path string) error {
    ```
 
    Em `apps/meuapp` troque o `app.json` (o `id` deve ser `meuapp`, o nome da pasta), apague o que não precisar do
-   `hello.go` e monte a sua tela em `newHello`. O kit já encaminha o toque, as teclas físicas e o teclado do sistema
+   `hello.go` e monte a sua tela em `newHello`. A plataforma já encaminha o toque, as teclas físicas e o teclado do sistema
    para o seu documento, registra o ícone na primeira execução e repinta só o que mudou (veja
    [Apps e o contrato](13-apps-e-o-contrato.md)).
 

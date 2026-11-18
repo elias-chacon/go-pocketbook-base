@@ -8,8 +8,8 @@ and is built with the same pieces you saw in the previous pages.
 > **How to use a recipe.** Create the screen, put it in a document and give the document a keyboard:
 >
 > ```go
-> login := examples.NewLoginForm(func(user string, remember bool) { /* signed in */ })
-> doc := examples.Screen(1404, 1872, deviceKeyboard{}, login.Root)
+> login := recipes.NewLoginForm(func(user string, remember bool) { /* signed in */ })
+> doc := harness.Screen(1404, 1872, deviceKeyboard{}, login.Root)
 > ```
 >
 > On the reader `Screen` and the keyboard come from your `main` (see `apps/hello`); in tests and
@@ -27,10 +27,10 @@ What to notice: the fields are plain `*widget.Input` values stored in the struct
 column that stretches to the width.
 
 ```go
-// examples/login.go
-package examples
+// examples/recipes/login.go
+package recipes
 
-import "go-pocketbook-base/internal/widget"
+import "go-pocketbook-base/internal/toolkit/widget"
 
 // LoginForm is a sign-in screen with validation.
 type LoginForm struct {
@@ -89,13 +89,13 @@ What to notice: the slider has `FlexGrow = 1`, so it takes the width the value l
 updates the label while the knob moves; `SetValue("pt")` chooses the combo's initial option by value.
 
 ```go
-// examples/settings.go
-package examples
+// examples/recipes/settings.go
+package recipes
 
 import (
 	"fmt"
 
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // Settings is a preferences screen that mixes a switch, a slider, a
@@ -153,14 +153,14 @@ fires when the clear (×) button empties the field, which restores the full list
 the **displayed** `Rows`.
 
 ```go
-// examples/catalog.go
-package examples
+// examples/recipes/catalog.go
+package recipes
 
 import (
 	"strings"
 
-	"go-pocketbook-base/internal/gfx"
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/toolkit/gfx"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // Catalog is a searchable, sortable table with a detail card.
@@ -223,13 +223,13 @@ What to notice: moving the calendar to another month needs `Year` and `Month` to
 `Selected`; a zero `time.Time` means "no date" and the label says so.
 
 ```go
-// examples/datepicker.go
-package examples
+// examples/recipes/datepicker.go
+package recipes
 
 import (
 	"time"
 
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // DatePicker is a calendar with the chosen date written below it and a
@@ -283,14 +283,14 @@ many digits the mask needs; `DecimalSeparator = ","` shows Brazilian prices whil
 number.
 
 ```go
-// examples/order.go
-package examples
+// examples/recipes/order.go
+package recipes
 
 import (
 	"fmt"
 	"strings"
 
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // OrderForm shows numeric fields with − / + buttons, a digit mask and a total
@@ -352,12 +352,12 @@ What to notice: `Tabs.Body` is where you set the padding (it already takes every
 remembered; this function returns a whole `Document`.
 
 ```go
-// examples/navigation.go
-package examples
+// examples/recipes/navigation.go
+package recipes
 
 import (
-	"go-pocketbook-base/internal/geom"
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/kernel/geom"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // NewPagedApp builds a whole application: tabs that switch between the Login,
@@ -399,11 +399,11 @@ func NewPagedApp(width, height int, kb widget.Keyboard) *widget.Document {
 ```go
 // apps/hello/main.go#main
 func main() {
-	err := appkit.Run(appkit.Config{
+	err := platform.Run(platform.Config{
 		Manifest: manifest,
-		// An app may draw its own launcher icon; without Icon the kit draws one
-		// from the title (appkit.DefaultIcon).
-		Icon: func(size int, focused bool) image.Image { return ui.RenderIcon(size, focused) },
+		// An app may draw its own launcher icon; without Icon the platform draws one
+		// from the title (platform.DefaultIcon).
+		Icon: func(size int, focused bool) image.Image { return showcase.RenderIcon(size, focused) },
 	}, newHello)
 	if err != nil {
 		log.Fatal(err)
@@ -411,27 +411,27 @@ func main() {
 }
 ```
 
-and its screen is built by a factory the kit calls once it knows the screen size:
+and its screen is built by a factory the platform calls once it knows the screen size:
 
 ```go
 // apps/hello/hello.go#newHello
-// newHello is the appkit.Factory: the kit calls it once the screen size is
-// known, with everything the app may need in env.
-func newHello(env appkit.Env) appkit.App {
-	return &hello{demo: demo.New(env.Width, env.Height, demo.Config{
+// newHello is the platform.Factory: the platform calls it once the screen size
+// is known, with everything the app may need in env.
+func newHello(env platform.Env) platform.App {
+	return &hello{demo: showcase.New(env.Width, env.Height, showcase.Config{
 		Version:  env.Version,
 		Keyboard: env.Keyboard,
 		Exit:     env.Exit,
 		Notice:   env.Notice,
 		Lang:     env.Lang,
 		// The language chosen here becomes the language of every app.
-		OnLangChange: func(lang string) { _ = appkit.SaveSettings(env.Root, appkit.Settings{Lang: lang}) },
+		OnLangChange: func(lang string) { _ = env.Settings.Save(platform.Settings{Lang: lang}) },
 	})}
 }
 ```
 
 Everything else (touch, keys, the system keyboard, partial repaint, first-run registration) is
-`internal/appkit`. Copy the folder to `apps/<id>`, change `app.json` and the screen, and build with
+`internal/platform`. Copy the folder to `apps/<id>`, change `app.json` and the screen, and build with
 `.\build.ps1 -App <id>`. The whole contract is in [Apps and the contract](13-apps-and-the-contract.md).
 
 ## Small patterns

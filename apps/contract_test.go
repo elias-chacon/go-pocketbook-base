@@ -1,5 +1,5 @@
 // Package apps has no code: it holds the test that every folder in ./apps
-// follows the app contract (see internal/appkit and apps/hello, the blueprint).
+// follows the app contract (see internal/platform and apps/hello, the blueprint).
 package apps
 
 import (
@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"go-pocketbook-base/internal/appkit"
-	"go-pocketbook-base/internal/i18n"
+	"go-pocketbook-base/internal/localization/i18n"
+	"go-pocketbook-base/internal/platform/domain"
 )
 
 // appDirs lists the app folders (every sub-folder of ./apps).
@@ -46,7 +46,7 @@ func checkApp(t *testing.T, dir string) {
 	if err != nil {
 		t.Fatalf("an app needs an app.json: %v", err)
 	}
-	m, err := appkit.ParseManifest(data)
+	m, err := domain.ParseManifest(data)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,9 +58,9 @@ func checkApp(t *testing.T, dir string) {
 	if err != nil {
 		t.Fatalf("an app needs a main.go: %v", err)
 	}
-	for _, want := range []string{"package main", "go:embed app.json", "appkit.Run"} {
+	for _, want := range []string{"package main", "go:embed app.json", "platform.Run"} {
 		if !strings.Contains(string(main), want) {
-			t.Errorf("main.go must contain %q (the contract: embed the manifest and run the kit)", want)
+			t.Errorf("main.go must contain %q (the contract: embed the manifest and run the platform)", want)
 		}
 	}
 

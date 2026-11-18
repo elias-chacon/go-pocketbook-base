@@ -1,7 +1,7 @@
 APP    ?= hello
 IMAGE  ?= go-pocketbook-base-sdk
 DIST   := dist
-PKG    := go-pocketbook-base/internal/version
+PKG    := go-pocketbook-base/internal/kernel/version
 
 .PHONY: all image app dist preview test sonar task-done major clean
 all: dist

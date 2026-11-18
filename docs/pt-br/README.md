@@ -33,17 +33,18 @@ Ele traz:
 | 11 | [Solução de problemas](11-solucao-de-problemas.md) | Particularidades do aparelho e problemas comuns |
 | 12 | [Internacionalização](12-internacionalizacao.md) | pt-BR primeiro, fallback em inglês, traduções em JSON |
 | 13 | [Apps e o contrato](13-apps-e-o-contrato.md) | `apps/<id>`, o manifesto, o ciclo de vida, o `apps/hello` como blueprint |
+| 14 | [Arquitetura (DDD)](14-arquitetura.md) | contextos delimitados, camadas, linguagem ubíqua, a regra de dependência |
 
 ## Uma olhada rápida
 
 ```go
-// examples/hello.go
-package examples
+// examples/recipes/hello.go
+package recipes
 
 import (
 	"fmt"
 
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // Hello is the smallest useful screen: a card with a message and a button.
@@ -66,14 +67,16 @@ func Hello(onClose func()) widget.Widget {
 ## Mapa do projeto
 
 ```
-apps/hello         o app blueprint: uma vitrine de componentes que segue o contrato
-internal/appkit    o que todo app compartilha: ciclo de vida, registro na primeira execução, manifesto
-cmd/preview        gera as páginas da demo em PNG
-examples/          código testado usado nesta documentação (e um modelo de app)
-internal/widget    componentes, layout e toque  ← a biblioteca
-internal/gfx       desenho vetorial (canvas, texto, ícones)
-internal/inkview   binding do leitor (cgo)
-internal/install   auto-instalação na primeira execução
-tools/             bumpversion, docgen, docsync
-docs/              esta documentação (en, pt-br) e as imagens dos componentes
+apps/hello             o app blueprint (raiz de composição): uma vitrine de componentes
+internal/kernel        núcleo compartilhado: geom, version
+internal/toolkit       toolkit de UI: widget (componentes, layout, toque), gfx (desenho vetorial)
+internal/device        o leitor: inkview (binding cgo), desktop (registro na tela inicial)
+internal/localization  i18n: pt-BR primeiro, fallback em inglês
+internal/platform      o que é um app: domain · application · infrastructure (+ a fachada platform)
+internal/showcase      o conteúdo do app hello
+internal/architecture  a regra de dependência, como código e como teste
+cmd/preview            gera as páginas da demo em PNG
+examples/              amostras testadas da documentação: components, recipes, custom, translation, harness
+tools/                 bumpversion, docgen, docsync
+docs/                  esta documentação (en, pt-br) e as imagens dos componentes
 ```

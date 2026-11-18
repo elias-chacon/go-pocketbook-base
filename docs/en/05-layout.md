@@ -59,7 +59,7 @@ the **cross axis**. Free space on the main axis goes to children with `FlexGrow`
 Spread items with the free space between them:
 
 ```go
-// examples/components.go#FlexRow
+// examples/components/flex.go#FlexRow
 // FlexRow spreads three items along a row with the free space between them.
 func FlexRow() widget.Widget {
 	row := widget.NewRow(12, widget.NewButton("A"), widget.NewButton("B"), widget.NewButton("C"))
@@ -71,7 +71,7 @@ func FlexRow() widget.Widget {
 Let one child take what is left:
 
 ```go
-// examples/components.go#FlexGrow
+// examples/components/flex.go#FlexGrow
 // FlexGrow gives the leftover width to one child.
 func FlexGrow() widget.Widget {
 	fixed := widget.NewButton("Fixed")
@@ -84,7 +84,7 @@ func FlexGrow() widget.Widget {
 Break into several lines when the children do not fit:
 
 ```go
-// examples/components.go#FlexWrap
+// examples/components/flex.go#FlexWrap
 // FlexWrap breaks the children into several lines when they do not fit.
 func FlexWrap() widget.Widget {
 	panel := widget.NewRow(12)
@@ -100,7 +100,7 @@ func FlexWrap() widget.Widget {
 Stack vertically (children stretch to the column width unless you set `AlignItems`):
 
 ```go
-// examples/components.go#FlexColumn
+// examples/components/flex.go#FlexColumn
 // FlexColumn stacks the children; they stretch to the width of the column.
 func FlexColumn() widget.Widget {
 	return widget.NewColumn(12, widget.NewButton("First"), widget.NewButton("Second"))
@@ -118,7 +118,7 @@ Columns are fixed (`PxTrack`) or flexible (`FrTrack`, like `1fr`). Rows are crea
 the height of their tallest cell; every child fills its cell (unless it has its own `Width`/`Height`).
 
 ```go
-// examples/components.go#GridLayout
+// examples/components/grid.go#GridLayout
 // GridLayout uses three columns (1fr, 1fr and 120 px); one child spans two.
 func GridLayout() widget.Widget {
 	wide := widget.NewButton("spans two columns")

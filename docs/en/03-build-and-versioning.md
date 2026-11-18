@@ -37,7 +37,7 @@ The result is **one file**: `dist/applications/<app>.app`. The script also:
 Build flags used internally (for reference):
 
 ```sh
-go build -ldflags=-X=go-pocketbook-base/internal/version.Value=<version> -o dist/applications/hello.app ./apps/hello
+go build -ldflags=-X=go-pocketbook-base/internal/kernel/version.Value=<version> -o dist/applications/hello.app ./apps/hello
 ```
 
 ### Make targets
@@ -69,13 +69,13 @@ go run ./tools/bumpversion minor    # 1.2.4 -> 1.3.0
 go run ./tools/bumpversion major    # 1.3.0 -> 2.0.0
 ```
 
-The tool prints the new version. The build embeds it in the binary (`internal/version.Value`) and the
+The tool prints the new version. The build embeds it in the binary (`internal/kernel/version.Value`) and the
 demo shows it in the footer, so you always know which build is on the reader.
 
 In your own code:
 
 ```go
-import "go-pocketbook-base/internal/version"
+import "go-pocketbook-base/internal/kernel/version"
 
 fmt.Println("running v" + version.Value) // "dev" when not built with the scripts
 ```
@@ -85,7 +85,7 @@ fmt.Println("running v" + version.Value) // "dev" when not built with the script
 ```sh
 go test ./...                        # all packages
 go test -cover ./...                 # with coverage
-go test ./internal/widget -run Layout -v
+go test ./internal/toolkit/widget -run Layout -v
 ```
 
 The suite covers the layout engine, every component, touch accuracy (the center of every interactive
@@ -103,8 +103,8 @@ go run ./tools/docsync -check   # only checks (the test suite runs this too)
 To put a tested sample in a page, write a fenced `go` block whose **first line** is a comment naming
 the source, leave the rest empty and run `docsync`:
 
-- `// examples/login.go` embeds the whole file;
-- `// examples/components.go#ButtonExample` embeds one function (with its doc comment).
+- `// examples/recipes/login.go` embeds the whole file;
+- `// examples/components/button.go#ButtonExample` embeds one function (with its doc comment).
 
 The block is filled (and later refreshed) with the real code. Pages with a stale block make
 `go test ./tools/docsync` fail, so documentation and code cannot drift apart.

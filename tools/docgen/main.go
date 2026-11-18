@@ -13,8 +13,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"go-pocketbook-base/internal/geom"
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/kernel/geom"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 func main() {

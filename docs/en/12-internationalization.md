@@ -3,7 +3,7 @@
 [← Troubleshooting](11-troubleshooting.md) · [Index](README.md)
 
 Every app of this project is written in **Brazilian Portuguese (pt-BR)** and falls back to **English (en)**
-automatically, through the reusable `internal/i18n` package. A string that a language does not translate is
+automatically, through the reusable `internal/localization/i18n` package. A string that a language does not translate is
 never blank: it comes from English, then from Portuguese, and as a last resort the key itself is shown (so a
 forgotten translation is visible).
 
@@ -35,14 +35,14 @@ untouched, so a literal `%` is safe.
 ## Using it
 
 ```go
-// examples/i18n.go
-package examples
+// examples/translation/translation.go
+package translation
 
 import (
 	"embed"
 
-	"go-pocketbook-base/internal/i18n"
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/localization/i18n"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 //go:embed locales/*.json

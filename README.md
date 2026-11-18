@@ -43,7 +43,7 @@ componentes próprios, testes e solução de problemas. Todo código das página
 | RF-06 | Design pensado para e-ink: alto contraste, bordas nítidas, sem animação, alvos de toque grandes.                                                                                                                                                                                     |
 | RF-07 | O app se **instala sozinho** (ícone e entrada no desktop) na primeira execução.                                                                                                                                                                                                      |
 | RF-08 | Versionamento em `.version` (começa em `1.0.0`): o build incrementa o **BUILD**, tarefa concluída incrementa o **MINOR**, grande mudança incrementa o **MAJOR**.                                                                                                                     |
-| RF-09 | **i18n reutilizável** (`internal/i18n`): todo app é escrito em **pt-BR** e cai automaticamente para **en** (chave → idioma atual → en → pt-BR → a própria chave). |
+| RF-09 | **i18n reutilizável** (`internal/localization/i18n`): todo app é escrito em **pt-BR** e cai automaticamente para **en** (chave → idioma atual → en → pt-BR → a própria chave). |
 | RF-10 | **App Launcher e plugins**: os apps filhos vivem em `./apps/` (o `hello` é o blueprint) e seguem o mesmo contrato de empacotamento; o Launcher lista instalados, busca e baixa do GitHub (Releases) os disponíveis, executa os apps e tem configurações persistentes (grid, idioma, fundo). |
 
 ### Não funcionais
@@ -120,9 +120,10 @@ Legenda: `[x]` concluída · `[ ]` pendente. Ao concluir uma task, o MINOR é in
 
 **Launcher e plugins** (RF-09, RF-10; decisões: binários via GitHub Releases, "Installed" = apps do ecossistema com manifesto em `applications/.pbgo/`, `widget.Image` autorizado)
 
-- [x] T42 i18n reutilizável (`internal/i18n`): pt-BR primário, fallback automático para en, JSON embutido
+- [x] T42 i18n reutilizável (`internal/localization/i18n`): pt-BR primário, fallback automático para en, JSON embutido
 - [x] T43 `widget.Image` + `Canvas.DrawImage` (ícones BMP do grid e imagem de fundo)
 - [x] T44 `./apps/`: mover o `hello` para `apps/hello` como blueprint (ciclo de vida, empacotamento, manifesto `app.json`) e migrá-lo para i18n
+- [x] T49 Reorganização por domínios (DDD): contextos `kernel`, `toolkit`, `device`, `localization`, `platform` (domain · application · infrastructure) e `showcase`; `apps/` como raízes de composição; `examples/` por contexto; regra de dependência verificada por teste (`internal/architecture`). Feita antes do Launcher para que o código novo já nasça no lugar certo.
 - [ ] T45 Launcher: grid dos apps instalados (ícone + título) e execução do app filho, com retorno ao Launcher
 - [ ] T46 Launcher: busca em tempo real com as seções `-- Installed --` e `-- Available --`
 - [ ] T47 Launcher: catálogo do GitHub (`apps/` do repositório + assets dos Releases), download e instalação com um clique
@@ -161,27 +162,31 @@ go run ./tools/bumpversion minor   # 1.2.4 -> 1.3.0
 go run ./tools/bumpversion major   # 1.3.0 -> 2.0.0
 ```
 
-A versão é gravada no binário por `-ldflags -X …/internal/version.Value` e aparece no rodapé do app.
+A versão é gravada no binário por `-ldflags -X …/internal/kernel/version.Value` e aparece no rodapé do app.
 
 ## Arquitetura
 
+O código segue **DDD**: contextos delimitados, cada um com suas camadas, e uma regra de dependência
+(`internal/architecture`, verificada por teste). Detalhes em [docs/pt-br/14-arquitetura.md](docs/pt-br/14-arquitetura.md).
+
 ```
-apps/hello         app blueprint do aparelho: vitrine de componentes que segue o contrato (apps/<id>)
-internal/appkit    contrato dos apps: ciclo de vida InkView ↔ Document, registro na 1ª execução, manifesto app.json
-cmd/preview        renderiza as páginas da demo em PNG (sem aparelho)
-internal/demo      vitrine de componentes (compartilhada por hello, preview e testes)
-internal/widget    componentes + layout flex/grid + toque + abas e estado + repintura parcial (a biblioteca)
-internal/i18n      traduções: pt-BR primário, fallback en (JSON embutido)
-internal/gfx       desenho vetorial: Canvas, fontes, texto, ícones, cores
-internal/geom      Rect, Point, Size, Insets
-internal/inkview   binding cgo mínimo da libinkview (eventos, blit, teclado)
-internal/install   auto-instalação (ícones + entrada no view.json do desktop)
-internal/ui        ícone de lançamento
-internal/version   MAJOR.MINOR.BUILD
-tools/bumpversion  incrementa .version
-tools/docgen        gera os desenhos de cada componente (docs/components/*.png)
-tools/docsync       preenche os blocos de código de docs/ a partir de examples/ (e confere)
-examples/          exemplos testados usados na documentação (telas completas, um por componente, app novo)
+apps/<id>                    raízes de composição: um app por pasta (hello é o blueprint)
+internal/
+  kernel/                    núcleo compartilhado: geom (Rect, Point…), version (MAJOR.MINOR.BUILD)
+  toolkit/                   biblioteca de UI: widget (Document, componentes, layout, toque), gfx (desenho vetorial)
+  device/                    o leitor: inkview (binding cgo), desktop (ícone na tela inicial)
+  localization/i18n          pt-BR primário, fallback en (JSON embutido)
+  platform/                  o que é um app:
+    domain                     Manifest, InstalledApp, Settings e as portas (AppRegistry, SettingsStore, …)
+    application                casos de uso: Runtime (ciclo de vida), FirstRun (registro na 1ª execução)
+    infrastructure             adaptadores: jsonfiles (arquivos JSON), reader (InkView, teclado, desktop)
+    platform.go                fachada/raiz de composição: o único import de um app
+  showcase/                  o conteúdo do app hello (vitrine de componentes)
+  architecture/              o mapa e a regra de dependência, como código e teste
+examples/                    amostras testadas da documentação, por contexto:
+  components/ recipes/ custom/ translation/ harness/
+cmd/preview                  renderiza as páginas da demo em PNG (sem aparelho)
+tools/                       bumpversion, docgen (imagens), docsync (blocos de código da doc)
 ```
 
 Decisões (SOLID/KISS/DRY, sem exageros):

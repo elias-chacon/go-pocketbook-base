@@ -37,7 +37,7 @@ O resultado é **um arquivo**: `dist/applications/<app>.app`. O script também:
 Flags usadas internamente (para referência):
 
 ```sh
-go build -ldflags=-X=go-pocketbook-base/internal/version.Value=<versão> -o dist/applications/hello.app ./apps/hello
+go build -ldflags=-X=go-pocketbook-base/internal/kernel/version.Value=<versão> -o dist/applications/hello.app ./apps/hello
 ```
 
 ### Alvos do make
@@ -68,13 +68,13 @@ go run ./tools/bumpversion minor    # 1.2.4 -> 1.3.0
 go run ./tools/bumpversion major    # 1.3.0 -> 2.0.0
 ```
 
-A ferramenta imprime a nova versão. O build a grava no binário (`internal/version.Value`) e a demo a mostra no
+A ferramenta imprime a nova versão. O build a grava no binário (`internal/kernel/version.Value`) e a demo a mostra no
 rodapé, então você sempre sabe qual build está no leitor.
 
 No seu código:
 
 ```go
-import "go-pocketbook-base/internal/version"
+import "go-pocketbook-base/internal/kernel/version"
 
 fmt.Println("rodando v" + version.Value) // "dev" quando não foi compilado pelos scripts
 ```
@@ -84,7 +84,7 @@ fmt.Println("rodando v" + version.Value) // "dev" quando não foi compilado pelo
 ```sh
 go test ./...                        # todos os pacotes
 go test -cover ./...                 # com cobertura
-go test ./internal/widget -run Layout -v
+go test ./internal/toolkit/widget -run Layout -v
 ```
 
 A suíte cobre o motor de layout, cada componente, a precisão do toque (o centro de cada elemento interativo
@@ -101,8 +101,8 @@ go run ./tools/docsync -check   # só confere (a suíte de testes também faz is
 Para colocar um exemplo testado numa página, escreva um bloco `go` cuja **primeira linha** é um comentário com a
 origem, deixe o resto vazio e rode o `docsync`:
 
-- `// examples/login.go` embute o arquivo inteiro;
-- `// examples/components.go#ButtonExample` embute uma função (com o comentário dela).
+- `// examples/recipes/login.go` embute o arquivo inteiro;
+- `// examples/components/button.go#ButtonExample` embute uma função (com o comentário dela).
 
 O bloco é preenchido (e depois atualizado) com o código de verdade. Uma página com bloco desatualizado faz o
 `go test ./tools/docsync` falhar, então documentação e código não se separam.

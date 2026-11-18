@@ -58,7 +58,7 @@ transversal**. O espaço livre no eixo principal vai para os filhos com `FlexGro
 Distribuir os itens com o espaço livre entre eles:
 
 ```go
-// examples/components.go#FlexRow
+// examples/components/flex.go#FlexRow
 // FlexRow spreads three items along a row with the free space between them.
 func FlexRow() widget.Widget {
 	row := widget.NewRow(12, widget.NewButton("A"), widget.NewButton("B"), widget.NewButton("C"))
@@ -70,7 +70,7 @@ func FlexRow() widget.Widget {
 Deixar um filho ocupar o que sobra:
 
 ```go
-// examples/components.go#FlexGrow
+// examples/components/flex.go#FlexGrow
 // FlexGrow gives the leftover width to one child.
 func FlexGrow() widget.Widget {
 	fixed := widget.NewButton("Fixed")
@@ -83,7 +83,7 @@ func FlexGrow() widget.Widget {
 Quebrar em várias linhas quando os filhos não cabem:
 
 ```go
-// examples/components.go#FlexWrap
+// examples/components/flex.go#FlexWrap
 // FlexWrap breaks the children into several lines when they do not fit.
 func FlexWrap() widget.Widget {
 	panel := widget.NewRow(12)
@@ -99,7 +99,7 @@ func FlexWrap() widget.Widget {
 Empilhar na vertical (os filhos esticam na largura da coluna, a não ser que você defina `AlignItems`):
 
 ```go
-// examples/components.go#FlexColumn
+// examples/components/flex.go#FlexColumn
 // FlexColumn stacks the children; they stretch to the width of the column.
 func FlexColumn() widget.Widget {
 	return widget.NewColumn(12, widget.NewButton("First"), widget.NewButton("Second"))
@@ -117,7 +117,7 @@ ficam com a altura da célula mais alta; cada filho preenche a sua célula (a n�
 próprios).
 
 ```go
-// examples/components.go#GridLayout
+// examples/components/grid.go#GridLayout
 // GridLayout uses three columns (1fr, 1fr and 120 px); one child spans two.
 func GridLayout() widget.Widget {
 	wide := widget.NewButton("spans two columns")

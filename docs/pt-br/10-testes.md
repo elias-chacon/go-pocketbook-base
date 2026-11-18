@@ -11,15 +11,17 @@ principal motivo de a interface ter sido construída assim.
 |---|---|
 | `widget.FakeKeyboard` | um teclado que responde na hora: `Reply` é o texto digitado, `Cancel` simula cancelar, `Last` é o último pedido |
 | `doc.HandlePointer(...)` | simula um dedo (down, move, up) num ponto |
-| `doc.Render()` / `examples.SavePNG` | desenha a tela para você inspecionar pixels ou olhar um PNG |
+| `doc.Render()` / `harness.SavePNG` | desenha a tela para você inspecionar pixels ou olhar um PNG |
 
 ## Ajudantes
 
-A maioria dos testes começa com estes ajudantes pequenos (eles ficam em `examples/examples_test.go`):
+A maioria dos testes começa com estes ajudantes pequenos (eles ficam em `examples/harness/testkit.go`):
 
 ```go
-// examples/examples_test.go#newDoc
-func newDoc(content widget.Widget) (*widget.Document, *widget.FakeKeyboard) {
+// examples/harness/testkit.go#NewDoc
+// NewDoc puts content in a Screen with a fake keyboard (it answers "7") and lays
+// it out: the usual start of a test.
+func NewDoc(content widget.Widget) (*widget.Document, *widget.FakeKeyboard) {
 	kb := &widget.FakeKeyboard{Reply: "7"}
 	doc := Screen(1404, 1872, kb, content)
 	doc.Layout()
@@ -28,22 +30,24 @@ func newDoc(content widget.Widget) (*widget.Document, *widget.FakeKeyboard) {
 ```
 
 ```go
-// examples/examples_test.go#tapAt
-func tapAt(doc *widget.Document, p geom.Point) {
+// examples/harness/testkit.go#TapAt
+// TapAt touches the screen at p (design pixels): finger down, then up.
+func TapAt(doc *widget.Document, p geom.Point) {
 	doc.HandlePointer(widget.PointerDown, p.X*doc.Scale, p.Y*doc.Scale)
 	doc.HandlePointer(widget.PointerUp, p.X*doc.Scale, p.Y*doc.Scale)
 }
 ```
 
 ```go
-// examples/examples_test.go#tap
-func tap(doc *widget.Document, w widget.Widget) { tapAt(doc, w.Elem().Bounds.Center()) }
+// examples/harness/testkit.go#Tap
+// Tap touches the center of w.
+func Tap(doc *widget.Document, w widget.Widget) { TapAt(doc, w.Elem().Bounds.Center()) }
 ```
 
 ```go
-// examples/examples_test.go#interactive
-// interactive returns the elements that react to touch.
-func interactive(doc *widget.Document) []widget.Widget {
+// examples/harness/testkit.go#Interactive
+// Interactive returns the visible elements that react to touch.
+func Interactive(doc *widget.Document) []widget.Widget {
 	var out []widget.Widget
 	doc.Walk(func(w widget.Widget) bool {
 		if _, ok := w.(widget.PointerHandler); ok && w.Elem().Visible() {
@@ -63,12 +67,12 @@ func interactive(doc *widget.Document) []widget.Widget {
 ## Testar um botão
 
 ```go
-// examples/examples_test.go#TestHello
+// examples/recipes/recipes_test.go#TestHello
 func TestHello(t *testing.T) {
 	closed := false
-	doc, _ := newDoc(Hello(func() { closed = true }))
-	for _, w := range interactive(doc) {
-		tap(doc, w)
+	doc, _ := harness.NewDoc(Hello(func() { closed = true }))
+	for _, w := range harness.Interactive(doc) {
+		harness.Tap(doc, w)
 	}
 	if !closed {
 		t.Error("the button must call onClose")
@@ -81,32 +85,32 @@ func TestHello(t *testing.T) {
 Defina `kb.Reply` com o que o "usuário" digita e toque no campo:
 
 ```go
-// examples/examples_test.go#TestLoginFormValidatesBeforeCallingOnLogin
+// examples/recipes/recipes_test.go#TestLoginFormValidatesBeforeCallingOnLogin
 func TestLoginFormValidatesBeforeCallingOnLogin(t *testing.T) {
 	var user string
 	var remember bool
 	f := NewLoginForm(func(u string, r bool) { user, remember = u, r })
-	doc, kb := newDoc(f.Root)
-	submit := interactive(doc)[len(interactive(doc))-1] // the last element is the button
+	doc, kb := harness.NewDoc(f.Root)
+	submit := harness.Interactive(doc)[len(harness.Interactive(doc))-1] // the last element is the button
 
-	tap(doc, submit)
+	harness.Tap(doc, submit)
 	if f.Message.Hidden || f.Message.Text != "Type your user name" || user != "" {
 		t.Fatalf("empty user: message=%q hidden=%v", f.Message.Text, f.Message.Hidden)
 	}
 
 	kb.Reply = "ana"
-	tap(doc, f.User)
+	harness.Tap(doc, f.User)
 	kb.Reply = "123"
-	tap(doc, f.Password)
-	tap(doc, submit)
+	harness.Tap(doc, f.Password)
+	harness.Tap(doc, submit)
 	if f.Message.Text != "The password needs at least 4 characters" {
 		t.Fatalf("short password: %q", f.Message.Text)
 	}
 
 	kb.Reply = "1234"
-	tap(doc, f.Password)
-	tap(doc, f.Remember) // untick "Remember me"
-	tap(doc, submit)
+	harness.Tap(doc, f.Password)
+	harness.Tap(doc, f.Remember) // untick "Remember me"
+	harness.Tap(doc, submit)
 	if user != "ana" || remember || !f.Message.Hidden {
 		t.Errorf("login: user=%q remember=%v hidden=%v", user, remember, f.Message.Hidden)
 	}
@@ -160,7 +164,7 @@ if pretos == 0 {
 }
 ```
 
-Para ver com os olhos, use `examples.SavePNG(doc, "tela.png")` e abra o arquivo.
+Para ver com os olhos, use `harness.SavePNG(doc, "tela.png")` e abra o arquivo.
 
 ## Popups
 
@@ -187,7 +191,7 @@ go test -cover ./...
 .\scripts\sonar.ps1        # cobertura + análise estática no SonarQube local
 ```
 
-O código que só roda no leitor (`cmd/`, `internal/inkview`) fica fora da cobertura; mantenha a sua lógica em pacotes que rodam
+O código que só roda no leitor (`cmd/`, `internal/device/inkview`) fica fora da cobertura; mantenha a sua lógica em pacotes que rodam
 no PC e a cola do leitor bem fina.
 
 Próxima: [Solução de problemas →](11-solucao-de-problemas.md)

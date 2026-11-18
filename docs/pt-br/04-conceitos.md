@@ -7,17 +7,22 @@ Esta página explica como as peças se encaixam, para o resto da documentação 
 ## As camadas
 
 ```
-as suas telas (examples/, cmd/…)         o que você escreve
+seus apps (apps/<id>, examples/)             o que você escreve
         │
-internal/widget                          elementos, layout, despacho de toque
+internal/platform                            o que é um app: manifesto, ciclo de vida, primeira execução
         │
-internal/gfx  ·  internal/geom           desenho vetorial, geometria
+internal/toolkit/widget                      elementos, layout, despacho de toque
         │
-internal/inkview                         o leitor: eventos, tela, teclado (cgo)
+internal/toolkit/gfx  ·  internal/kernel/geom      desenho vetorial, geometria
+        ·
+internal/device/inkview                      o leitor: eventos, tela, teclado (cgo)
 ```
 
-`widget` e `gfx` são **Go puro**: rodam no seu PC, e é por isso que toda a interface pode ser testada e visualizada
-sem aparelho. Só o `inkview` precisa do leitor (no desktop ele tem versões vazias que não fazem nada).
+O código é dividido em **contextos delimitados** (toolkit, device, platform, localization, showcase, mais um pequeno
+núcleo compartilhado) com uma regra de dependência verificada por teste: veja [Arquitetura (DDD)](14-arquitetura.md).
+
+`widget` e `gfx` são **Go puro**: rodam no seu PC, e por isso a UI inteira pode ser testada e visualizada sem
+aparelho. Só o `inkview` precisa do leitor (no desktop ele tem stubs que não fazem nada).
 
 ## Document, Widget e Base
 
@@ -143,7 +148,7 @@ Um campo em edição fica *focado* (borda mais grossa) até o teclado fechar.
 
 ## O app no leitor
 
-O `internal/appkit` é uma cola fina entre o InkView e o documento, compartilhada por todos os apps (o `apps/hello` é o blueprint):
+O `internal/platform` é uma cola fina entre o InkView e o documento, compartilhada por todos os apps (o `apps/hello` é o blueprint):
 
 | Evento do InkView | O que a cola faz |
 |---|---|

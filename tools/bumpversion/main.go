@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"os"
 
-	"go-pocketbook-base/internal/version"
+	"go-pocketbook-base/internal/kernel/version"
 )
 
 func main() {

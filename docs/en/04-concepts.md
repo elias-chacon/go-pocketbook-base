@@ -7,14 +7,19 @@ This page explains how the pieces fit together, so the rest of the documentation
 ## The layers
 
 ```
-your screens (examples/, cmd/…)          what you write
+your apps (apps/<id>, examples/)             what you write
         │
-internal/widget                          elements, layout, touch dispatch
+internal/platform                            what an app is: manifest, lifecycle, first-run
         │
-internal/gfx  ·  internal/geom           vector drawing, geometry
+internal/toolkit/widget                      elements, layout, touch dispatch
         │
-internal/inkview                         the reader: events, screen, keyboard (cgo)
+internal/toolkit/gfx  ·  internal/kernel/geom      vector drawing, geometry
+        ·
+internal/device/inkview                      the reader: events, screen, keyboard (cgo)
 ```
+
+The code is split into **bounded contexts** (toolkit, device, platform, localization, showcase, plus a tiny
+shared kernel) with an enforced dependency rule: see [Architecture (DDD)](14-architecture.md).
 
 `widget` and `gfx` are **pure Go**: they run on your PC, which is why the whole UI can be tested and
 previewed without a device. Only `inkview` needs the reader (on the desktop it has stubs that do nothing).
@@ -144,7 +149,7 @@ keyboard closes.
 
 ## The app on the reader
 
-`internal/appkit` is a thin glue between InkView and the document, shared by every app (`apps/hello` is the blueprint):
+`internal/platform` is a thin glue between InkView and the document, shared by every app (`apps/hello` is the blueprint):
 
 | InkView event | What the glue does |
 |---|---|

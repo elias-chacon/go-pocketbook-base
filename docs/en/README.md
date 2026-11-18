@@ -31,17 +31,18 @@
 | 11 | [Troubleshooting](11-troubleshooting.md) | Device quirks and common problems |
 | 12 | [Internationalization](12-internationalization.md) | pt-BR first, English fallback, JSON translations |
 | 13 | [Apps and the contract](13-apps-and-the-contract.md) | `apps/<id>`, the manifest, the lifecycle, `apps/hello` as the blueprint |
+| 14 | [Architecture (DDD)](14-architecture.md) | bounded contexts, layers, ubiquitous language, the dependency rule |
 
 ## Quick look
 
 ```go
-// examples/hello.go
-package examples
+// examples/recipes/hello.go
+package recipes
 
 import (
 	"fmt"
 
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // Hello is the smallest useful screen: a card with a message and a button.
@@ -64,14 +65,16 @@ func Hello(onClose func()) widget.Widget {
 ## Project map
 
 ```
-apps/hello         the blueprint app: a component showcase that follows the contract
-internal/appkit    what every app shares: lifecycle, first-run registration, manifest
-cmd/preview        renders the demo pages to PNG
-examples/          tested code used by this documentation (and an app template)
-internal/widget    components, layout and touch  ← the library
-internal/gfx       vector drawing (canvas, text, icons)
-internal/inkview   binding to the reader (cgo)
-internal/install   first-run self-install
-tools/             bumpversion, docgen, docsync
-docs/              this documentation (en, pt-br) and the component pictures
+apps/hello             the blueprint app (composition root): a component showcase
+internal/kernel        shared kernel: geom, version
+internal/toolkit       UI toolkit: widget (components, layout, touch), gfx (vector drawing)
+internal/device        the reader: inkview (cgo binding), desktop (home screen registration)
+internal/localization  i18n: pt-BR first, English fallback
+internal/platform      what an app is: domain · application · infrastructure (+ the platform facade)
+internal/showcase      the content of the hello app
+internal/architecture  the dependency rule, as code and as a test
+cmd/preview            renders the demo pages to PNG
+examples/              tested documentation samples: components, recipes, custom, translation, harness
+tools/                 bumpversion, docgen, docsync
+docs/                  this documentation (en, pt-br) and the component pictures
 ```

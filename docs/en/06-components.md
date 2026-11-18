@@ -31,7 +31,7 @@ Static text (like `<span>` / `<p>`). It **wraps lines by itself** to the width i
 | Touch | none (add `OnClick` if you want it to react) |
 
 ```go
-// examples/components.go#LabelExample
+// examples/components/label.go#LabelExample
 // LabelExample shows a bold title and a muted paragraph that wraps by itself.
 func LabelExample() widget.Widget {
 	title := widget.NewLabel("A bold title")
@@ -57,7 +57,7 @@ A tappable button. Three visual weights: **primary** (filled), **secondary** (ou
 | Touch | a tap runs `OnClick` |
 
 ```go
-// examples/components.go#ButtonExample
+// examples/components/button.go#ButtonExample
 // ButtonExample shows the variants, an icon, an icon-only and a disabled button.
 func ButtonExample() widget.Widget {
 	save := widget.NewButton("Save")
@@ -94,7 +94,7 @@ On/off controls with a label. **The whole row is the touch area**, not just the 
 | Events | `OnChange` (`e.Target.(*widget.Toggle)` gives the control) |
 
 ```go
-// examples/components.go#ToggleExample
+// examples/components/toggle.go#ToggleExample
 // ToggleExample shows a check-box, two radio buttons of one group and a switch.
 func ToggleExample() widget.Widget {
 	news := widget.NewCheckbox("Send me the news", true)
@@ -130,7 +130,7 @@ A tap outside the list just closes it.
 | Events | `OnChange` |
 
 ```go
-// examples/components.go#ComboBoxExample
+// examples/components/combobox.go#ComboBoxExample
 // ComboBoxExample keeps one option from a list.
 func ComboBoxExample() widget.Widget {
 	city := widget.NewComboBox("Choose a city",
@@ -157,7 +157,7 @@ own `OnSelect`. Items can have an icon, be disabled, or be a separator line.
 | Events | `OnSelect` on the dropdown (after the item's own) |
 
 ```go
-// examples/components.go#DropdownExample
+// examples/components/dropdown.go#DropdownExample
 // DropdownExample opens a menu of actions.
 func DropdownExample() widget.Widget {
 	return widget.NewDropdown("Actions",
@@ -183,7 +183,7 @@ page) or opens a sub-menu with `Items`. `Selected` draws the current one filled.
 | Methods | `MenuRect(i)` — the touch rectangle of menu `i` |
 
 ```go
-// examples/components.go#MenuBarExample
+// examples/components/menubar.go#MenuBarExample
 // MenuBarExample has a direct item and a menu with a sub-menu.
 func MenuBarExample() widget.Widget {
 	return widget.NewMenuBar(
@@ -222,7 +222,7 @@ selection. *Data* (a table's `Rows`, a combo's `Options`) is not state: your `Bu
 | Custom state | make your own element implement `Stateful` (`SaveState() string`, `LoadState(string)`) |
 
 ```go
-// examples/navigation.go#NewPagedApp
+// examples/recipes/navigation.go#NewPagedApp
 // NewPagedApp builds a whole application: tabs that switch between the Login,
 // Settings and Catalog pages. Only the current page lives in memory; what the
 // user typed or chose is kept in the Tabs store and put back when the page is
@@ -270,7 +270,7 @@ is cut with "…" when it is too long to fit.
 | Touch | opens the keyboard (nothing if `ReadOnly`) |
 
 ```go
-// examples/components.go#TextInputExample
+// examples/components/input.go#TextInputExample
 // TextInputExample has a text field and a password field.
 func TextInputExample() widget.Widget {
 	name := widget.NewInput("Full name")
@@ -296,7 +296,7 @@ the value without opening the keyboard. The number is kept between `Min` and `Ma
 | Events | `OnChange` (keyboard, − and +) |
 
 ```go
-// examples/components.go#NumberInputExample
+// examples/components/input.go#NumberInputExample
 // NumberInputExample has − / + buttons, a range, decimals and a prefix.
 func NumberInputExample() widget.Widget {
 	quantity := widget.NewNumberInput(3, 0)
@@ -326,7 +326,7 @@ character is a literal that is inserted for you. `Value` keeps only the digits; 
 | Helpers | `widget.ApplyMask(mask, digits)`, `widget.OnlyDigits(s)`, `widget.MaskSlots(mask)`, `widget.TrimToMask(mask, digits)` |
 
 ```go
-// examples/components.go#MaskedInputExample
+// examples/components/input.go#MaskedInputExample
 // MaskedInputExample formats the typed digits with a mask.
 func MaskedInputExample() widget.Widget {
 	phone := widget.NewMaskedInput("(00) 00000-0000", "11987654321")
@@ -348,7 +348,7 @@ when there is text. The magnifier, and **OK on the keyboard**, fire `OnSubmit`.
 | Events | `OnSubmit` (search), `OnChange` (typed or cleared) |
 
 ```go
-// examples/components.go#SearchInputExample
+// examples/components/input.go#SearchInputExample
 // SearchInputExample has the magnifier and clear buttons.
 func SearchInputExample() widget.Widget {
 	search := widget.NewSearchInput("Search books…")
@@ -371,7 +371,7 @@ opens the system keyboard.
 | Events | `OnChange` |
 
 ```go
-// examples/components.go#TextAreaExample
+// examples/components/textarea.go#TextAreaExample
 // TextAreaExample is a multi-line field.
 func TextAreaExample() widget.Widget {
 	notes := widget.NewTextArea("Notes…", 4)
@@ -397,7 +397,7 @@ change page. `Selected` is always the index in `Rows`, even when the table is so
 | Events | `OnSelect` |
 
 ```go
-// examples/components.go#TableExample
+// examples/components/table.go#TableExample
 // TableExample is a sortable, selectable, paged table.
 func TableExample() widget.Widget {
 	table := widget.NewTable(4,
@@ -427,7 +427,7 @@ it. Set `Text` to show your own words.
 | Properties | `Value`, `Min`, `Max` (0–100 by default), `Text` |
 
 ```go
-// examples/components.go#ProgressExample
+// examples/components/progress.go#ProgressExample
 // ProgressExample is a progress bar; change Value and the bar follows.
 func ProgressExample() widget.Widget {
 	bar := widget.NewProgress(35)
@@ -448,7 +448,7 @@ A semicircular meter (speedometer) with the value in the middle, the limits at t
 | Properties | `Value`, `Min`, `Max`, `Unit`, `Label`, `Thickness` |
 
 ```go
-// examples/components.go#GaugeExample
+// examples/components/gauge.go#GaugeExample
 // GaugeExample is a semicircular meter.
 func GaugeExample() widget.Widget {
 	speed := widget.NewGauge(0, 240, 135, " km/h")
@@ -476,7 +476,7 @@ never smaller than 64 px, even with a small knob.
 A plain slider:
 
 ```go
-// examples/components.go#SliderExample
+// examples/components/slider.go#SliderExample
 // SliderExample is a bar with a knob you can drag; Step makes it snap.
 func SliderExample() widget.Widget {
 	volume := widget.NewSlider(0, 100, 5, 40)
@@ -489,7 +489,7 @@ func SliderExample() widget.Widget {
 A three-position slide button with a custom size:
 
 ```go
-// examples/components.go#SlideButtonExample
+// examples/components/slider.go#SlideButtonExample
 // SlideButtonExample is a slider with three resting places: left, center, right.
 func SlideButtonExample() widget.Widget {
 	position := widget.NewSlider(0, 100, 50, 50) // step 50: 0, 50 or 100
@@ -518,7 +518,7 @@ the chip (or calls `OnClose`).
 | Group | `Exclusive`, `SelectedLabels()` |
 
 ```go
-// examples/components.go#ChipsExample
+// examples/components/chips.go#ChipsExample
 // ChipsExample has selectable chips and removable chips.
 func ChipsExample() widget.Widget {
 	topics := widget.NewChipGroup(false) // true = only one selected at a time
@@ -553,7 +553,7 @@ day of a neighboring month also goes there. Today gets a ring. Names come from `
 | Events | `OnChange` |
 
 ```go
-// examples/components.go#CalendarExample
+// examples/components/calendar.go#CalendarExample
 // CalendarExample picks a day.
 func CalendarExample() widget.Widget {
 	calendar := widget.NewCalendar(time.Now())
@@ -575,7 +575,7 @@ add (text, fields, buttons, tables…). It is a column `Panel`, so all the layou
 | Create | `widget.NewCard(title, subtitle, children...)` |
 
 ```go
-// examples/components.go#CardExample
+// examples/components/card.go#CardExample
 // CardExample groups a title, a subtitle, text and actions.
 func CardExample() widget.Widget {
 	ok := widget.NewButton("Learn more")
@@ -611,12 +611,12 @@ page.Style.BackgroundImage = wallpaper // from gfx.LoadImage or gfx.Resize
 ```
 
 ```go
-// examples/components.go#ImageExample
+// examples/components/image.go#ImageExample
 // ImageExample shows a bitmap at its natural size, in a wide box with each fit
 // and as a tappable tile (an icon with OnClick). Load your own files with
 // gfx.LoadImage(path, maxW, maxH), which shrinks big pictures.
 func ImageExample() widget.Widget {
-	icon := ui.RenderIcon(128, false) // any image.Image works
+	icon := showcase.RenderIcon(128, false) // any image.Image works
 
 	natural := widget.NewImage(icon)
 
@@ -658,7 +658,7 @@ bottom of the screen (and then the page behind it works again; the first button 
 The picture shows the modal drawn inline; `Open` draws the same thing over the page.
 
 ```go
-// examples/components.go#ModalExample
+// examples/components/modal.go#ModalExample
 // ModalExample builds a dialog with OK and Cancel and the close, maximize and
 // minimize buttons. It is shown over the page with m.Open(doc); it takes every
 // touch until it is closed (the Back key closes it too, as Cancel).

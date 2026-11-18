@@ -25,15 +25,15 @@ de layout.
 O `Badge` só desenha; o `TapCounter` também reage ao toque.
 
 ```go
-// examples/customwidget.go
-package examples
+// examples/custom/customwidget.go
+package custom
 
 import (
 	"strconv"
 
-	"go-pocketbook-base/internal/geom"
-	"go-pocketbook-base/internal/gfx"
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/internal/kernel/geom"
+	"go-pocketbook-base/internal/toolkit/gfx"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // Badge is a custom element: a dark pill showing a number. It only draws.
@@ -108,10 +108,10 @@ func (t *TapCounter) HandlePointer(e *widget.PointerEvent) {
 Use-os como qualquer outro elemento:
 
 ```go
-counter := examples.NewTapCounter()
+counter := custom.NewTapCounter()
 counter.OnChange = func(e *widget.Event) { fmt.Println("toques:", counter.Count) }
 
-row := widget.NewRow(16, examples.NewBadge(3), counter)
+row := widget.NewRow(16, custom.NewBadge(3), counter)
 ```
 
 ## Regras práticas

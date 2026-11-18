@@ -3,11 +3,12 @@ package main
 import (
 	"time"
 
-	samples "go-pocketbook-base/examples"
-	"go-pocketbook-base/internal/geom"
-	"go-pocketbook-base/internal/gfx"
-	"go-pocketbook-base/internal/ui"
-	"go-pocketbook-base/internal/widget"
+	"go-pocketbook-base/examples/custom"
+	"go-pocketbook-base/examples/recipes"
+	"go-pocketbook-base/internal/kernel/geom"
+	"go-pocketbook-base/internal/showcase"
+	"go-pocketbook-base/internal/toolkit/gfx"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // example is one picture of the README.
@@ -77,12 +78,12 @@ func examples() []example {
 		{"image", 760, 0, imageExample, nil},
 		{"modal", 760, 0, modalExample, nil},
 		{"custom", 640, 0, customRecipe, nil},
-		{"recipe-hello", 640, 0, func() widget.Widget { return samples.Hello(noAction) }, nil},
-		{"recipe-login", 640, 0, func() widget.Widget { return samples.NewLoginForm(noLogin).Root }, nil},
-		{"recipe-settings", 640, 0, func() widget.Widget { return samples.NewSettings().Root }, nil},
+		{"recipe-hello", 640, 0, func() widget.Widget { return recipes.Hello(noAction) }, nil},
+		{"recipe-login", 640, 0, func() widget.Widget { return recipes.NewLoginForm(noLogin).Root }, nil},
+		{"recipe-settings", 640, 0, func() widget.Widget { return recipes.NewSettings().Root }, nil},
 		{"recipe-catalog", 760, 0, catalogRecipe, nil},
 		{"recipe-datepicker", 640, 0, datepickerRecipe, nil},
-		{"recipe-order", 640, 0, func() widget.Widget { return samples.NewOrderForm().Root }, nil},
+		{"recipe-order", 640, 0, func() widget.Widget { return recipes.NewOrderForm().Root }, nil},
 	}
 }
 
@@ -300,7 +301,7 @@ func calendarExample() widget.Widget {
 // imageExample shows the same bitmap at its natural size and with each fit. A
 // column in a row takes the whole width unless it has one, so each gets its own.
 func imageExample() widget.Widget {
-	icon := ui.RenderIcon(128, false)
+	icon := showcase.RenderIcon(128, false)
 	column := func(caption string, width float64, img *widget.Image) widget.Widget {
 		c := captioned(caption, img)
 		c.Elem().Style.Width = widget.Px(width)
@@ -340,7 +341,7 @@ func cardExample() widget.Widget {
 }
 
 func catalogRecipe() widget.Widget {
-	return samples.NewCatalog([][]string{
+	return recipes.NewCatalog([][]string{
 		{"Dom Casmurro", "Machado de Assis", "256"}, {"Vidas Secas", "Graciliano Ramos", "176"},
 		{"Iracema", "José de Alencar", "160"}, {"Macunaíma", "Mário de Andrade", "224"},
 		{"O Cortiço", "Aluísio Azevedo", "320"},
@@ -348,15 +349,15 @@ func catalogRecipe() widget.Widget {
 }
 
 func datepickerRecipe() widget.Widget {
-	p := samples.NewDatePicker(time.Date(2026, 11, 18, 0, 0, 0, 0, time.UTC), noDate)
+	p := recipes.NewDatePicker(time.Date(2026, 11, 18, 0, 0, 0, 0, time.UTC), noDate)
 	p.Calendar.Today = time.Date(2026, 11, 13, 0, 0, 0, 0, time.UTC)
 	return p.Root
 }
 
 func customRecipe() widget.Widget {
-	counter := samples.NewTapCounter()
+	counter := custom.NewTapCounter()
 	counter.Count = 2
-	badge := samples.NewBadge(3)
+	badge := custom.NewBadge(3)
 	return widget.NewRow(20, badge, counter)
 }
 

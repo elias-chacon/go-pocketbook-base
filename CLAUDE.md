@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Go base for **PocketBook e-reader apps** (Linux ARM): a from-scratch vector widget library (`internal/widget`, drawn with `fogleman/gg`), a thin cgo binding to the reader's `libinkview` (`internal/inkview`), and an app that installs its own launcher icon on first run. Developed and tested on a **PB741 (InkPad Color 2, 1404x1872, firmware 6.x)**. The README and `docs/` are in Brazilian Portuguese / English; the code and comments are English.
+A Go base for **PocketBook e-reader apps** (Linux ARM): a from-scratch vector widget library (`internal/toolkit/widget`, drawn with `fogleman/gg`), a thin cgo binding to the reader's `libinkview` (`internal/device/inkview`), and an app that installs its own launcher icon on first run. Developed and tested on a **PB741 (InkPad Color 2, 1404x1872, firmware 6.x)**. The README and `docs/` are in Brazilian Portuguese / English; the code and comments are English.
 
 ## Commands
 
 ```sh
 go test ./...                                   # everything (run this before declaring anything done)
-go test ./internal/widget -run TestTable -v     # a single test / package
+go test ./internal/toolkit/widget -run TestTable -v     # a single test / package
 go vet ./...                                    # also catches `unkeyed fields` on geom.Rect: use geom.R(x, y, w, h)
 go run ./cmd/preview                            # render the demo pages to preview-<n>.png (-page N, -w, -h)
 go run ./tools/docgen                           # redraw docs/components/*.png from the real widgets
@@ -22,17 +22,22 @@ make dist [APP=name]                            # same on Linux/macOS/WSL
 .\scripts\install.ps1 -Drive F:                 # copy the built .app to a USB-mounted reader
 ```
 
-Only `internal/inkview` needs the device; on the desktop it compiles to stubs (build tags `linux && arm && cgo`), so all UI logic is testable on the PC. `apps/*` only build for the reader, through Docker.
+Only `internal/device/inkview` needs the device; on the desktop it compiles to stubs (build tags `linux && arm && cgo`), so all UI logic is testable on the PC. `apps/*` only build for the reader, through Docker.
 
-## Architecture
+## Architecture (DDD, enforced)
 
-- **`internal/widget`** is the library. `Document` owns one element tree: `Layout()` -> `Render()` (grayscale `*image.Gray`) -> `HandlePointer()`. Every element embeds `Base` (ID, ClassName, Style, Hidden, Disabled, OnClick, Bounds...) and implements `Widget` (`Elem`, `Measure`, `Paint`); interactive ones also implement `PointerHandler`. One layout engine (`layout.go`) serves everything: a block is a vertical flex; measuring and arranging are pure functions over the tree. Custom elements outside the package must call `Base.Init(self)` and use `widget.Fire`.
+The repo is organized by **bounded contexts** under `internal/`, with one dependency rule that `internal/architecture` checks (`go test ./internal/architecture`): dependencies point inwards (infrastructure → application → domain), every context may use the kernel, a context never reaches into another's insides, and nothing in `internal/` imports `apps/`, `examples/`, `tools/` or `cmd/`. A new top-level folder in `internal/` must be declared in `architecture.Contexts` (and its rules in `architecture.Rules`). The map and the glossary are the package doc of `internal/architecture`; docs chapter 14 explains it.
+
+- **`internal/kernel`**: shared kernel, depends on nothing. `geom` is Rect/Point/Insets, `version` is MAJOR.MINOR.BUILD.
+- **`internal/toolkit`**: the UI library. **`widget`**: `Document` owns one element tree: `Layout()` -> `Render()`/`Update()` (grayscale `*image.Gray`) -> `HandlePointer()`. Every element embeds `Base` (ID, ClassName, Style, Hidden, Disabled, OnClick, Bounds...) and implements `Widget` (`Elem`, `Measure`, `Paint`); interactive ones also implement `PointerHandler`. One layout engine (`layout.go`) serves everything: a block is a vertical flex; measuring and arranging are pure functions over the tree. Custom elements outside the package must call `Base.Init(self)` and use `widget.Fire`. **`gfx`** draws in design units (`Canvas`, fonts, text, icons, images).
 - **Coordinates are "design pixels"** (reference width 1404). `Document.Scale` converts to the real screen and touch is converted back, so drawing and touch share one space. Never offset or scale by hand.
-- **Touch** (`dispatch.go`): down picks the deepest interactive, non-disabled element; move/up go to it (slider drag); a click is synthesized on release inside it, then `OnClick` bubbles up the tree. Popups (`OpenPopup`) are drawn above and a touch outside only closes them. Text entry goes through the injected `Keyboard` interface (`FakeKeyboard` in tests/preview, InkView's keyboard on the device).
-- **`internal/gfx`** draws in design units (`Canvas`, fonts, text, icons); **`internal/geom`** is Rect/Point/Insets.
-- **`internal/demo`** is the showcase shared by `apps/hello`, `cmd/preview` and tests (its texts are translated: pt-BR first, English fallback, via `internal/i18n`). **`internal/appkit`** is the contract every app follows (lifecycle glue: InkView events -> `Document`, repaints coalesced and partial; first-run registration; the `app.json` manifest and the `applications/.pbgo` records the Launcher reads). Apps live in `apps/<id>` (`apps/hello` is the blueprint; `apps/contract_test.go` checks them all) and build to `dist/applications/<id>.app`.
-- **`internal/install`** self-registers the app on first run: writes 128x128 8-bit BMP icons and text-patches the desktop `view.json` (backup, JSON validation, atomic replace, idempotent, repairs old relative paths). Tested against a real firmware file in `testdata/`.
-- **`examples/`** is the source of every code sample in `docs/`; `tools/docsync` copies it into fenced blocks whose first line is `// examples/<file>` or `// examples/<file>#<Func>`, and `TestRepositoryDocsAreInSync` fails if a page is stale.
+- **Touch** (`dispatch.go`): down picks the deepest interactive, non-disabled element; move/up go to it (slider drag); a click is synthesized on release inside it, then `OnClick` bubbles up the tree. Modals and popups are drawn above; a touch outside a popup only closes it, a modal takes every touch. Text entry goes through the injected `Keyboard` interface (`FakeKeyboard` in tests/preview, InkView's keyboard on the device).
+- **`internal/device`**: `inkview` (the only cgo; stubs on the desktop) and `desktop` (writes 128x128 8-bit BMP icons and text-patches the desktop `view.json`: backup, JSON validation, atomic replace, idempotent, repairs old relative paths; tested against a real firmware file in `testdata/`).
+- **`internal/localization/i18n`**: pt-BR is primary, English the fallback (key -> language -> en -> pt-BR -> the key). Texts live in embedded `locales/*.json`.
+- **`internal/platform`**: what an app is. `domain` (Manifest, InstalledApp, Settings + ports), `application` (Runtime = device lifecycle with partial repaint, FirstRun), `infrastructure` (`jsonfiles` under `applications/.pbgo`, `reader` = InkView adapter + home screen registrar), and the package `platform` (composition root, the only import an app needs).
+- **`internal/showcase`** is the hello app's content, shared by `apps/hello`, `cmd/preview` and tests (translated, with a language switch).
+- **`apps/<id>`** are composition roots: `main.go` embeds `app.json` and calls `platform.Run`; `apps/hello` is the blueprint and `apps/contract_test.go` checks every app. They build to `dist/applications/<id>.app`.
+- **`examples/`** holds the code samples of `docs/`, by context (`components`, `recipes`, `custom`, `translation`, `harness`); `tools/docsync` copies them into fenced blocks whose first line is `// examples/<package>/<file>.go` (the whole file) or `// examples/<package>/<file>.go#<Func>`, and `TestRepositoryDocsAreInSync` fails if a page is stale.
 
 ## Non-obvious constraints
 
@@ -42,7 +47,7 @@ Only `internal/inkview` needs the device; on the desktop it compiles to stubs (b
 - **Desktop entry** (`system/profiles/default/config/desktop/view.json`; `system/config` is a link): the `path` of `U_<app>` must be **absolute**, icons may be relative, and the key must also be in a group's `apps` array. The home screen only reloads it when the USB cable is unplugged.
 - **Fonts** (Go Regular/Bold) lack glyphs like "✓": draw an icon with `Canvas.Icon` instead.
 - **Layout gaps to know**: no scrolling, `Pct` only for width, one page must fit the screen (the demo test fails on overflow).
-- **Touch-accuracy rule**: a touch at the center of every interactive element must reach that element; `internal/demo/demo_test.go` and `examples/examples_test.go` enforce it, plus a 56 px minimum target.
+- **Touch-accuracy rule**: a touch at the center of every interactive element must reach that element; `internal/showcase/demo_test.go` and `examples/components/components_test.go` enforce it, plus a 56 px minimum target.
 
 ## Environment quirks (Windows + WSL)
 
