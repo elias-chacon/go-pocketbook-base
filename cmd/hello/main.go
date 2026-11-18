@@ -82,15 +82,21 @@ func (a *app) Draw() {
 	}
 }
 
-// Key: Back closes an open popup, otherwise leaves the app.
+// Key handles the hardware keys. The PB741 has no Back key, so left and Menu
+// close an open popup, then an open modal; with nothing open, left and right
+// change the page. Home is handled by the system (it closes the app).
 func (a *app) Key(code int) bool {
-	if code != inkview.KeyBack {
+	doc := a.demo.Doc
+	switch {
+	case inkview.IsBackKey(code) && doc.HandleBack():
+	case code == inkview.KeyPrev:
+		a.demo.MovePage(-1)
+	case code == inkview.KeyNext && !doc.HasModal():
+		a.demo.MovePage(1)
+	case code == inkview.KeyBack:
+		inkview.Exit() // devices that do have a Back key
+	default:
 		return false
-	}
-	if a.demo.Doc.HasPopup() {
-		a.demo.Doc.ClosePopups()
-	} else {
-		inkview.Exit()
 	}
 	return true
 }

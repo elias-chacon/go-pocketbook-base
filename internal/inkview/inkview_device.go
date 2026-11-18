@@ -135,15 +135,6 @@ func goMainHandler(t, p1, p2 C.int) C.int {
 	return 0
 }
 
-// Key codes (subset of inkview.h).
-const (
-	KeyBack = 0x1b
-	KeyOK   = 0x0a
-	KeyMenu = 0x17
-	KeyPrev = 0x18
-	KeyNext = 0x19
-)
-
 func boolToInt(b bool) C.int {
 	if b {
 		return 1

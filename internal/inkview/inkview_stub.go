@@ -7,15 +7,6 @@ import "errors"
 // ErrNotOnDevice is returned by Run when built for a non-PocketBook target.
 var ErrNotOnDevice = errors.New("inkview: only available when built for PocketBook (linux/arm + cgo); use cmd/preview on desktop")
 
-// Key codes (subset of inkview.h).
-const (
-	KeyBack = 0x1b
-	KeyOK   = 0x0a
-	KeyMenu = 0x17
-	KeyPrev = 0x18
-	KeyNext = 0x19
-)
-
 // Desktop stubs: there is no InkView here, so these do nothing (they exist so
 // the packages that use them compile and can be tested on any machine).
 

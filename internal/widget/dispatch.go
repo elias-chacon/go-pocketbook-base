@@ -44,6 +44,14 @@ func (d *Document) TargetAt(p geom.Point) Widget {
 			return interactiveFrom(h)
 		}
 	}
+	if d.modal != nil {
+		if h := hit(d.modal, p); h != nil {
+			return interactiveFrom(h)
+		}
+		if d.modal.blocks() {
+			return nil // a modal takes the touches outside it
+		}
+	}
 	if d.Root == nil {
 		return nil
 	}

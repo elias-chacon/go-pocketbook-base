@@ -106,10 +106,10 @@ button.OnClick = func(e *widget.Event) {
 ## Popups e o teclado
 
 - Combo-boxes, dropdowns e menu bars abrem um **popup** acima de tudo. Um toque fora só o fecha. `doc.HasPopup()` diz se há
-  um aberto e `doc.ClosePopups()` o fecha (a tecla Voltar faz isso).
+  um aberto e `doc.ClosePopups()` o fecha (o `doc.HandleBack()` faz isso e, depois, fecha uma modal).
 - Os campos de entrada chamam `doc.RequestText(...)`, que usa `doc.Keyboard`. `doc.Focused()` devolve o campo em edição,
   ou nil.
-- No leitor, a tecla **Voltar** chega pelo `inkview` (`KeyBack`); a cola do app decide o que ela faz.
+- No leitor, as teclas chegam pelo `inkview` (`KeyBack`, `KeyPrev`, `KeyNext`, `KeyMenu`); a cola do app decide o que fazem. O Home é tratado pelo sistema, que fecha o app. O PB741 **não tem tecla Voltar**, então o `inkview.IsBackKey` também aceita as teclas esquerda (página anterior) e Menu.
 
 ## Avançado: toque bruto
 

@@ -177,3 +177,20 @@ func TestTabsOnChangeAndBounds(t *testing.T) {
 		t.Error("the menu bar must mark the current tab")
 	}
 }
+
+func TestTabsMoveWrapsAround(t *testing.T) {
+	tabs := twoTabs(TabRemember)
+	tabs.Move(1)
+	if tabs.Current() != 1 {
+		t.Fatalf("next from 0 = %d", tabs.Current())
+	}
+	tabs.Move(1) // past the last: back to the first
+	if tabs.Current() != 0 {
+		t.Errorf("next from the last = %d, want 0", tabs.Current())
+	}
+	tabs.Move(-1) // before the first: the last
+	if tabs.Current() != 1 {
+		t.Errorf("previous from the first = %d, want 1", tabs.Current())
+	}
+	NewTabs(nil).Move(1) // no tabs: nothing happens
+}

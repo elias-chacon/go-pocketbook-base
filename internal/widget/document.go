@@ -22,6 +22,7 @@ type Document struct {
 	// hooks it to InkView's Repaint).
 	OnInvalidate func()
 
+	modal      *Modal // the open modal, below the popups
 	popups     []Widget
 	popupOwner Widget // element that opened the popup (its chevron shows "open")
 	focus      Widget
@@ -62,6 +63,9 @@ func (d *Document) Layout() {
 	if d.Root != nil {
 		layoutWidget(d.Root, geom.Rect{W: d.W, H: d.H})
 	}
+	if d.modal != nil {
+		d.layoutModal()
+	}
 }
 
 // Render lays out and paints the document into a grayscale image.
@@ -101,8 +105,11 @@ func paintBox(c *gfx.Canvas, b *Base) {
 
 // Walk visits every element depth-first; fn returns false to stop.
 func (d *Document) Walk(fn func(Widget) bool) {
-	if d.Root != nil {
-		walk(d.Root, fn)
+	if d.Root != nil && !walk(d.Root, fn) {
+		return
+	}
+	if d.modal != nil { // so GetElementByID finds the modal's elements too
+		walk(d.modal, fn)
 	}
 }
 
@@ -163,6 +170,49 @@ func (d *Document) RequestText(owner Widget, req KeyboardRequest) {
 	d.Keyboard.Request(req)
 }
 
+// ---- modal ----
+
+// OpenModal shows m above the page (and below any popup). It takes every touch
+// until closed, except when minimized. Opening another one replaces it.
+func (d *Document) OpenModal(m *Modal) {
+	d.ClosePopups()
+	if d.modal != nil && d.modal != m {
+		attach(d.modal, nil)
+	}
+	d.modal = m
+	attach(m, d)
+	m.Refresh()
+	d.Invalidate()
+}
+
+// CloseModal closes m if it is the open modal (see Modal.Close).
+func (d *Document) CloseModal(m *Modal) {
+	if d.modal != m {
+		return
+	}
+	d.modal, d.focus = nil, nil
+	attach(m, nil)
+	d.ClosePopups()
+	d.Invalidate()
+}
+
+// HasModal reports whether a modal is open.
+func (d *Document) HasModal() bool { return d.modal != nil }
+
+// HandleBack is what the Back key does: close the open popup, else cancel the
+// modal. It reports whether it did something (otherwise the app should leave).
+func (d *Document) HandleBack() bool {
+	switch {
+	case d.HasPopup():
+		d.ClosePopups()
+	case d.modal != nil:
+		d.modal.Cancel()
+	default:
+		return false
+	}
+	return true
+}
+
 // ---- popups (menus, drop-downs) ----
 
 // OpenPopup shows w (opened by owner) above the rest of the UI, below (or above, when there is
@@ -196,3 +246,6 @@ func (d *Document) HasPopup() bool { return len(d.popups) > 0 }
 func (d *Document) PopupOpenFor(owner Widget) bool {
 	return d != nil && d.popupOwner == owner && d.HasPopup()
 }
+
+// Modal returns the open modal, or nil.
+func (d *Document) Modal() *Modal { return d.modal }

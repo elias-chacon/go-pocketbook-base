@@ -280,3 +280,29 @@ func TestSavePNGWritesTheScreen(t *testing.T) {
 		t.Error("a path that cannot be created must be an error")
 	}
 }
+
+func TestModalExampleOpensAboveThePageAndTakesTheTouch(t *testing.T) {
+	page := widget.NewButton("Page button")
+	doc, _ := newDoc(page)
+	m := ModalExample().(*widget.Modal)
+	m.Open(doc)
+	doc.Layout()
+	if !doc.HasModal() {
+		t.Fatal("the modal must be open")
+	}
+	for _, w := range interactive(doc) {
+		if w == widget.Widget(page) {
+			continue // behind the modal: checked below
+		}
+		if got := doc.TargetAt(w.Elem().Bounds.Center()); got != w {
+			t.Errorf("a touch at the center of %T reaches %T", w, got)
+		}
+	}
+	if doc.TargetAt(page.Bounds.Center()) != nil {
+		t.Error("the page behind the modal must not get the touch")
+	}
+	m.Cancel()
+	if doc.HasModal() || doc.TargetAt(page.Bounds.Center()) != page {
+		t.Error("after Cancel the page works again")
+	}
+}

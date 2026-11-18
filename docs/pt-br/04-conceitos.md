@@ -71,8 +71,11 @@ Toda vez que a tela precisa mudar, o documento executa três passos (`doc.Render
 
 1. **Layout** — cada elemento recebe o seu retângulo (`Bounds`) do motor flex/grid.
 2. **Desenho** — a árvore é desenhada em profundidade: primeiro a caixa de cada elemento (fundo, borda) a partir do
-   `Style`, depois o conteúdo (`Paint`), depois os filhos. Os popups abertos são desenhados por último, por cima.
+   `Style`, depois o conteúdo (`Paint`), depois os filhos. A modal aberta vem depois, e por último os popups abertos, por cima.
 3. **Imagem em tons de cinza** — o resultado é uma imagem de 8 bits; no leitor ela é copiada para a tela e atualizada.
+
+Uma **modal** (`widget.Modal`) fica entre a página e os popups: enquanto está aberta (e não minimizada) ela recebe todos os
+toques, e tocar fora dela não faz nada. Popups abertos de dentro da modal são desenhados acima dela.
 
 ```go
 img := doc.Render() // *image.Gray, do tamanho do aparelho; salve como PNG ou envie ao e-ink
@@ -147,7 +150,8 @@ Um campo em edição fica *focado* (borda mais grossa) até o teclado fechar.
 | início | desliga o painel do sistema, lê o tamanho da tela, monta o documento |
 | exibir | `doc.Update()` e envia à tela só as áreas que mudaram (`examples/newapp`: `doc.Render()` e a imagem inteira) |
 | toque down / move / up | `doc.HandlePointer(...)` |
-| tecla Voltar | fecha um popup, ou sai do app |
+| tecla (Voltar, ou esquerda / Menu no PB741) | `doc.HandleBack()`: fecha um popup, depois uma modal |
+| tecla (página anterior / próxima) | o demo troca de aba (`MovePage`) |
 
 Dois detalhes que vale conhecer:
 

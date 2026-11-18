@@ -150,7 +150,7 @@ func SavePNG(doc *widget.Document, path string) error {
    ```
 
    Open `cmd/myapp/main.go` and replace `examples.NewPagedApp(...)` with your own screen. The template
-   already forwards touch, the Back key and the system keyboard to the document.
+   already forwards touch, the hardware keys and the system keyboard to the document.
 
 2. Build (needs Docker, see [Build and versioning](03-build-and-versioning.md)):
 

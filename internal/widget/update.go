@@ -100,6 +100,9 @@ func (d *Document) snapshot() map[Widget]snap {
 	if d.Root != nil {
 		walk(d.Root, add)
 	}
+	if d.modal != nil {
+		walk(d.modal, add)
+	}
 	for _, p := range d.popups {
 		walk(p, add)
 	}
@@ -211,6 +214,9 @@ func (d *Document) paintFull() *image.Gray {
 	if d.Root != nil {
 		paintTree(c, d.Root)
 	}
+	if d.modal != nil {
+		paintTree(c, d.modal)
+	}
 	for _, p := range d.popups {
 		paintTree(c, p)
 	}
@@ -232,6 +238,9 @@ func (d *Document) paintRegion(r image.Rectangle) {
 	area := geom.R(float64(w.Min.X)/d.Scale, float64(w.Min.Y)/d.Scale, float64(w.Dx())/d.Scale, float64(w.Dy())/d.Scale)
 	if d.Root != nil {
 		paintTreeIn(c, d.Root, area)
+	}
+	if d.modal != nil {
+		paintTreeIn(c, d.modal, area)
 	}
 	for _, p := range d.popups {
 		paintTreeIn(c, p, area)

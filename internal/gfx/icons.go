@@ -19,6 +19,8 @@ const (
 	IconMenu
 	IconSearch
 	IconCalendar
+	IconMaximize // a square: make the window fill the screen
+	IconRestore  // two overlapping squares: back to the normal size
 )
 
 // pt is a point in the unit square of an icon (0..1).
@@ -37,6 +39,8 @@ var iconStrokes = map[IconKind][][]pt{
 	IconMenu:         {{{0.2, 0.28}, {0.8, 0.28}}, {{0.2, 0.5}, {0.8, 0.5}}, {{0.2, 0.72}, {0.8, 0.72}}},
 	IconSearch:       {{{0.62, 0.62}, {0.86, 0.86}}},
 	IconCalendar:     {{{0.15, 0.4}, {0.85, 0.4}}, {{0.32, 0.12}, {0.32, 0.3}}, {{0.68, 0.12}, {0.68, 0.3}}},
+	IconMaximize:     {{{0.2, 0.2}, {0.8, 0.2}, {0.8, 0.8}, {0.2, 0.8}, {0.2, 0.2}}},
+	IconRestore:      {{{0.32, 0.2}, {0.8, 0.2}, {0.8, 0.68}}, {{0.2, 0.32}, {0.68, 0.32}, {0.68, 0.8}, {0.2, 0.8}, {0.2, 0.32}}},
 }
 
 // Icon draws kind centered in r, as a square of the shorter side, with the

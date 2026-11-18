@@ -115,7 +115,7 @@ func TestTextUnderClipIsCutAndClipIsReusable(t *testing.T) {
 
 func TestEveryIconDrawsSomething(t *testing.T) {
 	kinds := []IconKind{IconCheck, IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight,
-		IconPlus, IconMinus, IconClose, IconMenu, IconSearch, IconCalendar}
+		IconPlus, IconMinus, IconClose, IconMenu, IconSearch, IconCalendar, IconMaximize, IconRestore}
 	for _, k := range kinds {
 		c := NewCanvas(60, 60, 1)
 		c.Clear(Gray(255))

@@ -84,6 +84,9 @@ func New(deviceW, deviceH int, cfg Config) *App {
 // ShowPage switches to page i (see widget.Tabs.Show).
 func (a *App) ShowPage(i int) { a.tabs.Show(i) }
 
+// MovePage shows the page delta places away (the reader's previous/next keys).
+func (a *App) MovePage(delta int) { a.tabs.Move(delta) }
+
 // Pages returns the page titles.
 func (a *App) Pages() []string {
 	out := make([]string, a.tabs.Count())
@@ -95,12 +98,41 @@ func (a *App) Pages() []string {
 
 func (a *App) moreMenu() *widget.Menu {
 	return &widget.Menu{Label: "Mais", Items: []widget.MenuItem{
-		{Label: "Sobre", Icon: gfx.IconSearch, OnSelect: func() {
-			a.say(fmt.Sprintf("go-pocketbook-base v%s — componentes vetoriais em Go", a.cfg.Version))
-		}},
+		{Label: "Sobre", Icon: gfx.IconSearch, OnSelect: a.about},
+		{Label: "Modal (opções)", Icon: gfx.IconMaximize, OnSelect: a.optionsModal},
 		{Separator: true},
 		{Label: "Sair", Icon: gfx.IconClose, OnSelect: a.exit},
 	}}
+}
+
+// about shows the About modal: centered, with an OK button.
+func (a *App) about() {
+	name := widget.NewLabel("go-pocketbook-base")
+	name.Style.Bold, name.Style.FontSize = true, widget.FontTitle
+	desc := widget.NewLabel("Componentes visuais vetoriais em Go para aplicativos PocketBook (e-readers Linux ARM).")
+	version := widget.NewLabel("Versão " + a.cfg.Version)
+	version.Style.Color = widget.Muted
+	m := widget.NewModal("Sobre", name, desc, version)
+	m.ID = "modal-about"
+	m.Open(a.Doc)
+}
+
+// optionsModal shows a modal with every option: OK and Cancel, and the close,
+// maximize and minimize buttons (try them).
+func (a *App) optionsModal() {
+	nick := widget.NewInput("Apelido")
+	nick.ID = "modal-input"
+	notify := widget.NewSwitch("Receber avisos", true)
+	m := widget.NewModal("Modal com opções",
+		widget.NewLabel("OK e Cancelar no rodapé; fechar, maximizar e minimizar na barra de título."),
+		nick, notify)
+	m.ID = "modal-options"
+	m.OKText, m.CancelText = "Salvar", "Cancelar"
+	m.SetButtons(widget.ModalOKCancel)
+	m.SetControls(widget.ModalClose | widget.ModalMaximize | widget.ModalMinimize)
+	m.OnOK = func(e *widget.Event) { a.say("Modal: salvo (%q, avisos: %v)", nick.Value, notify.Checked) }
+	m.OnCancel = func(e *widget.Event) { a.say("Modal: cancelado") }
+	m.Open(a.Doc)
 }
 
 func (a *App) exit() {

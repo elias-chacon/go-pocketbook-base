@@ -106,6 +106,14 @@ func (t *Tabs) Save() {
 	}
 }
 
+// Move shows the tab delta places away (-1 previous, +1 next), wrapping around
+// (for the previous/next page keys of the reader).
+func (t *Tabs) Move(delta int) {
+	if n := len(t.tabs); n > 0 {
+		t.Show(((t.current+delta)%n + n) % n)
+	}
+}
+
 // Show switches to tab i: the current page is saved (TabRemember), dropped
 // (or kept, TabKeepAlive) and page i is built and restored.
 func (t *Tabs) Show(i int) {

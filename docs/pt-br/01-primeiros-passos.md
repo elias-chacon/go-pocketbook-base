@@ -149,7 +149,7 @@ func SavePNG(doc *widget.Document, path string) error {
    ```
 
    Abra `cmd/meuapp/main.go` e troque `examples.NewPagedApp(...)` pela sua tela. O modelo já encaminha o
-   toque, a tecla Voltar e o teclado do sistema para o documento.
+   toque, as teclas físicas e o teclado do sistema para o documento.
 
 2. Compile (precisa de Docker, veja [Build e versionamento](03-build-e-versionamento.md)):
 

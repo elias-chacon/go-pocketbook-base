@@ -71,7 +71,7 @@ Every time the screen must change, the document runs three steps (`doc.Render()`
 
 1. **Layout** — each element receives its rectangle (`Bounds`) from the flex/grid engine.
 2. **Paint** — the tree is drawn depth-first: first the box of each element (background, border) from its
-   `Style`, then its own content (`Paint`), then its children. Open popups are drawn last, on top.
+   `Style`, then its own content (`Paint`), then its children. The open modal comes next, then open popups, on top.
 3. **Gray image** — the result is an 8-bit grayscale image; on the reader it is copied to the screen and
    refreshed.
 
@@ -124,6 +124,9 @@ Touch goes through `doc.HandlePointer(phase, x, y)` with three phases: **down**,
 Popups (combo-box lists, menus) are drawn above everything. While one is open, a touch **outside** it
 only closes it, and never reaches the element underneath.
 
+A **modal** (`widget.Modal`) sits between the page and the popups: while it is open (and not minimized) it takes every touch,
+and a touch outside it does nothing. Popups opened from inside the modal are drawn above it.
+
 ## Typing: the system keyboard
 
 Input fields do not draw a keyboard. When tapped they ask the `Keyboard` of the document to open the
@@ -148,7 +151,8 @@ keyboard closes.
 | start | turn the system panel off, read the screen size, build the document |
 | show | `doc.Update()` and send only the changed areas to the screen (`examples/newapp`: `doc.Render()` and the whole image) |
 | touch down / move / up | `doc.HandlePointer(...)` |
-| Back key | close a popup, or leave the app |
+| key (Back, or left / Menu on the PB741) | `doc.HandleBack()`: close a popup, then a modal |
+| key (previous / next page) | the demo changes tab (`MovePage`) |
 
 Two details worth knowing:
 

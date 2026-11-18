@@ -585,4 +585,44 @@ func CardExample() widget.Widget {
 }
 ```
 
+## Modal
+
+![modal](../components/modal.png)
+
+Um diálogo desenhado **acima da página**, centralizado, com barra de título, um corpo para qualquer conteúdo e um rodapé.
+Enquanto está aberto ele recebe todos os toques (tocar fora não faz nada); a lista de um combo-box e o teclado do sistema
+continuam funcionando dentro dele.
+
+| | |
+|---|---|
+| Criar | `widget.NewModal(título, conteúdo...)` — mostre com `m.Open(doc)` |
+| Rodapé | `m.SetButtons(widget.ModalOK)` (padrão) · `ModalOKCancel` · `ModalNoButtons`; textos em `OKText` / `CancelText` |
+| Botões da barra de título | `m.SetControls(widget.ModalClose \| widget.ModalMaximize \| widget.ModalMinimize)` (nenhum por padrão) |
+| Tamanho | centralizada, `Style.Width` (padrão 900 px) e tão alta quanto o conteúdo; `SetState(widget.ModalMaximized)` é **tela cheia** |
+| Callbacks | `OnOK` (OK) e `OnCancel` (Cancelar, o botão de fechar e a tecla **Voltar**, que no PB741 é a esquerda ou o Menu); a modal fecha depois de qualquer um |
+| Métodos | `Open(doc)`, `Close()` (sem callback), `Confirm()`, `Cancel()`, `SetState(...)`, `State()`, `Refresh()`, `Body` (o painel do conteúdo) |
+
+Os botões da barra de título: **maximizar** alterna a tela cheia, **minimizar** reduz a modal à barra de título, encostada
+no rodapé da tela (e aí a página atrás volta a funcionar; o primeiro botão restaura), **fechar** cancela.
+A imagem mostra a modal desenhada no fluxo; `Open` desenha a mesma coisa sobre a página.
+
+```go
+// examples/components.go#ModalExample
+// ModalExample builds a dialog with OK and Cancel and the close, maximize and
+// minimize buttons. It is shown over the page with m.Open(doc); it takes every
+// touch until it is closed (the Back key closes it too, as Cancel).
+func ModalExample() widget.Widget {
+	nick := widget.NewInput("Nickname")
+	m := widget.NewModal("Edit profile", widget.NewLabel("Choose how you appear to others."), nick)
+	m.SetButtons(widget.ModalOKCancel)
+	m.SetControls(widget.ModalClose | widget.ModalMaximize | widget.ModalMinimize)
+	m.OnOK = func(e *widget.Event) { fmt.Println("saved:", nick.Value) }
+	m.OnCancel = func(e *widget.Event) { fmt.Println("cancelled") }
+	return m
+}
+```
+
+No app, faça a tecla **Voltar** (no PB741: esquerda e Menu, veja `inkview.IsBackKey`) fechá-la com `doc.HandleBack()` (ele fecha um popup primeiro, depois a modal, e devolve
+false quando não há nada a fechar, para o app poder sair).
+
 Próxima: [Eventos e estado →](07-eventos-e-estado.md)

@@ -107,11 +107,11 @@ func TestMenuBarSwitchesPagesAndExits(t *testing.T) {
 		t.Fatal("Mais must open a popup")
 	}
 	// the last row is "Sair"
-	pop := app.Doc.TargetAt(geom.Point{X: bar.MenuRect(app.tabs.Count()).X + 20, Y: bar.Bounds.Bottom() + 6 + 76 + 26 + 76/2 + 6})
+	pop := app.Doc.TargetAt(geom.Point{X: bar.MenuRect(app.tabs.Count()).X + 20, Y: bar.Bounds.Bottom() + 6 + 76 + 76 + 26 + 76/2 + 6})
 	if pop == nil {
 		t.Fatal("no popup row under the touch")
 	}
-	tapPoint(app, geom.Point{X: bar.MenuRect(app.tabs.Count()).X + 20, Y: bar.Bounds.Bottom() + 6 + 6 + 76 + 26 + 76/2})
+	tapPoint(app, geom.Point{X: bar.MenuRect(app.tabs.Count()).X + 20, Y: bar.Bounds.Bottom() + 6 + 6 + 76 + 76 + 26 + 76/2})
 	if !exited {
 		t.Error("“Sair” must call Exit")
 	}
@@ -181,4 +181,84 @@ func TestDemoRemembersValuesAcrossTabs(t *testing.T) {
 		t.Fatal("calendar missing")
 	}
 	app.Doc.Layout()
+}
+
+func TestAboutOpensAModalWithOK(t *testing.T) {
+	app, _ := newApp(nil)
+	app.Doc.Layout()
+	bar := byID(t, app, "menubar").(*widget.MenuBar)
+	more := bar.MenuRect(app.tabs.Count())
+
+	tapPoint(app, more.Center())                                                     // "Mais"
+	tapPoint(app, geom.Point{X: more.X + 20, Y: bar.Bounds.Bottom() + 6 + 6 + 76/2}) // "Sobre"
+	if !app.Doc.HasModal() || app.Doc.Modal().ID != "modal-about" {
+		t.Fatal("“Sobre” must open the About modal")
+	}
+	app.Doc.Layout()
+	m := app.Doc.Modal()
+	if m.Title != "Sobre" || !m.Elem().Visible() {
+		t.Errorf("title=%q", m.Title)
+	}
+	// the page behind does not react while the modal is open
+	before := app.tabs.Current()
+	tapPoint(app, bar.MenuRect(1).Center())
+	if app.tabs.Current() != before {
+		t.Error("the page behind a modal must not receive touches")
+	}
+	// the OK button is the only footer button and closes it
+	var ok *widget.Button
+	app.Doc.Walk(func(w widget.Widget) bool {
+		if b, isButton := w.(*widget.Button); isButton && b.Text == "OK" {
+			ok = b
+		}
+		return true
+	})
+	if ok == nil {
+		t.Fatal("the About modal has an OK button")
+	}
+	tapPoint(app, ok.Bounds.Center())
+	if app.Doc.HasModal() {
+		t.Error("OK must close the modal")
+	}
+}
+
+func TestOptionsModalHasEveryControlAndReportsItsResult(t *testing.T) {
+	app, _ := newApp(nil)
+	app.optionsModal()
+	app.Doc.Layout()
+	m := app.Doc.Modal()
+	if byID(t, app, "modal-input") == nil {
+		t.Fatal("the modal's content is reachable through GetElementByID")
+	}
+	buttons := 0
+	app.Doc.Walk(func(w widget.Widget) bool {
+		if _, isButton := w.(*widget.Button); isButton {
+			buttons++
+		}
+		return true
+	})
+	if buttons != 5 { // minimize, maximize, close, Cancelar, Salvar
+		t.Errorf("buttons = %d, want 5", buttons)
+	}
+	m.Confirm()
+	if app.message.Text != "Modal: salvo (\"\", avisos: true)" {
+		t.Errorf("message = %q", app.message.Text)
+	}
+	app.optionsModal()
+	app.Doc.Modal().Cancel()
+	if app.message.Text != "Modal: cancelado" || app.Doc.HasModal() {
+		t.Errorf("message = %q open=%v", app.message.Text, app.Doc.HasModal())
+	}
+}
+
+func TestPageKeysMoveBetweenPagesAndWrap(t *testing.T) {
+	app, _ := newApp(nil)
+	app.MovePage(1)
+	if app.tabs.Current() != 1 {
+		t.Fatalf("next = %d", app.tabs.Current())
+	}
+	app.MovePage(-2) // wraps to the last page
+	if app.tabs.Current() != app.tabs.Count()-1 {
+		t.Errorf("previous from the first = %d", app.tabs.Current())
+	}
 }

@@ -111,7 +111,7 @@ Legenda: `[x]` concluída · `[ ]` pendente. Ao concluir uma task, o MINOR é in
 
   - [x] T36 A aba de dados demora muito a abrir, talvez por que o componente data table esteja muito pesado, ao navegar nos itens do data table, também demora muito a abrir, o aparelho tem apenas 1G de ram, acredito que todos os componentes devam ser otimizados.
   - [x] T37 As abas devem ser carregadas e descarregadas de forma lazy para evitar o uso intenso da memória ram de 1g apenas. 
-  - [ ] T38 O botão "Sobre" não mostra nada. Se não temos componente de modal, crie um e coloque o conteudo do sobre nela e siga o padrão de layout já estabelecido - modal centralizada com botão ok.
+  - [x] T38 O botão "Sobre" não mostra nada. Se não temos componente de modal, crie um e coloque o conteudo do sobre nela e siga o padrão de layout já estabelecido - modal centralizada com botão ok.
   - [ ] T39 O slide button, quando eu arrasto, não atualiza, ele deveria ser draggable também.
   - [x] T41 Componente de abas (`Tabs`) com política por aba: **lembrar** o estado dos campos (texto, número, paginação da tabela, data do calendário) num store compartilhado e leve, **recriar** do zero ou **manter** a árvore viva.
   - [x] T40 Se possível, ao invés de redesenhar a tela por completo seria interessante redesenhar apenas o componente que está recebendo a interação.
@@ -465,6 +465,23 @@ cal.Locale = widget.LocalePTBR
 cal.OnChange = func(e *widget.Event) { fmt.Println(cal.Selected) }
 ```
 
+### Modal
+
+![modal](docs/components/modal.png)
+
+Diálogo **acima da página**, centralizado, com barra de título, corpo e rodapé; enquanto aberto recebe todos os toques.
+Rodapé: OK (padrão), OK e Cancelar ou nenhum; barra de título: fechar, maximizar e minimizar (ou nenhum). Maximizar vira
+**tela cheia**; minimizar reduz à barra de título no rodapé da tela e libera a página. A tecla Voltar cancela
+(`doc.HandleBack()`; no PB741, que não tem Voltar, são as teclas esquerda e Menu). O botão "Sobre" do app de exemplo usa uma modal com OK; "Modal (opções)" mostra todas as opções.
+
+```go
+m := widget.NewModal("Editar perfil", widget.NewLabel("Escolha seu apelido"), apelido)
+m.SetButtons(widget.ModalOKCancel)
+m.SetControls(widget.ModalClose | widget.ModalMaximize | widget.ModalMinimize)
+m.OnOK = func(e *widget.Event) { salvar(apelido.Value) }
+m.Open(doc)
+```
+
 ### Card
 
 ![card](docs/components/card.png)
@@ -528,6 +545,7 @@ Desenvolvido e testado em um **PocketBook PB741-N-WW** (InkPad Color 2): 7,8", 1
 
 - Com o painel do sistema ligado (padrão), o InkView reserva 137 px e desloca o canvas; o app chama
   `inkview.DisablePanel()` no início para a tela inteira ser do app.
+- **Teclas:** o PB741 tem Home, esquerda (página anterior), direita (página seguinte) e Menu, e **não tem Voltar**. O Home fecha o app pelo sistema; no app de exemplo, esquerda e Menu fecham popup/modal (`inkview.IsBackKey`), e esquerda/direita trocam de aba quando nada está aberto.
 - O `path` de `U_<app>` no `view.json` precisa ser **absoluto**; ícones podem ser relativos.
 - Desempenho (medido no PB741, tela cheia): a conversão RGBA→cinza com `draw.Draw` levava 2,7 s por frame e o `Clip` do `gg` alocava 10 MB por texto; uma tela completa leva ~1,5 s (desenho vetorial) + ~0,1 s de blit, mas `Document.Update` repinta só o que mudou: um toque pequeno custa 0,1–0,4 s e uma tabela ~0,6 s. O custo fixo da detecção de mudança é ~0,1 s (layout + retrato dos elementos).
 - O app grava `applications/hello.log` (eventos) para depuração; remova a linha `DebugLog` em release.

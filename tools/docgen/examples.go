@@ -73,6 +73,7 @@ func examples() []example {
 		{"chips", 640, 0, chipsExample, nil},
 		{"calendar", 640, 0, calendarExample, nil},
 		{"card", 640, 0, cardExample, nil},
+		{"modal", 760, 0, modalExample, nil},
 		{"custom", 640, 0, customRecipe, nil},
 		{"recipe-hello", 640, 0, func() widget.Widget { return samples.Hello(noAction) }, nil},
 		{"recipe-login", 640, 0, func() widget.Widget { return samples.NewLoginForm(noLogin).Root }, nil},
@@ -292,6 +293,17 @@ func calendarExample() widget.Widget {
 	cal.Locale = widget.LocalePTBR
 	cal.Today = time.Date(2026, 11, 13, 0, 0, 0, 0, time.UTC)
 	return cal
+}
+
+// modalExample draws the dialog inline (the library draws the same widget over
+// the page when it is opened with Modal.Open).
+func modalExample() widget.Widget {
+	nick := widget.NewInput("Apelido")
+	m := widget.NewModal("Editar perfil", widget.NewLabel("Escolha como você aparece para os outros."), nick)
+	m.OKText, m.CancelText = "Salvar", "Cancelar"
+	m.SetButtons(widget.ModalOKCancel)
+	m.SetControls(widget.ModalClose | widget.ModalMaximize | widget.ModalMinimize)
+	return m
 }
 
 func cardExample() widget.Widget {

@@ -27,3 +27,18 @@ type App interface {
 	// Pointer handles a touch phase at x,y (device pixels); return true if handled.
 	Pointer(kind PointerKind, x, y int) bool
 }
+
+// Key codes (subset of inkview.h). On the PB741 the left key is KeyPrev and the
+// right key KeyNext; Home never reaches the app (the system closes it).
+const (
+	KeyBack = 0x1b
+	KeyOK   = 0x0a
+	KeyMenu = 0x17
+	KeyPrev = 0x18
+	KeyNext = 0x19
+)
+
+// IsBackKey reports whether code should act as "Back". The PB741 has no Back
+// key, only Home, previous page (left), next page (right) and Menu, so the left
+// and Menu keys stand in for it.
+func IsBackKey(code int) bool { return code == KeyBack || code == KeyPrev || code == KeyMenu }

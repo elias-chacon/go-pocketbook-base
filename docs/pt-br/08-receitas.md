@@ -437,15 +437,15 @@ func (a *app) Draw() {
 	inkview.Blit(img.Pix, b.Dx(), b.Dy(), img.Stride)
 }
 
-// Key handles hardware keys: Back closes a popup, then leaves the app.
+// Key handles hardware keys. The PB741 has no Back key, so left and Menu close
+// a popup, then a modal; Home is handled by the system (it closes the app).
 func (a *app) Key(code int) bool {
-	if code != inkview.KeyBack {
+	switch {
+	case inkview.IsBackKey(code) && a.doc.HandleBack():
+	case code == inkview.KeyBack:
+		inkview.Exit() // devices that do have a Back key
+	default:
 		return false
-	}
-	if a.doc.HasPopup() {
-		a.doc.ClosePopups()
-	} else {
-		inkview.Exit()
 	}
 	return true
 }

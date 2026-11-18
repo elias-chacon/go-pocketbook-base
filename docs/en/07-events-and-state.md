@@ -106,10 +106,10 @@ button.OnClick = func(e *widget.Event) {
 ## Popups and the keyboard
 
 - Combo-boxes, dropdowns and menu bars open a **popup** above everything. A tap outside only closes it.
-  `doc.HasPopup()` tells whether one is open and `doc.ClosePopups()` closes it (the Back key does this).
+  `doc.HasPopup()` tells whether one is open and `doc.ClosePopups()` closes it (`doc.HandleBack()` does this, and then closes a modal).
 - Input fields call `doc.RequestText(...)` which uses `doc.Keyboard`. `doc.Focused()` returns the field being
   edited, or nil.
-- On the reader the **Back** key arrives through `inkview` (`KeyBack`); the app glue decides what it does.
+- On the reader the keys arrive through `inkview` (`KeyBack`, `KeyPrev`, `KeyNext`, `KeyMenu`); the app glue decides what they do. Home is handled by the system, which closes the app. The PB741 has **no Back key**, so `inkview.IsBackKey` also accepts the left (previous page) and Menu keys.
 
 ## Advanced: raw touch
 
