@@ -1,0 +1,108 @@
+// Command release prepares what is published on a GitHub Release:
+//
+//   - the apps built for the reader (dist/applications/<id>.app), as they are, so
+//     the Launcher can download them;
+//   - the installer for people (cmd/pbinstaller) for Windows, Linux and macOS,
+//     each carrying the apps inside, as a zip / tar.gz;
+//   - SHA256SUMS of everything.
+//
+// Build the apps first (.\build.ps1 -All), then:
+//
+//	go run ./tools/release            # writes ./release
+//
+// The Windows installer gets the Launcher's icon through a .syso that this tool
+// writes itself (syso.go): nothing is downloaded.
+package main
+
+import (
+	"fmt"
+	"image"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+
+	launcherui "go-pocketbook-base/internal/launcher/presentation"
+)
+
+const (
+	distApps = "dist/applications"
+	payload  = "cmd/pbinstaller/payload"
+	outDir   = "release"
+)
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, "release:", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
+	raw, err := os.ReadFile(".version")
+	if err != nil {
+		return err
+	}
+	version := strings.TrimSpace(string(raw))
+
+	ids, err := stage(distApps, "apps", payload, version)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("version %s, apps: %s\n", version, strings.Join(ids, ", "))
+
+	if err := os.RemoveAll(outDir); err != nil {
+		return err
+	}
+	if err := os.MkdirAll(outDir, 0o755); err != nil {
+		return err
+	}
+	var files []string
+	for _, id := range ids { // the apps themselves, for the Launcher to download
+		if err := copyFile(filepath.Join(distApps, id+".app"), filepath.Join(outDir, id+".app")); err != nil {
+			return err
+		}
+		files = append(files, id+".app")
+	}
+
+	windowsIcon()
+	for _, t := range targets {
+		name, err := build(t, version)
+		if err != nil {
+			return err
+		}
+		files = append(files, name)
+		fmt.Println("built", name)
+	}
+	return checksums(outDir, files)
+}
+
+// windowsIcon writes the .syso that gives the Windows executable the Launcher's
+// icon (see syso.go). It is a nicety: a failure only warns.
+func windowsIcon() {
+	data, err := sysoFor(func(size int) image.Image { return launcherui.RenderIcon(size, false) })
+	if err != nil {
+		fmt.Println("warning: the Windows installer gets the default icon:", err)
+		return
+	}
+	syso := filepath.Join("cmd", "pbinstaller", "rsrc_windows_amd64.syso")
+	if err := os.WriteFile(syso, data, 0o644); err != nil {
+		fmt.Println("warning: the Windows installer gets the default icon:", err)
+	}
+}
+
+// build compiles the installer for t and archives it in outDir; it returns the
+// archive's file name.
+func build(t target, version string) (string, error) {
+	exePath := filepath.Join(os.TempDir(), fmt.Sprintf("pbgo-%s-%s-%s", t.OS, t.Arch, t.exe()))
+	cmd := exec.Command("go", "build", "-trimpath",
+		"-ldflags", "-s -w -X go-pocketbook-base/internal/kernel/version.Value="+version,
+		"-o", exePath, "./cmd/pbinstaller")
+	cmd.Env = append(os.Environ(), "CGO_ENABLED=0", "GOOS="+t.OS, "GOARCH="+t.Arch)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return "", fmt.Errorf("%s/%s: %v\n%s", t.OS, t.Arch, err, out)
+	}
+	defer os.Remove(exePath)
+	name := t.archive(version)
+	return name, writeArchive(filepath.Join(outDir, name), t, t.exe(), exePath)
+}

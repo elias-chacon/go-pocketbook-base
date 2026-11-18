@@ -56,11 +56,12 @@ go run ./tools/release    # prepara o payload e gera os instaladores em ./releas
 
 O `tools/release` copia cada `dist/applications/<id>.app` e o seu `apps/<id>/app.json` para `cmd/pbinstaller/payload`, compila o
 instalador para Windows (amd64), Linux (amd64) e macOS (amd64, arm64) com a versão no binário, dá ao do Windows o ícone do
-Launcher (um arquivo de recursos feito por `github.com/akavel/rsrc`; sem rede, fica o ícone padrão), empacota cada um em zip ou
+Launcher (o `tools/release/syso.go` escreve o arquivo de recursos do Windows por conta própria, então nada é baixado), empacota cada um em zip ou
 tar.gz, copia os `<id>.app` crus (o Launcher baixa estes) e escreve o `SHA256SUMS`.
 
 O workflow `.github/workflows/release.yml` faz tudo isso quando uma tag `vMAJOR.MINOR.BUILD` é enviada (a tag deve ser igual a
 `.version`) e publica os arquivos na Release do GitHub.
 
-> **Estado.** O instalador está testado no computador (achar, copiar e registrar usam pastas temporárias), mas ainda não foi
-> executado contra um leitor de verdade pelo cabo, e o workflow de release ainda não rodou.
+> **Estado.** O `go run ./tools/release` foi executado no PC: o executável do Windows mostra o ícone do Launcher e o instalador
+> instala numa pasta com a forma de um leitor (`-drive`). Ainda não foi executado contra um leitor de verdade pelo cabo, e o
+> workflow de release ainda não rodou no GitHub.
