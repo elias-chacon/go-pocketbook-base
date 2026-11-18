@@ -8,6 +8,7 @@ import (
 	_ "embed" // go:embed
 	"log"
 
+	"go-pocketbook-base/internal/launcher/presentation"
 	"go-pocketbook-base/internal/platform"
 )
 
@@ -15,7 +16,7 @@ import (
 var manifest []byte
 
 func main() {
-	err := platform.Run(platform.Config{Manifest: manifest, Icon: icon}, newLauncher)
+	err := platform.Run(platform.Config{Manifest: manifest, Icon: presentation.RenderIcon}, newLauncher)
 	if err != nil {
 		log.Fatal(err)
 	}

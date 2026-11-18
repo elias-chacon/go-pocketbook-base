@@ -17,7 +17,9 @@
 package platform
 
 import (
+	"errors"
 	"os"
+	"path"
 	"path/filepath"
 
 	"go-pocketbook-base/internal/kernel/version"
@@ -90,9 +92,13 @@ func Run(cfg Config, factory Factory) error {
 		Settings: settings, Apps: apps,
 	}
 	screen := &reader.Screen{}
+	// InkView ends the process when the app closes, so going back to the Launcher
+	// has to happen as the app asks to exit, not after the event loop.
+	screen.BeforeClose = func() {
+		returnToLauncher(exe, true, os.Getenv(domain.LauncherEnv), process.Exec)
+	}
 	err = reader.Run(application.NewRuntime(env, factory, screen))
 	reader.Logf("Run returned err=%v", err)
-	returnToLauncher(exe, screen.ClosedByApp(), os.Getenv(domain.LauncherEnv), process.Exec)
 	return err
 }
 
@@ -109,3 +115,38 @@ func returnToLauncher(self string, askedToExit bool, launcher string, exec func(
 		reader.Logf("could not return to the launcher: %v", err)
 	}
 }
+
+// RegisterOnDrive installs an app on a reader mounted as a drive (USB), from the
+// PC: it does what the app does the first time it runs (icons, the home-screen
+// entry in view.json, the record for the Launcher), so the icon is there as soon
+// as the cable is unplugged, without opening the app first. drive is the drive
+// root (e.g. "F:\"); the app itself must already be copied to its applications
+// folder. A nil icon draws the default one. It returns whether view.json changed.
+func RegisterOnDrive(drive string, manifest []byte, icon domain.IconRenderer, version string) (bool, error) {
+	m, err := domain.ParseManifest(manifest)
+	if err != nil {
+		return false, err
+	}
+	// The paths recorded for the reader are the reader's, not the PC's.
+	exe := path.Join(application.DefaultRoot, "applications", m.ID+".app")
+	changed := false
+	notice := application.FirstRun{
+		Registrar: registrarFunc(func(r domain.Registration) (bool, error) {
+			c, err := reader.DesktopRegistrar{Root: drive}.Register(r)
+			changed = c
+			return c, err
+		}),
+		Apps: jsonfiles.NewApps(drive),
+	}.Execute(application.FirstRunInput{
+		Manifest: m, Lang: jsonfiles.NewSettings(drive).Load().Lang, Version: version, Exe: exe,
+		IconPath: path.Join(application.DefaultRoot, "applications", "icons", m.ID+".bmp"), Icon: icon,
+	})
+	if notice != "" && !changed {
+		return false, errors.New(notice)
+	}
+	return changed, nil
+}
+
+type registrarFunc func(domain.Registration) (bool, error)
+
+func (f registrarFunc) Register(r domain.Registration) (bool, error) { return f(r) }

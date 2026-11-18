@@ -40,6 +40,9 @@ além e o app **instala o próprio ícone**.
    .\scripts\install.ps1 -Drive F: -App meuapp  # o seu app
    ```
 
+   O script também **registra** o app a partir do PC (ícones, entrada no `view.json`, registro para o Launcher), então o
+   ícone já aparece ao desconectar o cabo. Se você copiar o `.app` à mão, o registro acontece na primeira execução (abaixo).
+
 4. Ejete o leitor com segurança.
 
 ### 2. Abra uma vez

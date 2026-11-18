@@ -77,3 +77,32 @@ func TestRunRegistersTheAppRecordsItAndStartsTheReader(t *testing.T) {
 		t.Error("the facade re-exports the domain")
 	}
 }
+
+func TestRegisterOnDriveInstallsFromThePCWithTheReadersPaths(t *testing.T) {
+	root, view := readerRoot(t)
+	changed, err := RegisterOnDrive(root, []byte(manifest), nil, "1.2.3")
+	if err != nil || !changed {
+		t.Fatalf("changed=%v err=%v", changed, err)
+	}
+	text, _ := os.ReadFile(view)
+	if !strings.Contains(string(text), `"path": "/mnt/ext1/applications/hello.app"`) {
+		t.Errorf("the entry must use the reader's path, not the PC's:\n%s", text)
+	}
+	rec, err := os.ReadFile(filepath.Join(root, "applications", ".pbgo", "hello.json"))
+	if err != nil || !strings.Contains(string(rec), `"exe": "/mnt/ext1/applications/hello.app"`) ||
+		!strings.Contains(string(rec), `"icon": "/mnt/ext1/applications/icons/hello.bmp"`) {
+		t.Errorf("the record holds the reader's paths: %v\n%s", err, rec)
+	}
+	if _, err := os.Stat(filepath.Join(root, "applications", "icons", "hello_f.bmp")); err != nil {
+		t.Errorf("icons are written: %v", err)
+	}
+	if again, err := RegisterOnDrive(root, []byte(manifest), nil, "1.2.3"); err != nil || again {
+		t.Errorf("idempotent: changed=%v err=%v", again, err)
+	}
+	if _, err := RegisterOnDrive(root, []byte("{"), nil, ""); err == nil {
+		t.Error("a broken manifest is an error")
+	}
+	if _, err := RegisterOnDrive(t.TempDir(), []byte(manifest), nil, ""); err == nil {
+		t.Error("a drive without the reader's system folder is an error")
+	}
+}

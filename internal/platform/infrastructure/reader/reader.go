@@ -43,7 +43,13 @@ func PointerOf(kind inkview.PointerKind) widget.PointerType {
 
 // Screen is the application.Screen of the reader's panel. It remembers whether
 // the app asked to close (as opposed to the system closing it with Home).
-type Screen struct{ closed bool }
+type Screen struct {
+	closed bool
+	// BeforeClose, when set, runs as the app asks to close and before InkView is
+	// told to exit (InkView ends the process itself, so nothing can run after
+	// the event loop). It may replace the process, as returning to the Launcher does.
+	BeforeClose func()
+}
 
 // Show implements application.Screen.
 func (*Screen) Show(img *image.Gray) {
@@ -62,6 +68,9 @@ func (*Screen) RequestRepaint() { inkview.Repaint() }
 // Close implements application.Screen.
 func (s *Screen) Close() {
 	s.closed = true
+	if s.BeforeClose != nil {
+		s.BeforeClose()
+	}
 	inkview.Exit()
 }
 

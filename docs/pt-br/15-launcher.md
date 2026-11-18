@@ -51,6 +51,6 @@ título).
 .\scripts\install.ps1 -Drive F: -All    # copia para o leitor
 ```
 
-Abra cada app **uma vez** pela lista *Aplicativos* (isso o registra) e depois abra o Launcher: ele lista os outros.
+O `install.ps1` copia os apps **e os registra** (ícones, entrada no `view.json` e o registro que o Launcher lê: `tools/register`). Ejete, **desconecte o cabo** e os ícones aparecem na tela inicial; abra o Launcher e ele lista os outros. Um app copiado à mão continua se registrando sozinho na primeira execução.
 
 [← Arquitetura (DDD)](14-arquitetura.md) · [Índice](README.md)
