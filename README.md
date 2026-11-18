@@ -5,7 +5,7 @@ biblioteca de componentes visuais desenhada do zero em gráficos vetoriais
 ([`fogleman/gg`](https://github.com/fogleman/gg)), ícone que se registra sozinho e build
 reproduzível em Docker. Faça um fork para começar novos apps. Otimizada para um hardware limitado com no máximo 1G de ram.
 
-O app de exemplo (`cmd/hello`) é uma vitrine com todos os componentes, em 4 páginas
+O app de exemplo (`apps/hello`, o blueprint de todo app do ecossistema) é uma vitrine com todos os componentes, em 4 páginas
 (**Entradas**, **Escolhas**, **Dados**, **Calendário**) navegadas por uma barra de menus.
 
 > Versão atual: ver [`.version`](.version) · `MAJOR.MINOR.BUILD` (veja [Versionamento](#versionamento)).
@@ -122,7 +122,7 @@ Legenda: `[x]` concluída · `[ ]` pendente. Ao concluir uma task, o MINOR é in
 
 - [x] T42 i18n reutilizável (`internal/i18n`): pt-BR primário, fallback automático para en, JSON embutido
 - [x] T43 `widget.Image` + `Canvas.DrawImage` (ícones BMP do grid e imagem de fundo)
-- [ ] T44 `./apps/`: mover o `hello` para `apps/hello` como blueprint (ciclo de vida, empacotamento, manifesto `app.json`) e migrá-lo para i18n
+- [x] T44 `./apps/`: mover o `hello` para `apps/hello` como blueprint (ciclo de vida, empacotamento, manifesto `app.json`) e migrá-lo para i18n
 - [ ] T45 Launcher: grid dos apps instalados (ícone + título) e execução do app filho, com retorno ao Launcher
 - [ ] T46 Launcher: busca em tempo real com as seções `-- Installed --` e `-- Available --`
 - [ ] T47 Launcher: catálogo do GitHub (`apps/` do repositório + assets dos Releases), download e instalação com um clique
@@ -166,7 +166,8 @@ A versão é gravada no binário por `-ldflags -X …/internal/version.Value` e 
 ## Arquitetura
 
 ```
-cmd/hello          app do aparelho: liga InkView ↔ widget.Document (toque, teclado, repaint)
+apps/hello         app blueprint do aparelho: vitrine de componentes que segue o contrato (apps/<id>)
+internal/appkit    contrato dos apps: ciclo de vida InkView ↔ Document, registro na 1ª execução, manifesto app.json
 cmd/preview        renderiza as páginas da demo em PNG (sem aparelho)
 internal/demo      vitrine de componentes (compartilhada por hello, preview e testes)
 internal/widget    componentes + layout flex/grid + toque + abas e estado + repintura parcial (a biblioteca)

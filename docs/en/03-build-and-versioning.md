@@ -11,8 +11,8 @@ Go 1.17. You never install the SDK by hand.
 ### One command
 
 ```powershell
-.\build.ps1                 # Windows: builds ./cmd/hello
-.\build.ps1 -App myapp      # builds ./cmd/myapp
+.\build.ps1                 # Windows: builds ./apps/hello
+.\build.ps1 -App myapp      # builds ./apps/myapp
 ```
 ```sh
 make dist                   # Linux / macOS / WSL
@@ -37,7 +37,7 @@ The result is **one file**: `dist/applications/<app>.app`. The script also:
 Build flags used internally (for reference):
 
 ```sh
-go build -ldflags=-X=go-pocketbook-base/internal/version.Value=<version> -o dist/applications/hello.app ./cmd/hello
+go build -ldflags=-X=go-pocketbook-base/internal/version.Value=<version> -o dist/applications/hello.app ./apps/hello
 ```
 
 ### Make targets

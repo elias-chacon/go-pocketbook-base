@@ -143,14 +143,16 @@ func SavePNG(doc *widget.Document, path string) error {
 
 ## Step 5 — Run it on the reader
 
-1. Copy the template app and change the screen it shows:
+1. Copy the blueprint app and change the screen it shows:
 
    ```sh
-   cp -r examples/newapp cmd/myapp
+   cp -r apps/hello apps/myapp
    ```
 
-   Open `cmd/myapp/main.go` and replace `examples.NewPagedApp(...)` with your own screen. The template
-   already forwards touch, the hardware keys and the system keyboard to the document.
+   In `apps/myapp` change `app.json` (the `id` must be `myapp`, the name of the folder), delete what you do not
+   need of `hello.go` and build your own screen in `newHello`. The kit already forwards touch, the hardware keys
+   and the system keyboard to your document, registers the icon on the first run and repaints only what changed
+   (see [Apps and the contract](13-apps-and-the-contract.md)).
 
 2. Build (needs Docker, see [Build and versioning](03-build-and-versioning.md)):
 

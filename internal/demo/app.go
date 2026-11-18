@@ -1,14 +1,20 @@
 // Package demo is the showcase screen of every widget. It is plain Go on top
-// of the widget package, shared by the device app (cmd/hello), the desktop
-// preview (cmd/preview) and the tests.
+// of the widget package, shared by the device app (apps/hello), the desktop
+// preview (cmd/preview) and the tests. Its texts are translated (pt-BR first,
+// English as the fallback) through internal/i18n.
 package demo
 
 import (
+	"embed"
 	"fmt"
 
 	"go-pocketbook-base/internal/gfx"
+	"go-pocketbook-base/internal/i18n"
 	"go-pocketbook-base/internal/widget"
 )
+
+//go:embed locales/*.json
+var locales embed.FS
 
 // Config wires the demo to its environment.
 type Config struct {
@@ -17,13 +23,22 @@ type Config struct {
 	Exit     func()
 	// Notice is shown in the footer at start (e.g. first-run install result).
 	Notice string
+	// Lang is the language to start in (default pt-BR).
+	Lang string
+	// OnLangChange runs after the user switches the language (the device app
+	// saves it in the shared settings).
+	OnLangChange func(lang string)
 }
+
+// pageKeys are the translation keys of the page titles, in order.
+var pageKeys = []string{"menu.inputs", "menu.choices", "menu.data", "menu.calendar"}
 
 // App is the demo application: a menu bar, one page at a time and a footer.
 type App struct {
 	Doc *widget.Document
 
 	cfg     Config
+	tr      *i18n.Bundle
 	tabs    *widget.Tabs
 	menu    *widget.MenuBar
 	body    *widget.Panel
@@ -37,7 +52,13 @@ type App struct {
 
 // New builds the demo for a deviceW x deviceH screen.
 func New(deviceW, deviceH int, cfg Config) *App {
-	a := &App{cfg: cfg}
+	a := &App{cfg: cfg, tr: i18n.New()}
+	if err := a.tr.AddFS(locales, "locales"); err != nil {
+		panic(err) // embedded files: an error is a programming mistake
+	}
+	if cfg.Lang != "" {
+		a.tr.SetLang(cfg.Lang)
+	}
 	a.Doc = widget.NewDocument(deviceW, deviceH)
 	a.Doc.Keyboard = cfg.Keyboard
 
@@ -60,10 +81,10 @@ func New(deviceW, deviceH int, cfg Config) *App {
 		}
 	}
 	a.tabs = widget.NewTabs(nil,
-		&widget.Tab{Title: "Entradas", Build: build(a.inputsPage), Restored: restored},
-		&widget.Tab{Title: "Escolhas", Build: build(a.choicesPage), Restored: restored},
-		&widget.Tab{Title: "Dados", Build: build(a.dataPage), Restored: restored},
-		&widget.Tab{Title: "Calendário", Build: build(a.calendarPage), Restored: restored})
+		&widget.Tab{Title: a.t(pageKeys[0]), Build: build(a.inputsPage), Restored: restored},
+		&widget.Tab{Title: a.t(pageKeys[1]), Build: build(a.choicesPage), Restored: restored},
+		&widget.Tab{Title: a.t(pageKeys[2]), Build: build(a.dataPage), Restored: restored},
+		&widget.Tab{Title: a.t(pageKeys[3]), Build: build(a.calendarPage), Restored: restored})
 	a.menu, a.body = a.tabs.Bar, a.tabs.Body
 	a.menu.ID = "menubar"
 	a.menu.Menus = append(a.menu.Menus, a.moreMenu())
@@ -78,7 +99,43 @@ func New(deviceW, deviceH int, cfg Config) *App {
 	root.ID, root.Style.Background = "root", widget.Paper
 	root.OnClick = a.trackTouch
 	a.Doc.SetRoot(root)
+
+	a.tr.OnChange = a.relocalize
 	return a
+}
+
+// t translates a key (with fmt arguments).
+func (a *App) t(key string, args ...interface{}) string { return a.tr.T(key, args...) }
+
+// Lang is the current language.
+func (a *App) Lang() string { return a.tr.Lang() }
+
+// SetLang switches the language and rebuilds the screen in it.
+func (a *App) SetLang(lang string) { a.tr.SetLang(lang) }
+
+// relocalize puts every visible text in the new language. The current page is
+// rebuilt through the Tabs, which keeps what the user typed and chose.
+func (a *App) relocalize() {
+	for i, k := range pageKeys {
+		a.menu.Menus[i].Label = a.t(k)
+	}
+	a.menu.Menus[len(pageKeys)] = a.moreMenu()
+	a.touch.Text = "v" + a.cfg.Version
+	a.message.Text = ""
+	a.tabs.Show(a.tabs.Current())
+	a.Doc.Invalidate()
+	if a.cfg.OnLangChange != nil {
+		a.cfg.OnLangChange(a.tr.Lang())
+	}
+}
+
+// toggleLanguage switches between Portuguese and English.
+func (a *App) toggleLanguage() {
+	if a.tr.Lang() == "en" {
+		a.SetLang("pt-BR")
+		return
+	}
+	a.SetLang("en")
 }
 
 // ShowPage switches to page i (see widget.Tabs.Show).
@@ -97,11 +154,12 @@ func (a *App) Pages() []string {
 }
 
 func (a *App) moreMenu() *widget.Menu {
-	return &widget.Menu{Label: "Mais", Items: []widget.MenuItem{
-		{Label: "Sobre", Icon: gfx.IconSearch, OnSelect: a.about},
-		{Label: "Modal (opções)", Icon: gfx.IconMaximize, OnSelect: a.optionsModal},
+	return &widget.Menu{Label: a.t("menu.more"), Items: []widget.MenuItem{
+		{Label: a.t("menu.about"), Icon: gfx.IconSearch, OnSelect: a.about},
+		{Label: a.t("menu.modal"), Icon: gfx.IconMaximize, OnSelect: a.optionsModal},
+		{Label: a.t("menu.language"), Icon: gfx.IconMenu, OnSelect: a.toggleLanguage},
 		{Separator: true},
-		{Label: "Sair", Icon: gfx.IconClose, OnSelect: a.exit},
+		{Label: a.t("menu.exit"), Icon: gfx.IconClose, OnSelect: a.exit},
 	}}
 }
 
@@ -109,10 +167,10 @@ func (a *App) moreMenu() *widget.Menu {
 func (a *App) about() {
 	name := widget.NewLabel("go-pocketbook-base")
 	name.Style.Bold, name.Style.FontSize = true, widget.FontTitle
-	desc := widget.NewLabel("Componentes visuais vetoriais em Go para aplicativos PocketBook (e-readers Linux ARM).")
-	version := widget.NewLabel("Versão " + a.cfg.Version)
+	desc := widget.NewLabel(a.t("about.description"))
+	version := widget.NewLabel(a.t("about.version", a.cfg.Version))
 	version.Style.Color = widget.Muted
-	m := widget.NewModal("Sobre", name, desc, version)
+	m := widget.NewModal(a.t("about.title"), name, desc, version)
 	m.ID = "modal-about"
 	m.Open(a.Doc)
 }
@@ -120,18 +178,16 @@ func (a *App) about() {
 // optionsModal shows a modal with every option: OK and Cancel, and the close,
 // maximize and minimize buttons (try them).
 func (a *App) optionsModal() {
-	nick := widget.NewInput("Apelido")
+	nick := widget.NewInput(a.t("modal.nickname"))
 	nick.ID = "modal-input"
-	notify := widget.NewSwitch("Receber avisos", true)
-	m := widget.NewModal("Modal com opções",
-		widget.NewLabel("OK e Cancelar no rodapé; fechar, maximizar e minimizar na barra de título."),
-		nick, notify)
+	notify := widget.NewSwitch(a.t("modal.notices"), true)
+	m := widget.NewModal(a.t("modal.title"), widget.NewLabel(a.t("modal.text")), nick, notify)
 	m.ID = "modal-options"
-	m.OKText, m.CancelText = "Salvar", "Cancelar"
+	m.OKText, m.CancelText = a.t("modal.save"), a.t("modal.cancel")
 	m.SetButtons(widget.ModalOKCancel)
 	m.SetControls(widget.ModalClose | widget.ModalMaximize | widget.ModalMinimize)
-	m.OnOK = func(e *widget.Event) { a.say("Modal: salvo (%q, avisos: %v)", nick.Value, notify.Checked) }
-	m.OnCancel = func(e *widget.Event) { a.say("Modal: cancelado") }
+	m.OnOK = func(e *widget.Event) { a.say(a.t("modal.saved", nick.Value, notify.Checked)) }
+	m.OnCancel = func(e *widget.Event) { a.say(a.t("modal.cancelled")) }
 	m.Open(a.Doc)
 }
 
@@ -141,9 +197,9 @@ func (a *App) exit() {
 	}
 }
 
-// say shows a message in the footer.
-func (a *App) say(format string, args ...interface{}) {
-	a.message.Text = fmt.Sprintf(format, args...)
+// say shows an already translated message in the footer.
+func (a *App) say(text string) {
+	a.message.Text = text
 	a.Doc.Invalidate()
 }
 
@@ -154,5 +210,5 @@ func (a *App) trackTouch(e *widget.Event) {
 	if name == "" {
 		name = fmt.Sprintf("%T", e.Target)
 	}
-	a.touch.Text = fmt.Sprintf("v%s · toque (%.0f, %.0f) → %s", a.cfg.Version, e.X, e.Y, name)
+	a.touch.Text = a.t("footer.touch", a.cfg.Version, e.X, e.Y, name)
 }

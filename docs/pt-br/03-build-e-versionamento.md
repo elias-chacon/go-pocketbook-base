@@ -11,8 +11,8 @@ corrigido. Você nunca instala o SDK à mão.
 ### Um comando
 
 ```powershell
-.\build.ps1                 # Windows: compila ./cmd/hello
-.\build.ps1 -App meuapp     # compila ./cmd/meuapp
+.\build.ps1                 # Windows: compila ./apps/hello
+.\build.ps1 -App meuapp     # compila ./apps/meuapp
 ```
 ```sh
 make dist                   # Linux / macOS / WSL
@@ -37,7 +37,7 @@ O resultado é **um arquivo**: `dist/applications/<app>.app`. O script também:
 Flags usadas internamente (para referência):
 
 ```sh
-go build -ldflags=-X=go-pocketbook-base/internal/version.Value=<versão> -o dist/applications/hello.app ./cmd/hello
+go build -ldflags=-X=go-pocketbook-base/internal/version.Value=<versão> -o dist/applications/hello.app ./apps/hello
 ```
 
 ### Alvos do make

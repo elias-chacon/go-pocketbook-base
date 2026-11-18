@@ -12,7 +12,7 @@ Telas completas que você pode copiar e adaptar. Cada uma é um arquivo real em 
 > doc := examples.Screen(1404, 1872, deviceKeyboard{}, login.Root)
 > ```
 >
-> No leitor, o `Screen` e o teclado vêm do seu `main` (veja `examples/newapp`); em testes e previews use
+> No leitor, o `Screen` e o teclado vêm do seu `main` (veja `apps/hello`); em testes e previews use
 > `&widget.FakeKeyboard{}`.
 
 ## Formulário de login com validação
@@ -390,97 +390,45 @@ func NewPagedApp(width, height int, kb widget.Keyboard) *widget.Document {
 
 ## Um app inteiro no leitor
 
-O `examples/newapp` é o modelo para começar um app de verdade: ele liga os eventos do leitor ao documento (`Init`, `Draw`,
-`Key`, `Pointer`) e ao teclado do sistema. Copie para `cmd/<nome>`, troque a linha marcada com `your screen goes here` e
-compile com `.\build.ps1 -App <nome>`.
+O `apps/hello` é o blueprint para começar um app de verdade. O `main` dele é só o manifesto, o ícone e uma chamada:
 
 ```go
-// examples/newapp/main.go
-// Command newapp is a starting point for a new PocketBook application:
-// copy this folder to cmd/<name>, change the screen and run `make dist APP=<name>`.
-package main
-
-import (
-	"log"
-
-	"go-pocketbook-base/examples"
-	"go-pocketbook-base/internal/inkview"
-	"go-pocketbook-base/internal/widget"
-)
-
-type app struct {
-	doc     *widget.Document
-	pending bool // a repaint is already queued
-}
-
-// Init runs once, when the app starts.
-func (a *app) Init() {
-	inkview.DisablePanel() // the app gets the whole screen
-	w, h := inkview.ScreenSize()
-	a.doc = examples.NewPagedApp(w, h, deviceKeyboard{}) // <- your screen goes here
-	a.doc.OnInvalidate = a.requestRepaint
-}
-
-// requestRepaint queues at most one repaint, however many changes happen.
-func (a *app) requestRepaint() {
-	if !a.pending {
-		a.pending = true
-		inkview.Repaint()
-	}
-}
-
-// Draw renders the document and shows it on the e-ink screen.
-func (a *app) Draw() {
-	a.pending = false
-	img := a.doc.Render()
-	b := img.Bounds()
-	inkview.Blit(img.Pix, b.Dx(), b.Dy(), img.Stride)
-}
-
-// Key handles hardware keys. The PB741 has no Back key, so left and Menu close
-// a popup, then a modal; Home is handled by the system (it closes the app).
-func (a *app) Key(code int) bool {
-	switch {
-	case inkview.IsBackKey(code) && a.doc.HandleBack():
-	case code == inkview.KeyBack:
-		inkview.Exit() // devices that do have a Back key
-	default:
-		return false
-	}
-	return true
-}
-
-// Pointer forwards touches (device pixels) to the document.
-func (a *app) Pointer(kind inkview.PointerKind, x, y int) bool {
-	if kind == inkview.PointerMove && a.pending {
-		return true // the screen is still catching up: skip intermediate positions
-	}
-	phase := map[inkview.PointerKind]widget.PointerType{
-		inkview.PointerDown: widget.PointerDown,
-		inkview.PointerMove: widget.PointerMove,
-		inkview.PointerUp:   widget.PointerUp,
-	}[kind]
-	a.doc.HandlePointer(phase, float64(x), float64(y))
-	return true
-}
-
-// deviceKeyboard opens the reader's on-screen keyboard.
-type deviceKeyboard struct{}
-
-func (deviceKeyboard) Request(r widget.KeyboardRequest) {
-	flags := inkview.KeyboardNormal
-	if r.Kind == widget.KeyboardNumeric {
-		flags = inkview.KeyboardNumeric
-	}
-	inkview.OpenKeyboard(r.Title, r.Initial, r.MaxLen, flags, r.Done)
-}
-
+// apps/hello/main.go#main
 func main() {
-	if err := inkview.Run(&app{}); err != nil {
+	err := appkit.Run(appkit.Config{
+		Manifest: manifest,
+		// An app may draw its own launcher icon; without Icon the kit draws one
+		// from the title (appkit.DefaultIcon).
+		Icon: func(size int, focused bool) image.Image { return ui.RenderIcon(size, focused) },
+	}, newHello)
+	if err != nil {
 		log.Fatal(err)
 	}
 }
 ```
+
+e a tela é montada por uma fábrica que o kit chama quando já sabe o tamanho da tela:
+
+```go
+// apps/hello/hello.go#newHello
+// newHello is the appkit.Factory: the kit calls it once the screen size is
+// known, with everything the app may need in env.
+func newHello(env appkit.Env) appkit.App {
+	return &hello{demo: demo.New(env.Width, env.Height, demo.Config{
+		Version:  env.Version,
+		Keyboard: env.Keyboard,
+		Exit:     env.Exit,
+		Notice:   env.Notice,
+		Lang:     env.Lang,
+		// The language chosen here becomes the language of every app.
+		OnLangChange: func(lang string) { _ = appkit.SaveSettings(env.Root, appkit.Settings{Lang: lang}) },
+	})}
+}
+```
+
+O resto (toque, teclas, teclado do sistema, repintura parcial, registro na primeira execução) é o
+`internal/appkit`. Copie a pasta para `apps/<id>`, troque o `app.json` e a tela, e compile com
+`.\build.ps1 -App <id>`. O contrato inteiro está em [Apps e o contrato](13-apps-e-o-contrato.md).
 
 ## Pequenos padrões
 

@@ -1,0 +1,4 @@
+{
+  "install.registered": "Icon registered: it shows on the home screen after the reader reloads (e.g. when you unplug the USB cable).",
+  "install.failed": "Could not register the icon: %s"
+}

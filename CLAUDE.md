@@ -22,7 +22,7 @@ make dist [APP=name]                            # same on Linux/macOS/WSL
 .\scripts\install.ps1 -Drive F:                 # copy the built .app to a USB-mounted reader
 ```
 
-Only `internal/inkview` needs the device; on the desktop it compiles to stubs (build tags `linux && arm && cgo`), so all UI logic is testable on the PC. `cmd/hello` and `examples/newapp` only build for the reader, through Docker.
+Only `internal/inkview` needs the device; on the desktop it compiles to stubs (build tags `linux && arm && cgo`), so all UI logic is testable on the PC. `apps/*` only build for the reader, through Docker.
 
 ## Architecture
 
@@ -30,7 +30,7 @@ Only `internal/inkview` needs the device; on the desktop it compiles to stubs (b
 - **Coordinates are "design pixels"** (reference width 1404). `Document.Scale` converts to the real screen and touch is converted back, so drawing and touch share one space. Never offset or scale by hand.
 - **Touch** (`dispatch.go`): down picks the deepest interactive, non-disabled element; move/up go to it (slider drag); a click is synthesized on release inside it, then `OnClick` bubbles up the tree. Popups (`OpenPopup`) are drawn above and a touch outside only closes them. Text entry goes through the injected `Keyboard` interface (`FakeKeyboard` in tests/preview, InkView's keyboard on the device).
 - **`internal/gfx`** draws in design units (`Canvas`, fonts, text, icons); **`internal/geom`** is Rect/Point/Insets.
-- **`internal/demo`** is the showcase shared by `cmd/hello`, `cmd/preview` and tests. **`cmd/hello`** is only glue: InkView events -> `Document`, repaints coalesced via `OnInvalidate`.
+- **`internal/demo`** is the showcase shared by `apps/hello`, `cmd/preview` and tests (its texts are translated: pt-BR first, English fallback, via `internal/i18n`). **`internal/appkit`** is the contract every app follows (lifecycle glue: InkView events -> `Document`, repaints coalesced and partial; first-run registration; the `app.json` manifest and the `applications/.pbgo` records the Launcher reads). Apps live in `apps/<id>` (`apps/hello` is the blueprint; `apps/contract_test.go` checks them all) and build to `dist/applications/<id>.app`.
 - **`internal/install`** self-registers the app on first run: writes 128x128 8-bit BMP icons and text-patches the desktop `view.json` (backup, JSON validation, atomic replace, idempotent, repairs old relative paths). Tested against a real firmware file in `testdata/`.
 - **`examples/`** is the source of every code sample in `docs/`; `tools/docsync` copies it into fenced blocks whose first line is `// examples/<file>` or `// examples/<file>#<Func>`, and `TestRepositoryDocsAreInSync` fails if a page is stale.
 

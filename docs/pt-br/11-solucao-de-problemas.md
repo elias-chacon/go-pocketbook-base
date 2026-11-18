@@ -14,8 +14,8 @@ Problemas encontrados ao construir este projeto em um PB741, com a causa e a cor
 | A imagem fica deslocada ~137 px para baixo e o fundo encosta na borda | O painel do sistema está ligado e o InkView desloca o canvas | Chame `inkview.DisablePanel()` no `Init` (o modelo já faz) |
 | O Sair não faz nada | `CloseApp()` sozinho não encerrava o app | `inkview.Exit()` chama `CloseApp()` **e** `LeaveInkViewMain()` |
 | O toque cai "um pouco fora" do desenho | Desenho e toque usaram coordenadas diferentes | Não escale nem desloque à mão: use pixels de design e `doc.HandlePointer` com as coordenadas do aparelho |
-| Digitar não faz nada | Nenhum teclado foi dado ao documento | `doc.Keyboard = deviceKeyboard{}` (veja `examples/newapp`) |
-| Arrastar um slider é lento | O e-ink redesenha a tela inteira | A cola agrupa os redesenhos e ignora eventos move; a atualização parcial está no backlog |
+| Digitar não faz nada | Nenhum teclado foi dado ao documento | `doc.Keyboard = env.Keyboard` (o kit entrega à sua fábrica, veja `apps/hello`) |
+| Arrastar um slider é lento | O e-ink redesenha a tela inteira | O kit agrupa os redesenhos, ignora eventos de movimento e envia ao painel só as áreas que mudaram (atualização parcial) |
 | Um símbolo (✓, →) aparece como quadrado | As fontes embutidas não têm esse glifo | Desenhe um ícone (`c.Icon`) ou use outro símbolo |
 | O texto termina em "…" | Não cabe na caixa | Dê mais largura ao elemento (`FlexGrow`, `Width`) ou use um texto menor |
 | O app não faz nada ao abrir | Ele travou antes de desenhar | Leia `applications/hello.log` (gravado pela demo) |

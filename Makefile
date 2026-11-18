@@ -13,7 +13,7 @@ image:            ## build the SDK + Go toolchain docker image
 app: image        ## cross-compile the .app (linux/arm, cgo + libinkview)
 	v=$$(go run ./tools/bumpversion build) && echo "Version: $$v" && \
 	docker run --rm -v "$(CURDIR)":/app -v pbgo-cache:/gopath $(IMAGE) \
-		build -ldflags=-X=$(PKG).Value=$$v -o $(DIST)/applications/$(APP).app ./cmd/$(APP)
+		build -ldflags=-X=$(PKG).Value=$$v -o $(DIST)/applications/$(APP).app ./apps/$(APP)
 
 dist: app         ## single file to copy to the device: dist/applications/$(APP).app
 

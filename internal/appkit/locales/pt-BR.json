@@ -1,0 +1,4 @@
+{
+  "install.registered": "Ícone registrado: aparece na tela inicial depois que o aparelho recarregar (ex.: ao tirar o cabo USB).",
+  "install.failed": "Falha ao registrar o ícone: %s"
+}

@@ -144,15 +144,15 @@ keyboard closes.
 
 ## The app on the reader
 
-`cmd/hello` and `examples/newapp` are a thin glue between InkView and the document:
+`internal/appkit` is a thin glue between InkView and the document, shared by every app (`apps/hello` is the blueprint):
 
 | InkView event | What the glue does |
 |---|---|
 | start | turn the system panel off, read the screen size, build the document |
-| show | `doc.Update()` and send only the changed areas to the screen (`examples/newapp`: `doc.Render()` and the whole image) |
+| show | `doc.Update()` and send only the changed areas to the screen |
 | touch down / move / up | `doc.HandlePointer(...)` |
 | key (Back, or left / Menu on the PB741) | `doc.HandleBack()`: close a popup, then a modal |
-| key (previous / next page) | the demo changes tab (`MovePage`) |
+| other keys | the app's `Key` method (the demo changes tab with previous / next page) |
 
 Two details worth knowing:
 

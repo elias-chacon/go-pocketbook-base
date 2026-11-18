@@ -142,14 +142,16 @@ func SavePNG(doc *widget.Document, path string) error {
 
 ## Passo 5 — Rodar no leitor
 
-1. Copie o app modelo e troque a tela que ele mostra:
+1. Copie o app blueprint e troque a tela que ele mostra:
 
    ```sh
-   cp -r examples/newapp cmd/meuapp
+   cp -r apps/hello apps/meuapp
    ```
 
-   Abra `cmd/meuapp/main.go` e troque `examples.NewPagedApp(...)` pela sua tela. O modelo já encaminha o
-   toque, as teclas físicas e o teclado do sistema para o documento.
+   Em `apps/meuapp` troque o `app.json` (o `id` deve ser `meuapp`, o nome da pasta), apague o que não precisar do
+   `hello.go` e monte a sua tela em `newHello`. O kit já encaminha o toque, as teclas físicas e o teclado do sistema
+   para o seu documento, registra o ícone na primeira execução e repinta só o que mudou (veja
+   [Apps e o contrato](13-apps-e-o-contrato.md)).
 
 2. Compile (precisa de Docker, veja [Build e versionamento](03-build-e-versionamento.md)):
 

@@ -32,6 +32,7 @@ Ele traz:
 | 10 | [Testes](10-testes.md) | Testar telas e toque sem o aparelho |
 | 11 | [Solução de problemas](11-solucao-de-problemas.md) | Particularidades do aparelho e problemas comuns |
 | 12 | [Internacionalização](12-internacionalizacao.md) | pt-BR primeiro, fallback em inglês, traduções em JSON |
+| 13 | [Apps e o contrato](13-apps-e-o-contrato.md) | `apps/<id>`, o manifesto, o ciclo de vida, o `apps/hello` como blueprint |
 
 ## Uma olhada rápida
 
@@ -65,7 +66,8 @@ func Hello(onClose func()) widget.Widget {
 ## Mapa do projeto
 
 ```
-cmd/hello          o app de demonstração que roda no leitor
+apps/hello         o app blueprint: uma vitrine de componentes que segue o contrato
+internal/appkit    o que todo app compartilha: ciclo de vida, registro na primeira execução, manifesto
 cmd/preview        gera as páginas da demo em PNG
 examples/          código testado usado nesta documentação (e um modelo de app)
 internal/widget    componentes, layout e toque  ← a biblioteca

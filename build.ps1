@@ -29,7 +29,7 @@ if ($LASTEXITCODE -or -not $version) { throw "could not bump the version" }
 Write-Host "Version: $version"
 
 Dk build -t $Image docker
-Dk run --rm -v "${src}:/app" -v pbgo-cache:/gopath $Image build "-ldflags=-X=go-pocketbook-base/internal/version.Value=$version" -o $out "./cmd/$App"
+Dk run --rm -v "${src}:/app" -v pbgo-cache:/gopath $Image build "-ldflags=-X=go-pocketbook-base/internal/version.Value=$version" -o $out "./apps/$App"
 
 if (-not (Test-Path $out)) { throw "Build finished but $out was not created (see the docker output above)." }
 Write-Host "Done: v$version $out ($([math]::Round((Get-Item $out).Length/1MB,1)) MB) - copy this single file to <device>/applications (USB)."

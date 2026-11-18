@@ -30,6 +30,7 @@
 | 10 | [Testing](10-testing.md) | Test screens and touch without a device |
 | 11 | [Troubleshooting](11-troubleshooting.md) | Device quirks and common problems |
 | 12 | [Internationalization](12-internationalization.md) | pt-BR first, English fallback, JSON translations |
+| 13 | [Apps and the contract](13-apps-and-the-contract.md) | `apps/<id>`, the manifest, the lifecycle, `apps/hello` as the blueprint |
 
 ## Quick look
 
@@ -63,7 +64,8 @@ func Hello(onClose func()) widget.Widget {
 ## Project map
 
 ```
-cmd/hello          the demo app that runs on the reader
+apps/hello         the blueprint app: a component showcase that follows the contract
+internal/appkit    what every app shares: lifecycle, first-run registration, manifest
 cmd/preview        renders the demo pages to PNG
 examples/          tested code used by this documentation (and an app template)
 internal/widget    components, layout and touch  ← the library

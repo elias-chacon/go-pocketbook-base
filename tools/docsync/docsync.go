@@ -23,8 +23,12 @@ import (
 //	// examples/components.go#ButtonExample   <- one function
 //	```
 //
+//	```go
+//	// apps/hello/hello.go#newHello   <- a function of an app (a whole file only for examples/)
+//	```
+//
 // docsync fills (or refreshes) such blocks from the real, tested source.
-var blockRe = regexp.MustCompile("(?s)```go\n(// examples/[^\n]+)\n(.*?)```")
+var blockRe = regexp.MustCompile("(?s)```go\n(// (?:examples|apps)/[^\n]+)\n(.*?)```")
 
 // syncAll refreshes every embedded block of the .md files under root/docs. It
 // returns the files whose content differs from the sources; with write=true it

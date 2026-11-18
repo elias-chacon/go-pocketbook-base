@@ -14,8 +14,8 @@ Problems seen while building this project on a PB741, with the cause and the fix
 | The picture is shifted down ~137 px, and the bottom touches the edge | The system panel is on and InkView offsets the canvas | Call `inkview.DisablePanel()` in `Init` (the template does) |
 | The Exit/Quit does nothing | `CloseApp()` alone did not end the app | `inkview.Exit()` calls `CloseApp()` **and** `LeaveInkViewMain()` |
 | A tap lands "a bit off" the drawing | Drawing and touch used different coordinates | Do not scale or offset by hand: use design pixels and `doc.HandlePointer` with the device coordinates |
-| Typing does nothing | No keyboard was given to the document | `doc.Keyboard = deviceKeyboard{}` (see `examples/newapp`) |
-| Dragging a slider is slow | The e-ink redraws the whole screen | The glue coalesces repaints and skips move events; a partial refresh is on the backlog |
+| Typing does nothing | No keyboard was given to the document | `doc.Keyboard = env.Keyboard` (the kit gives it to your factory, see `apps/hello`) |
+| Dragging a slider is slow | The e-ink redraws the whole screen | The kit coalesces repaints, skips move events and sends only the changed areas to the panel (partial refresh) |
 | A symbol (✓, →) shows as a box | The built-in fonts lack that glyph | Draw an icon (`c.Icon`) or use another symbol |
 | Text ends with "…" | It does not fit its box | Give the element more width (`FlexGrow`, `Width`) or shorter text |
 | The app does nothing at all when opened | It crashed before drawing | Read `applications/hello.log` (written by the demo) |

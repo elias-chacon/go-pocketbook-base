@@ -107,11 +107,11 @@ func TestMenuBarSwitchesPagesAndExits(t *testing.T) {
 		t.Fatal("Mais must open a popup")
 	}
 	// the last row is "Sair"
-	pop := app.Doc.TargetAt(geom.Point{X: bar.MenuRect(app.tabs.Count()).X + 20, Y: bar.Bounds.Bottom() + 6 + 76 + 76 + 26 + 76/2 + 6})
+	pop := app.Doc.TargetAt(geom.Point{X: bar.MenuRect(app.tabs.Count()).X + 20, Y: bar.Bounds.Bottom() + 6 + 3*76 + 26 /* About, Modal, Language, then a separator */ + 76/2 + 6})
 	if pop == nil {
 		t.Fatal("no popup row under the touch")
 	}
-	tapPoint(app, geom.Point{X: bar.MenuRect(app.tabs.Count()).X + 20, Y: bar.Bounds.Bottom() + 6 + 6 + 76 + 76 + 26 + 76/2})
+	tapPoint(app, geom.Point{X: bar.MenuRect(app.tabs.Count()).X + 20, Y: bar.Bounds.Bottom() + 6 + 6 + 3*76 + 26 /* About, Modal, Language, then a separator */ + 76/2})
 	if !exited {
 		t.Error("“Sair” must call Exit")
 	}
@@ -260,5 +260,69 @@ func TestPageKeysMoveBetweenPagesAndWrap(t *testing.T) {
 	app.MovePage(-2) // wraps to the last page
 	if app.tabs.Current() != app.tabs.Count()-1 {
 		t.Errorf("previous from the first = %d", app.tabs.Current())
+	}
+}
+
+func TestEveryTextIsTranslatedAndEnglishIsComplete(t *testing.T) {
+	app, _ := newApp(nil)
+	for _, lang := range []string{"pt-BR", "en"} {
+		if missing := app.tr.Missing(lang); len(missing) != 0 {
+			t.Errorf("%s lacks translations: %v", lang, missing)
+		}
+	}
+}
+
+func TestSwitchingLanguageTranslatesTheScreenAndKeepsWhatWasTyped(t *testing.T) {
+	var saved string
+	kb := &widget.FakeKeyboard{Reply: "Ana"}
+	app := New(1404, 1872, Config{Version: "1.2.3", Keyboard: kb, OnLangChange: func(l string) { saved = l }})
+	app.Doc.Layout()
+	tapPoint(app, byID(t, app, "input-name").Elem().Bounds.Center()) // type a name in Portuguese
+	if app.Pages()[0] != "Entradas" {
+		t.Fatalf("starts in Portuguese: %v", app.Pages())
+	}
+
+	app.toggleLanguage()
+	if app.Lang() != "en" || saved != "en" {
+		t.Fatalf("lang=%q saved=%q", app.Lang(), saved)
+	}
+	if got := app.Pages(); got[0] != "Inputs" || got[3] != "Calendar" {
+		t.Errorf("page titles = %v", got)
+	}
+	if got := byID(t, app, "input-name").(*widget.Input); got.Value != "Ana" || got.Placeholder != "Full name" {
+		t.Errorf("the typed value survives the language change and the placeholder is translated: %q %q", got.Value, got.Placeholder)
+	}
+	if byID(t, app, "input-price").(*widget.Input).Prefix != "$ " {
+		t.Error("number formats follow the language")
+	}
+
+	app.ShowPage(3)
+	if byID(t, app, "calendar").(*widget.Calendar).Locale != widget.LocaleEN {
+		t.Error("the calendar speaks English")
+	}
+	app.ShowPage(2)
+	if tbl := byID(t, app, "table-books").(*widget.Table); tbl.Columns[0].Title != "Book" || tbl.Summary(1, 5, 12) != "1–5 of 12" {
+		t.Errorf("table: %q %q", tbl.Columns[0].Title, tbl.Summary(1, 5, 12))
+	}
+
+	app.toggleLanguage() // and back
+	if app.Lang() != "pt-BR" || saved != "pt-BR" || app.Pages()[2] != "Dados" {
+		t.Errorf("back to Portuguese: %q %q %v", app.Lang(), saved, app.Pages())
+	}
+}
+
+func TestStartingInEnglishAndTheLanguageMenuItem(t *testing.T) {
+	app := New(1404, 1872, Config{Version: "1", Lang: "en"})
+	if app.Pages()[1] != "Choices" {
+		t.Errorf("Config.Lang starts the demo in English: %v", app.Pages())
+	}
+	app.Doc.Layout()
+	bar := byID(t, app, "menubar").(*widget.MenuBar)
+	more := bar.MenuRect(app.tabs.Count())
+	tapPoint(app, more.Center())
+	// the third row of the "More" menu is the language switch (it names the OTHER language)
+	tapPoint(app, geom.Point{X: more.X + 20, Y: bar.Bounds.Bottom() + 6 + 6 + 2*76 + 76/2})
+	if app.Lang() != "pt-BR" || app.Pages()[1] != "Escolhas" {
+		t.Errorf("the menu item must switch back to Portuguese: %q %v", app.Lang(), app.Pages())
 	}
 }

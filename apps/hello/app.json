@@ -1,0 +1,12 @@
+{
+  "id": "hello",
+  "title": {
+    "pt-BR": "Hello Go",
+    "en": "Hello Go"
+  },
+  "description": {
+    "pt-BR": "Vitrine de todos os componentes da biblioteca. É também o blueprint dos apps do Launcher.",
+    "en": "Showcase of every component of the library. It is also the blueprint of the Launcher's apps."
+  },
+  "group": "@General"
+}

@@ -143,15 +143,15 @@ Um campo em edição fica *focado* (borda mais grossa) até o teclado fechar.
 
 ## O app no leitor
 
-`cmd/hello` e `examples/newapp` são uma cola fina entre o InkView e o documento:
+O `internal/appkit` é uma cola fina entre o InkView e o documento, compartilhada por todos os apps (o `apps/hello` é o blueprint):
 
 | Evento do InkView | O que a cola faz |
 |---|---|
 | início | desliga o painel do sistema, lê o tamanho da tela, monta o documento |
-| exibir | `doc.Update()` e envia à tela só as áreas que mudaram (`examples/newapp`: `doc.Render()` e a imagem inteira) |
+| exibir | `doc.Update()` e envia à tela só as áreas que mudaram |
 | toque down / move / up | `doc.HandlePointer(...)` |
 | tecla (Voltar, ou esquerda / Menu no PB741) | `doc.HandleBack()`: fecha um popup, depois uma modal |
-| tecla (página anterior / próxima) | o demo troca de aba (`MovePage`) |
+| outras teclas | o método `Key` do app (o demo troca de aba com página anterior / próxima) |
 
 Dois detalhes que vale conhecer:
 
