@@ -28,7 +28,7 @@ até você vetá-las**, e trocá-las é barato porque cada uma fica atrás de um
 | 7 | CalDAV e WebDAV (T68) | `github.com/emersion/go-webdav` v0.7.0 (pacote `caldav`) | Compila no Go 1.17/ARM (o conjunto IMAP + MIME + CalDAV ocupa 3,3 MB) |
 | 8 | Microsoft Graph (T60, T64, T68) | **HTTP e JSON diretos** (`env.HTTP` e `encoding/json`), sem SDK | O SDK da Microsoft é enorme e exige Go novo; a API REST é pequena |
 | 9 | Exchange local (T61) | **EWS** em SOAP/XML (`encoding/xml`) escrito por nós | Não há biblioteca em Go compatível; a fatia necessária (mensagens, calendário, tarefas) é pequena |
-| 10 | Autenticação (T53) | **OAuth2 por código de dispositivo** (RFC 8628) e senha de app como alternativa | O leitor não tem navegador: ele mostra o código e o endereço, e você autoriza no celular. Precisa de *client IDs* registrados por você |
+| 10 | Autenticação (T53) | **OAuth2 por código de dispositivo** (RFC 8628) para a **Microsoft**, e **senha de app** para os demais (Google, iCloud, Fastmail) | O leitor não tem navegador: ele mostra o código e o endereço, e você autoriza no celular. Isso serve à Microsoft, que aceita os escopos de e-mail, calendário e tarefas nesse fluxo. O **Google não**: o fluxo por código de dispositivo dele só permite escopos limitados (login, Drive, YouTube), sem Gmail nem Calendar. O Gmail usa então IMAP/SMTP com senha de app, e o calendário do Google entra **somente leitura** pelo endereço iCal secreto (T70). Precisa de um *client ID* da Microsoft registrado por você |
 | 11 | Tokens e senhas (T57) | Cifrados em repouso com **AES-GCM**; chave derivada de um **PIN opcional** e, sem PIN, de um identificador do aparelho | Sem PIN a cifra só protege contra copiar o arquivo para outro lugar; **não é cofre** (o leitor não tem *keystore*). Isso deve estar dito na tela |
 | 12 | Sincronização (T54) | **Offline-first**: a interface lê só do `store`; uma fila de operações sincroniza quando há rede (`Env.HTTP` conecta o Wi-Fi) | O Wi-Fi do leitor demora a conectar e some; a tela nunca espera a rede |
 | 13 | Integração entre apps (T55) | **Intents** (`PBGO_INTENT`, na linha do `PBGO_LAUNCHER`) e dados compartilhados no `store` | Um app por vez: não há comunicação em processo, só dados em disco e um app abrindo o outro |
@@ -40,7 +40,7 @@ até você vetá-las**, e trocá-las é barato porque cada uma fica atrás de um
   é um arquivo próprio (registros em JSON com índice em memória), atrás da mesma porta.
 - **T59** não usa biblioteca de SMTP: o envio é `net/smtp` mais XOAUTH2.
 - **T66** usa `go-ical` e `rrule-go` em vez de escrever o *parser* e a expansão de recorrência do zero.
-- **T53** só pode ser concluída depois que você registrar os aplicativos OAuth (Microsoft Entra ID e Google).
+- **T53** só pode ser concluída depois que você registrar o aplicativo OAuth na Microsoft (Entra ID), como cliente público com "permitir fluxos de cliente público" ligado. O Google não precisa de registro, porque usa senha de app.
 
 ## Como cada decisão foi checada
 

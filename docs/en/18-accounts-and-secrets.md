@@ -20,8 +20,8 @@ Rules (`Account.Validate`, which returns every problem at once): the `id` is a s
 protected** (IMAP and SMTP only with `tls` or `starttls`, CalDAV and EWS only with `https`); mail over IMAP needs both endpoints (IMAP and
 SMTP); `graph` and `google` have nothing to configure.
 
-Known providers are found by the domain of the address (`PresetFor("ana@hotmail.com")` gives Outlook's). Outlook and Google use
-OAuth2; iCloud and Fastmail an **app password**. An unknown provider is the `custom` preset, which starts with no services.
+Known providers are found by the domain of the address (`PresetFor("ana@hotmail.com")` gives Outlook's). Outlook uses
+OAuth2; Google, iCloud and Fastmail an **app password** (Google's OAuth flow for devices does not allow Gmail or Calendar; Gmail is mail only). An unknown provider is the `custom` preset, which starts with no services.
 
 ## The use cases (`Accounts`)
 
@@ -48,6 +48,18 @@ so a removal that failed midway can be repeated. `Credentials` hands the account
   overwritten** by a new one.
 - PBKDF2 is written here (the standard library only has it in recent Go) and is checked against the test vectors of RFC 7914.
 
+## Signing in by device code (OAuth2)
+
+The reader has no browser, so the Microsoft account signs in by the **device code flow** (RFC 8628): the reader asks for a code
+(`Authorizer.Start`), shows `microsoft.com/devicelogin` and the short code, and you type it on your phone. Meanwhile the reader asks the
+server every few seconds (`Wait`): `authorization_pending` means keep waiting, `slow_down` raises the interval by 5 s, and denying,
+expiring or cancelling end without tokens (`ErrDenied`, `ErrExpired`, `ErrCancelled`). The tokens received go into the vault, and `Refresh`
+renews the access token without asking anything again. The device code is never shown.
+
+Microsoft's configuration (`oauthdevice.Microsoft(clientID)`) uses the `common` tenant (personal and work accounts) and the scopes of the
+apps (mail, calendar and tasks). It needs a **client ID**: register an application in Entra ID as a **public client** and turn on
+"allow public client flows". Google is not here: its device flow does not allow Gmail or Calendar.
+
 ## The code
 
 | Layer | Package | Holds |
@@ -56,5 +68,6 @@ so a removal that failed midway can be repeated. `Credentials` hands the account
 | application | `internal/accounts/application` | `Accounts`: add, update, remove, list by service, credentials, refresh tokens |
 | infrastructure | `…/infrastructure/jsonaccounts` | the `AccountStore` in `accounts.json` |
 | | `…/infrastructure/securefile` | the encrypted `Vault`, the PIN and PBKDF2 |
+| | `…/infrastructure/oauthdevice` | the `Authorizer`: the device code flow and token renewal, with Microsoft's configuration |
 
 The context depends only on the shared kernel: the architecture test (chapter 14) checks it.

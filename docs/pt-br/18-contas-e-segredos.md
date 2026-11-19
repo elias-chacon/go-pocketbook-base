@@ -20,8 +20,8 @@ Regras (`Account.Validate`, que devolve todos os problemas de uma vez): o `id` �
 protegida** (IMAP e SMTP só com `tls` ou `starttls`, CalDAV e EWS só com `https`); o e-mail por IMAP precisa dos dois endpoints (IMAP
 e SMTP); `graph` e `google` não têm o que configurar.
 
-Os provedores conhecidos são achados pelo domínio do endereço (`PresetFor("ana@hotmail.com")` dá o do Outlook). O Outlook e o Google
-usam OAuth2; o iCloud e o Fastmail, uma **senha de app**. Um provedor desconhecido é o preset `custom`, que começa sem serviços.
+Os provedores conhecidos são achados pelo domínio do endereço (`PresetFor("ana@hotmail.com")` dá o do Outlook). O Outlook usa
+OAuth2; o Google, o iCloud e o Fastmail, uma **senha de app** (o fluxo OAuth do Google para dispositivos não permite o Gmail nem o Calendar; o Gmail é só e-mail). Um provedor desconhecido é o preset `custom`, que começa sem serviços.
 
 ## Os casos de uso (`Accounts`)
 
@@ -48,6 +48,18 @@ os tokens renovados.
   sobrescrito** por um novo.
 - O PBKDF2 está escrito aqui (a biblioteca padrão só o tem em Go recente) e é conferido contra os vetores de teste da RFC 7914.
 
+## Entrar por código de dispositivo (OAuth2)
+
+O leitor não tem navegador, então a conta da Microsoft entra pelo **fluxo de código de dispositivo** (RFC 8628): o leitor pede um código
+(`Authorizer.Start`), mostra `microsoft.com/devicelogin` e o código curto, e você o digita no celular. Enquanto isso o leitor consulta o
+servidor a cada poucos segundos (`Wait`): `authorization_pending` é esperar, `slow_down` aumenta o intervalo em 5 s, e negar, expirar ou
+cancelar terminam sem tokens (`ErrDenied`, `ErrExpired`, `ErrCancelled`). Os tokens recebidos vão para o cofre, e `Refresh` renova o token de
+acesso sem pedir nada de novo. O código do dispositivo nunca é mostrado.
+
+A configuração da Microsoft (`oauthdevice.Microsoft(clientID)`) usa o *tenant* `common` (contas pessoais e de trabalho) e os escopos dos
+apps (e-mail, calendário e tarefas). Ela precisa de um **client ID**: registre um aplicativo no Entra ID como **cliente público** e ligue
+"permitir fluxos de cliente público". O Google não entra aqui: o fluxo por dispositivo dele não permite o Gmail nem o Calendar.
+
 ## O código
 
 | Camada | Pacote | Guarda |
@@ -56,5 +68,6 @@ os tokens renovados.
 | application | `internal/accounts/application` | `Accounts`: adicionar, atualizar, remover, listar por serviço, credenciais, renovar tokens |
 | infrastructure | `…/infrastructure/jsonaccounts` | o `AccountStore` em `accounts.json` |
 | | `…/infrastructure/securefile` | o `Vault` cifrado, o PIN e o PBKDF2 |
+| | `…/infrastructure/oauthdevice` | o `Authorizer`: o fluxo de código de dispositivo e a renovação, com a configuração da Microsoft |
 
 O contexto só depende do núcleo compartilhado (`kernel`): o teste de arquitetura (capítulo 14) confere.

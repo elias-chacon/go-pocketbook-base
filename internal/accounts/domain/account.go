@@ -269,3 +269,37 @@ type Vault interface {
 type Eraser interface {
 	Erase(accountID string) error
 }
+
+// Challenge is what a person has to do to let the reader into an account without
+// a browser: open VerificationURI on another device and type UserCode there.
+type Challenge struct {
+	UserCode        string
+	VerificationURI string
+	ExpiresIn       int    // seconds the code lives
+	Interval        int    // seconds between the reader's checks
+	DeviceCode      string // the reader's own handle for the request: never shown
+}
+
+// String shows what the person needs, and never the device code.
+func (c Challenge) String() string {
+	return fmt.Sprintf("open %s and type %s", c.VerificationURI, c.UserCode)
+}
+
+// The ways a sign-in by device code ends without tokens.
+var (
+	ErrDenied    = errors.New("accounts: the sign-in was denied")
+	ErrExpired   = errors.New("accounts: the code expired before the sign-in was approved")
+	ErrCancelled = errors.New("accounts: the sign-in was cancelled")
+)
+
+// Authorizer is the port that signs in with OAuth2 by device code (RFC 8628) and
+// renews tokens.
+type Authorizer interface {
+	// Start asks the provider for a code to show the person.
+	Start() (Challenge, error)
+	// Wait blocks until the person approved (the tokens), denied, the code expired,
+	// or cancelled() says so (it is asked between the checks).
+	Wait(c Challenge, cancelled func() bool) (Secret, error)
+	// Refresh trades the refresh token of s for a new access token.
+	Refresh(s Secret) (Secret, error)
+}

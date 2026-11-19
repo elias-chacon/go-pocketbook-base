@@ -19,8 +19,14 @@ func TestEveryPresetBuildsAValidAccountExceptTheCustomOne(t *testing.T) {
 		if err != nil {
 			t.Errorf("%s: %v", p.ID, err)
 		}
-		if a.Provider != p.ID || !a.Has(Mail) || !a.Has(Calendar) || !a.Has(Tasks) {
-			t.Errorf("%s serves mail, calendar and tasks: %+v", p.ID, a.Services)
+		if a.Provider != p.ID || !a.Has(Mail) {
+			t.Errorf("%s serves mail: %+v", p.ID, a.Services)
+		}
+		if p.ID != "gmail" && (!a.Has(Calendar) || !a.Has(Tasks)) {
+			t.Errorf("%s serves calendar and tasks too: %+v", p.ID, a.Services)
+		}
+		if p.ID == "gmail" && (a.Has(Calendar) || a.Auth != Password) {
+			t.Errorf("gmail is mail by app password; its calendar is a secret iCal address: %+v", a)
 		}
 	}
 	if ps := Presets(); ps[len(ps)-1].ID != Custom {

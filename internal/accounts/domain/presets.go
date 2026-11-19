@@ -33,15 +33,16 @@ var presets = []Preset{
 	{
 		ID: "gmail", Label: "Google (Gmail)",
 		Domains: []string{"gmail.com", "googlemail.com"},
-		auth:    OAuth2,
+		// An app password, not OAuth2: Google's device code flow, the only one a reader
+		// without a browser can do, does not allow the Gmail or Calendar scopes. The
+		// calendar comes in read-only from the account's secret iCal address (T70).
+		auth: Password,
 		build: func() map[Service][]Endpoint {
-			g := []Endpoint{{Kind: Google}}
 			return map[Service][]Endpoint{
 				Mail: {
 					{Kind: IMAP, Host: "imap.gmail.com", Port: 993, Security: TLS},
 					{Kind: SMTP, Host: "smtp.gmail.com", Port: 587, Security: StartTLS},
 				},
-				Calendar: g, Tasks: g,
 			}
 		},
 	},
