@@ -33,11 +33,26 @@ enviar. Usa o `go-message` (compilado de verdade no SDK Go 1.17/ARM).
 - **Escrever**: UTF-8 em *quoted-printable*, `Message-ID` gerado do domínio do remetente (`NewMessageID`), conversa preservada, anexos em
   `multipart/mixed`. O **Cco nunca vai nos cabeçalhos**: esses destinatários só recebem pelo envelope.
 
+## O cache de mensagens (SQLite)
+
+A porta `MessageStore` é de onde as telas leem (*offline-first*); a sincronização escreve nela. O `sqlstore` a implementa no banco
+compartilhado (capítulo 22), com as suas próprias migrações (módulo `mail`) e as tabelas registradas para **apagar a conta**.
+
+- **Páginas**: `Page` lista uma pasta, **da mais nova para a mais antiga**, com o total, e **sem o corpo** (uma página de 20 mensagens não carrega
+  20 corpos): a lista mostra a prévia. `Get` traz uma mensagem com o corpo. O tamanho da página tem padrão e limite (20 e 200).
+- **Salvar de novo substitui** a mensagem (a mesma conta, pasta e id remoto), em vez de duplicá-la.
+- **Busca**: ignora maiúsculas e acentos (`reuniao` acha "Reunião"), exige **todas** as palavras no assunto, no remetente ou no texto, e um
+  `%` ou `_` digitado é só um caractere, não um curinga.
+- **Pastas**: `Folders` calcula o total e os **não lidas** na hora (nunca ficam desatualizados), e `SaveFolders` segue o servidor: uma pasta
+  que sumiu leva as suas mensagens junto.
+- **Marcas** (`SetFlags`: lida, sinalizada...) e `Delete`. Uma linha danificada é **reportada**, não escondida.
+
 ## O código
 
 | Camada | Pacote | Guarda |
 |---|---|---|
-| domain | `internal/mail/domain` | `Message`, `Folder`, `Draft`, `Address`, `Reply`, `Forward`, `Quote` |
+| domain | `internal/mail/domain` | `Message`, `Folder`, `Draft`, `Address`, `Reply`, `Forward`, `Quote`, a porta `MessageStore` e `Query` |
 | infrastructure | `internal/mail/infrastructure/mime` | `Parse`, `Compose`, a conversão de HTML em texto |
+| | `internal/mail/infrastructure/sqlstore` | o `MessageStore` no SQLite: páginas, busca, pastas, marcas |
 
 Como os outros contextos, o `mail` não conhece a plataforma nem o toolkit: o teste de arquitetura (capítulo 14) confere.

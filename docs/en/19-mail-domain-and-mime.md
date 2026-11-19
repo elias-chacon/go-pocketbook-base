@@ -33,11 +33,26 @@ the quote ("On 3 Jan, Ana wrote:") comes ready from the caller, in the person's 
 - **Writing**: UTF-8 in quoted-printable, a `Message-ID` generated from the sender's domain (`NewMessageID`), the thread kept, attachments in
   `multipart/mixed`. **Bcc never goes in the headers**: those recipients only get the message through the envelope.
 
+## The message cache (SQLite)
+
+The `MessageStore` port is where the screens read from (*offline-first*); synchronization writes to it. `sqlstore` implements it in the shared
+database (chapter 22), with its own migrations (module `mail`) and its tables registered so that **erasing an account** clears them.
+
+- **Pages**: `Page` lists a folder, **newest first**, with the total, and **without the body** (a page of 20 messages does not load 20 bodies): the list
+  shows the preview. `Get` returns one message with its body. The page size has a default and a cap (20 and 200).
+- **Saving again replaces** the message (the same account, folder and remote id), instead of duplicating it.
+- **Search**: ignores case and accents (`reuniao` finds "Reunião"), needs **every** word in the subject, the sender or the text, and a typed
+  `%` or `_` is just a character, not a wildcard.
+- **Folders**: `Folders` computes the total and the **unread** count on the spot (they are never stale), and `SaveFolders` follows the server: a
+  folder that went away takes its messages with it.
+- **Flags** (`SetFlags`: read, flagged...) and `Delete`. A damaged row is **reported**, not hidden.
+
 ## The code
 
 | Layer | Package | Holds |
 |---|---|---|
-| domain | `internal/mail/domain` | `Message`, `Folder`, `Draft`, `Address`, `Reply`, `Forward`, `Quote` |
+| domain | `internal/mail/domain` | `Message`, `Folder`, `Draft`, `Address`, `Reply`, `Forward`, `Quote`, the `MessageStore` port and `Query` |
 | infrastructure | `internal/mail/infrastructure/mime` | `Parse`, `Compose`, the HTML to text conversion |
+| | `internal/mail/infrastructure/sqlstore` | the `MessageStore` on SQLite: pages, search, folders, flags |
 
 Like the other contexts, `mail` knows neither the platform nor the toolkit: the architecture test (chapter 14) checks it.

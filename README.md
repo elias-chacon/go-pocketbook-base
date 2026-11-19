@@ -182,7 +182,7 @@ Critério de pronto de **cada app** (herdado das regras do projeto): segue o con
 
 *App de e-mail (`apps/mail`, contexto `internal/mail`)*
 
-- [ ] T58 Mail ([capítulo 19](docs/pt-br/19-email-dominio-e-mime.md)): domínio (mensagem, pasta, rascunho, responder e encaminhar), leitor e escritor de MIME (partes, codificações, charset, HTML → texto, anexos). **Feito e testado**, e compilado no SDK Go 1.17/ARM. **Falta:** o cache offline (depende do `store`, T54)
+- [ ] T58 Mail ([capítulo 19](docs/pt-br/19-email-dominio-e-mime.md)): domínio (mensagem, pasta, rascunho, responder e encaminhar), leitor e escritor de MIME (partes, codificações, charset, HTML → texto, anexos). **Feito e testado**, e compilado no SDK Go 1.17/ARM. O cache offline de mensagens também está feito (`sqlstore`: páginas sem corpo, busca sem acento, pastas com contagens), testado com um banco em memória. **Falta:** a sincronização que o preenche (T59/T60) e a tela (T62)
 - [ ] T59 Mail: **IMAP + SMTP** (login por senha de app ou OAuth2 com XOAUTH2), sincronização de pastas e mensagens, envio, rascunhos e anexos
 - [ ] T60 Mail: **Microsoft Graph** (Outlook.com e Microsoft 365) por OAuth2, mesmo modelo de domínio
 - [ ] T61 Mail: **Exchange local** (EWS), para servidores que não usam Microsoft 365

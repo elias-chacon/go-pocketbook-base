@@ -47,8 +47,9 @@
 //	mail          the e-mail of the future mail app: messages, folders, drafts, the rules
 //	              of replying and forwarding, and the MIME reader and writer. Layers:
 //	                domain          Message, Folder, Draft, Address, Reply, Forward
-//	                infrastructure  mime (RFC 5322 and MIME on the wire)
-//	              It depends on nothing but the kernel.
+//	                infrastructure  mime (RFC 5322 and MIME on the wire) and sqlstore (the
+//	                                messages in the shared database)
+//	              It depends on the kernel and, for the store, on storage.
 //	calendar      the events of the future calendar app: events, recurrence, reminders,
 //	              the occurrences of a range, and the iCalendar (.ics) reader and writer.
 //	              Layers:
@@ -173,7 +174,7 @@ var Rules = []Rule{
 	{accountsInfra, []string{kernelDir, accountsDomain, accountsInfra}},
 	// The Mail: its own vocabulary only.
 	{mailDomain, []string{kernelDir, mailDomain}},
-	{mailInfra, []string{kernelDir, mailDomain, mailInfra}},
+	{mailInfra, []string{kernelDir, mailDomain, mailInfra, storageDir}}, // sqlstore keeps the messages in the shared database
 	// The Calendar: its own vocabulary only.
 	{calendarDomain, []string{kernelDir, calendarDomain}},
 	{calendarInfra, []string{kernelDir, calendarDomain, calendarInfra}},
