@@ -8,7 +8,7 @@ Linux e macOS: um programa só, com ícone, que leva os apps dentro de si e os c
 ## Para quem só quer os apps
 
 1. Abra a página de [Releases](https://github.com/elias-chacon/go-pocketbook-base/releases) e baixe o arquivo do seu
-   computador: `pbgo-installer_<versão>_windows_amd64.zip`, `…_linux_amd64.tar.gz`, `…_darwin_arm64.tar.gz` (Apple
+   computador: `pbgo-installer_windows_amd64.zip`, `…_linux_amd64.tar.gz`, `…_darwin_arm64.tar.gz` (Apple
    silicon) ou `…_darwin_amd64.tar.gz` (Mac Intel). Descompacte.
 2. Conecte o PocketBook pelo cabo USB e escolha, no leitor, o modo de conexão com o PC (*Link com PC* / *PC Link*).
 3. Dê dois cliques em **pbgo-installer**. Ele encontra o leitor sozinho, copia os apps (o Launcher e os outros) e coloca os
@@ -59,8 +59,17 @@ instalador para Windows (amd64), Linux (amd64) e macOS (amd64, arm64) com a vers
 Launcher (o `tools/release/syso.go` escreve o arquivo de recursos do Windows por conta própria, então nada é baixado), empacota cada um em zip ou
 tar.gz, copia os `<id>.app` crus e os manifestos `<id>.json` (o catálogo do Launcher lista e baixa estes) e escreve o `SHA256SUMS`.
 
-O workflow `.github/workflows/release.yml` faz tudo isso quando uma tag `vMAJOR.MINOR.BUILD` é enviada (a tag deve ser igual a
-`.version`) e publica os arquivos na Release do GitHub.
+## Integração contínua e releases são dois workflows
+
+| Workflow | Quando | O que faz |
+|---|---|---|
+| `.github/workflows/ci.yml` | todo push na `main`, todo pull request e antes de uma release | `go vet`, todos os testes no Linux, a cobertura que conta (`tools/coverage`, as mesmas exclusões do Sonar), os dois apps compilados para o leitor; na `main` publica o badge de cobertura (JSON na branch `badges`) |
+| `.github/workflows/release.yml` | uma tag `vMAJOR.MINOR.BUILD` é enviada (deve ser igual ao `.version`) | roda o `ci.yml` antes, depois compila **todos os apps** de `apps/`, os instaladores e os checksums, e publica **uma Release do GitHub** com tudo |
+
+A release leva `<id>.app` + `<id>.json` de cada app (o catálogo do Launcher), o instalador de cada sistema com **nome sem versão**
+(então `…/releases/latest/download/pbgo-installer_windows_amd64.zip` é sempre o mais novo) e notas com o comando de instalação para
+Windows, Linux e macOS, geradas pelo `tools/release`. O README mostra os mesmos comandos para o `latest` e os badges (ci, cobertura,
+issues abertas, versão, última atualização).
 
 > **Estado.** Verificado no Windows com um leitor de verdade: o executável mostra o ícone do Launcher, acha o leitor e instala
-> (e registra) os apps. Ainda não verificados: o workflow de release no GitHub e os instaladores de Linux e macOS.
+> (e registra) os apps. Ainda não verificados: os dois workflows no GitHub e os instaladores de Linux e macOS (os testes rodam no Linux, em Docker).

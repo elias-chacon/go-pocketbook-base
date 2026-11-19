@@ -1,8 +1,12 @@
-# Publishes a release when a tag vMAJOR.MINOR.BUILD is pushed (it must equal .version):
-#   - dist/applications/<id>.app  the apps for the reader (the Launcher downloads these)
-#   - pbgo-installer_<version>_<os>_<arch>.zip|.tar.gz  the installer for people
+# Release: runs when a tag vMAJOR.MINOR.BUILD is pushed (it must equal .version).
+# It first runs the continuous integration (ci.yml), then builds every app of
+# apps/ for the reader and the installer for Windows, Linux and macOS, and
+# publishes one GitHub Release with:
+#   - <id>.app and <id>.json for every app (the Launcher's catalog reads these)
+#   - pbgo-installer_<os>_<arch>.zip|.tar.gz  the installer for people
 #   - SHA256SUMS
-# See docs/en/16-installer.md. This workflow has not been run yet.
+#   - release notes with the install command for each system (tools/release)
+# See docs/en/16-installer.md. The continuous integration is another workflow.
 name: release
 
 on:
@@ -10,11 +14,19 @@ on:
     tags: ["v*"]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: write # the called workflow declares it for its badge step (skipped on tags)
+
   release:
+    needs: ci
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the release
     steps:
       - uses: actions/checkout@v4
 
@@ -29,10 +41,7 @@ jobs:
             echo "tag $GITHUB_REF_NAME does not match .version ($version)"; exit 1
           fi
 
-      - name: Tests
-        run: go test ./...
-
-      - name: Build the apps for the reader (SDK image)
+      - name: Build every app for the reader (SDK image)
         run: |
           version="$(tr -d '\r\n' < .version)"
           docker build -t go-pocketbook-base-sdk docker
@@ -45,10 +54,13 @@ jobs:
               -o "dist/applications/$app.app" "./apps/$app"
           done
 
-      - name: Installer for Windows, Linux and macOS
+      - name: Installers, manifests, checksums and release notes
         run: go run ./tools/release
 
       - name: Publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "$GITHUB_REF_NAME" release/* --title "$GITHUB_REF_NAME" --generate-notes
+        run: |
+          files=$(ls release/* | grep -v RELEASE_NOTES.md)
+          gh release create "$GITHUB_REF_NAME" $files \
+            --title "$GITHUB_REF_NAME" --notes-file release/RELEASE_NOTES.md --generate-notes

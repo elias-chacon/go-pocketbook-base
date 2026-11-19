@@ -29,6 +29,8 @@ const (
 	distApps = "dist/applications"
 	payload  = "cmd/pbinstaller/payload"
 	outDir   = "release"
+	// defaultRepo is where the release is published when GITHUB_REPOSITORY is not set.
+	defaultRepo = "elias-chacon/go-pocketbook-base"
 )
 
 func main() {
@@ -79,7 +81,15 @@ func run() error {
 		files = append(files, name)
 		fmt.Println("built", name)
 	}
-	return checksums(outDir, files)
+	if err := checksums(outDir, files); err != nil {
+		return err
+	}
+	repo := os.Getenv("GITHUB_REPOSITORY")
+	if repo == "" {
+		repo = defaultRepo
+	}
+	base := "https://github.com/" + repo + "/releases/download/v" + version
+	return os.WriteFile(filepath.Join(outDir, "RELEASE_NOTES.md"), []byte(notes(base)), 0o644)
 }
 
 // windowsIcon writes the .syso that gives the Windows executable the Launcher's
@@ -108,6 +118,6 @@ func build(t target, version string) (string, error) {
 		return "", fmt.Errorf("%s/%s: %v\n%s", t.OS, t.Arch, err, out)
 	}
 	defer os.Remove(exePath)
-	name := t.archive(version)
+	name := t.archive()
 	return name, writeArchive(filepath.Join(outDir, name), t, t.exe(), exePath)
 }

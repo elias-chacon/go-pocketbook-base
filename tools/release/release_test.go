@@ -58,8 +58,8 @@ func TestArchivesKeepTheExecutableAndNameIt(t *testing.T) {
 	write(t, exe, "BINARY")
 
 	win := target{"windows", "amd64"}
-	zipPath := filepath.Join(dir, win.archive("1.0.0"))
-	if filepath.Base(zipPath) != "pbgo-installer_1.0.0_windows_amd64.zip" {
+	zipPath := filepath.Join(dir, win.archive())
+	if filepath.Base(zipPath) != "pbgo-installer_windows_amd64.zip" {
 		t.Errorf("name: %s", zipPath)
 	}
 	if err := writeArchive(zipPath, win, win.exe(), exe); err != nil {
@@ -72,7 +72,7 @@ func TestArchivesKeepTheExecutableAndNameIt(t *testing.T) {
 	zr.Close()
 
 	lin := target{"linux", "amd64"}
-	tgz := filepath.Join(dir, lin.archive("1.0.0"))
+	tgz := filepath.Join(dir, lin.archive())
 	if err := writeArchive(tgz, lin, lin.exe(), exe); err != nil {
 		t.Fatal(err)
 	}
@@ -123,5 +123,23 @@ func TestTargetsCoverTheThreeSystems(t *testing.T) {
 	}
 	if (target{"linux", "amd64"}).exe() != "pbgo-installer" {
 		t.Error("no extension outside Windows")
+	}
+}
+
+func TestTheNotesGiveTheInstallCommandOfEachSystem(t *testing.T) {
+	text := notes("https://github.com/o/r/releases/download/v1.2.3")
+	for _, want := range []string{
+		"Invoke-WebRequest https://github.com/o/r/releases/download/v1.2.3/pbgo-installer_windows_amd64.zip",
+		"Expand-Archive", `.\pbgo-installer\pbgo-installer.exe`,
+		"curl -fsSL https://github.com/o/r/releases/download/v1.2.3/pbgo-installer_linux_amd64.tar.gz | tar xz && ./pbgo-installer",
+		"curl -fsSL https://github.com/o/r/releases/download/v1.2.3/pbgo-installer_darwin_${arch}.tar.gz | tar xz",
+		"SHA256SUMS", "Executar assim mesmo",
+	} {
+		if !strings.Contains(text, want) {
+			t.Errorf("the notes lack %q:\n%s", want, text)
+		}
+	}
+	if strings.Contains(text, "%!") {
+		t.Errorf("a formatting mistake:\n%s", text)
 	}
 }

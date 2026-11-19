@@ -1,5 +1,11 @@
 # go-pocketbook-base
 
+[![ci](https://github.com/elias-chacon/go-pocketbook-base/actions/workflows/ci.yml/badge.svg)](https://github.com/elias-chacon/go-pocketbook-base/actions/workflows/ci.yml)
+[![coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Felias-chacon%2Fgo-pocketbook-base%2Fbadges%2Fcoverage.json)](https://github.com/elias-chacon/go-pocketbook-base/actions/workflows/ci.yml)
+[![issues abertas](https://img.shields.io/github/issues/elias-chacon/go-pocketbook-base?label=issues%20abertas)](https://github.com/elias-chacon/go-pocketbook-base/issues)
+[![versão](https://img.shields.io/github/v/release/elias-chacon/go-pocketbook-base?display_name=tag&label=vers%C3%A3o)](https://github.com/elias-chacon/go-pocketbook-base/releases/latest)
+[![atualizado em](https://img.shields.io/github/last-commit/elias-chacon/go-pocketbook-base?label=atualizado%20em)](https://github.com/elias-chacon/go-pocketbook-base/commits/main)
+
 Base para criar **aplicativos para PocketBook (e-readers Linux ARM) em Go**, com uma
 biblioteca de componentes visuais desenhada do zero em gráficos vetoriais
 ([`fogleman/gg`](https://github.com/fogleman/gg)), ícone que se registra sozinho e build
@@ -9,6 +15,34 @@ O app de exemplo (`apps/hello`, o blueprint de todo app do ecossistema) é uma v
 (**Entradas**, **Escolhas**, **Dados**, **Calendário**) navegadas por uma barra de menus.
 
 > Versão atual: ver [`.version`](.version) · `MAJOR.MINOR.BUILD` (veja [Versionamento](#versionamento)).
+
+## Instalação rápida (usuário final)
+
+Conecte o PocketBook ao computador por USB (modo *Link com PC*) e execute no seu sistema. O instalador acha o leitor, copia os
+aplicativos (o Launcher e os outros) e coloca os ícones na tela inicial. Detalhes e avisos do sistema: [capítulo 16](docs/pt-br/16-instalador.md).
+
+**Windows (PowerShell)**
+
+```powershell
+Invoke-WebRequest https://github.com/elias-chacon/go-pocketbook-base/releases/latest/download/pbgo-installer_windows_amd64.zip -OutFile pbgo-installer.zip
+Expand-Archive pbgo-installer.zip -DestinationPath pbgo-installer -Force
+.\pbgo-installer\pbgo-installer.exe
+```
+
+**Linux**
+
+```sh
+curl -fsSL https://github.com/elias-chacon/go-pocketbook-base/releases/latest/download/pbgo-installer_linux_amd64.tar.gz | tar xz && ./pbgo-installer
+```
+
+**macOS (Intel / Apple silicon)**
+
+```sh
+arch=$(uname -m); [ "$arch" = x86_64 ] && arch=amd64
+curl -fsSL https://github.com/elias-chacon/go-pocketbook-base/releases/latest/download/pbgo-installer_darwin_${arch}.tar.gz | tar xz && ./pbgo-installer
+```
+
+Ou baixe o arquivo do seu sistema na página de [Releases](https://github.com/elias-chacon/go-pocketbook-base/releases/latest) e dê dois cliques.
 
 ## Documentação completa
 
@@ -126,7 +160,7 @@ Legenda: `[x]` concluída · `[ ]` pendente. Ao concluir uma task, o MINOR é in
 - [x] T49 Reorganização por domínios (DDD): contextos `kernel`, `toolkit`, `device`, `localization`, `platform` (domain · application · infrastructure) e `showcase`; `apps/` como raízes de composição; `examples/` por contexto; regra de dependência verificada por teste (`internal/architecture`). Feita antes do Launcher para que o código novo já nasça no lugar certo.
 - [x] T45 Launcher: grid dos apps instalados (ícone + título) e execução do app filho, com retorno ao Launcher (`execve`, validado no aparelho). Cada app registra o próprio ícone e o `view.json` na primeira execução.
 - [x] T46 Launcher: busca em tempo real com as seções `-- Installed --` e `-- Available --` (validada no aparelho: campo, teclado e ×). A porta `Catalog` ainda não tem adaptador: a seção *Disponíveis* diz que o catálogo não está configurado até a T47.
-- [ ] T50 Instalador para o usuário final (`cmd/pbinstaller`, contexto `internal/installer`): executável em Go para Windows, Linux e macOS com ícone, que acha o leitor, copia os apps embutidos e registra os ícones; faz parte da release (`tools/release` + `.github/workflows/release.yml`, SHA256SUMS). **Validado no Windows com o leitor real (ícone do `.exe`, achar o leitor, copiar e registrar).** Falta a primeira release no GitHub (workflow) e testar em Linux/macOS.
+- [ ] T50 Instalador para o usuário final (`cmd/pbinstaller`, contexto `internal/installer`): executável em Go para Windows, Linux e macOS com ícone, que acha o leitor, copia os apps embutidos e registra os ícones; faz parte da release (`tools/release` + `.github/workflows/release.yml`, SHA256SUMS). **Validado no Windows com o leitor real (ícone do `.exe`, achar o leitor, copiar e registrar).** CI (`ci.yml`: vet, testes no Linux, cobertura e badges) e Release (`release.yml`: tag `v*` → todos os apps, instaladores e comandos de instalação para os 3 sistemas) são workflows separados, com badges no topo do README. Falta rodar os dois no GitHub (primeiro push/tag) e testar o instalador em Linux/macOS.
 - [ ] T47 Launcher: catálogo do GitHub (assets `<id>.app` + `<id>.json` da última Release, não a pasta `apps/`, já que o repositório só tem código-fonte), download e instalação com um clique. **Feito no código e nos testes (servidor HTTP de teste); falta validar no aparelho: Wi-Fi, DNS, certificados HTTPS e uma Release publicada.**
 - [ ] T48 Launcher: configurações persistentes (tamanho dos ícones e da grade, idioma, imagem de fundo)
 

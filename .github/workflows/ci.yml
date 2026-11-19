@@ -1,0 +1,89 @@
+# Continuous integration: runs on every push to main and on pull requests, and is
+# also called by the release workflow before it publishes anything.
+#   - vet and the whole test suite on Linux (architecture rules, docs in sync...)
+#   - the coverage of the code that counts (the Sonar exclusions) and, on main,
+#     the badge JSON published to the "badges" branch for the README
+#   - both apps built for the reader (Go 1.17 + the PocketBook SDK image)
+# Releases are another workflow: release.yml.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # only to publish the coverage badge (branch "badges") from main
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22" # the tools and the tests; the apps are built below with Go 1.17
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Tests with coverage
+        run: go test -coverpkg=./... -coverprofile=coverage.out ./...
+
+      - name: Coverage that counts (same exclusions as Sonar)
+        run: |
+          percent="$(go run ./tools/coverage -badge coverage-badge.json)"
+          echo "Coverage: ${percent}%" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: |
+            coverage.out
+            coverage-badge.json
+
+      - name: Publish the coverage badge (main only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          dir="$(mktemp -d)"
+          if git clone --quiet --depth 1 --branch badges "$remote" "$dir" 2>/dev/null; then :; else
+            git init --quiet "$dir"
+            git -C "$dir" checkout --quiet -b badges
+            git -C "$dir" remote add origin "$remote"
+          fi
+          cp coverage-badge.json "$dir/coverage.json"
+          cd "$dir"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add coverage.json
+          if git diff --cached --quiet; then echo "badge unchanged"; exit 0; fi
+          git commit --quiet -m "Coverage badge for ${GITHUB_SHA::7}"
+          git push --quiet origin badges
+
+  apps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build every app for the reader (SDK image)
+        run: |
+          docker build -t go-pocketbook-base-sdk docker
+          mkdir -p dist/applications
+          for dir in apps/*/; do
+            app="$(basename "$dir")"
+            [ -f "apps/$app/main.go" ] || continue
+            docker run --rm -v "$PWD":/app -v pbgo-cache:/gopath go-pocketbook-base-sdk \
+              build -o "dist/applications/$app.app" "./apps/$app"
+          done
+          ls -l dist/applications

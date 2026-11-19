@@ -34,13 +34,56 @@ func (t target) exe() string {
 }
 
 // archive is the file name of the download of a system: a zip for Windows, a
-// tar.gz (which keeps the executable bit) for the others.
-func (t target) archive(version string) string {
+// tar.gz (which keeps the executable bit) for the others. It has no version, so
+// .../releases/latest/download/<archive> is always the newest installer.
+func (t target) archive() string {
 	ext := ".tar.gz"
 	if t.OS == "windows" {
 		ext = ".zip"
 	}
-	return fmt.Sprintf("pbgo-installer_%s_%s_%s%s", version, t.OS, t.Arch, ext)
+	return fmt.Sprintf("pbgo-installer_%s_%s%s", t.OS, t.Arch, ext)
+}
+
+// notes is the text of the release: how to install, for the three systems, with
+// the commands to paste. base is the download address of the release's files.
+func notes(base string) string {
+	archive := func(os, arch string) string { return base + "/" + target{os, arch}.archive() }
+	return fmt.Sprintf(`## Instalação / Installation
+
+Conecte o PocketBook ao computador por USB (modo *Link com PC* / *PC Link*) e execute **no seu sistema**:
+Connect the PocketBook by USB (*PC Link* mode) and run **on your system**:
+
+**Windows (PowerShell)**
+
+`+"```powershell"+`
+Invoke-WebRequest %[1]s -OutFile pbgo-installer.zip
+Expand-Archive pbgo-installer.zip -DestinationPath pbgo-installer -Force
+.\pbgo-installer\pbgo-installer.exe
+`+"```"+`
+
+**Linux**
+
+`+"```sh"+`
+curl -fsSL %[2]s | tar xz && ./pbgo-installer
+`+"```"+`
+
+**macOS (Intel / Apple silicon)**
+
+`+"```sh"+`
+arch=$(uname -m); [ "$arch" = x86_64 ] && arch=amd64
+curl -fsSL %[3]s | tar xz && ./pbgo-installer
+`+"```"+`
+
+Ou baixe o arquivo do seu sistema abaixo e dê dois cliques. / Or download the file for your system below and double-click it.
+
+- Windows: se aparecer *"O Windows protegeu o computador"*, clique em **Mais informações → Executar assim mesmo**.
+- macOS: se o sistema bloquear, clique com o botão direito no arquivo → **Abrir**.
+- Conferência / checksums: `+"`SHA256SUMS`"+`.
+
+Os arquivos `+"`<id>.app`"+` e `+"`<id>.json`"+` são os aplicativos para o leitor: o Launcher os lista e baixa por aqui.
+`,
+		archive("windows", "amd64"), archive("linux", "amd64"),
+		strings.Replace(archive("darwin", "amd64"), "darwin_amd64", "darwin_${arch}", 1))
 }
 
 // stage fills the installer's payload folder with the built apps, their
