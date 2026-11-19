@@ -23,5 +23,13 @@
   "cal.repeat.weekly": "Every week",
   "cal.repeat.monthly": "Every month",
   "cal.repeat.yearly": "Every year",
-  "cal.repeat.custom": "Custom"
+  "cal.repeat.custom": "Custom",
+  "cal.remind": "Remind",
+  "cal.remind.none": "No reminder",
+  "cal.remind.5m": "5 minutes before",
+  "cal.remind.15m": "15 minutes before",
+  "cal.remind.30m": "30 minutes before",
+  "cal.remind.1h": "1 hour before",
+  "cal.remind.1d": "1 day before",
+  "cal.remind.minutes": "%d minutes before"
 }

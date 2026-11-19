@@ -347,3 +347,25 @@ func TestTheRepetitionIsChosenFromTheMenuAndKeptWhenCustom(t *testing.T) {
 		t.Errorf("custom rule lost: %q", st.events[id].Recurrence)
 	}
 }
+
+func TestTheReminderIsChosenAndSaved(t *testing.T) {
+	s, st, _ := newScreen(t, "dentista")
+	id := s.items[0].Event.ID
+	s.Edit(id)
+	rem := byID(t, s, "edit-reminder").(*widget.Dropdown)
+	rem.Items[2].OnSelect() // 15 minutes
+	if !strings.Contains(rem.Text, "15 minutos antes") {
+		t.Errorf("label = %q", rem.Text)
+	}
+	tap(t, s, "edit-save")
+	if r := st.events[id].Reminders; len(r) != 1 || r[0] != 15*time.Minute {
+		t.Fatalf("reminders = %v", r)
+	}
+	e := st.events[id]
+	e.Reminders = []time.Duration{45 * time.Minute}
+	st.events[id] = e
+	s.Edit(id)
+	if !strings.Contains(byID(t, s, "edit-reminder").(*widget.Dropdown).Text, "45 minutos") {
+		t.Error("an unusual reminder is not shown")
+	}
+}

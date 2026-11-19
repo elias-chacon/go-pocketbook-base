@@ -60,8 +60,8 @@ day** (all-day events first, then by start, repeating ones expanded), **Add**, *
 it never slips to the neighbouring day in another time zone. The clock comes from `TZ` or `/etc/timezone` (UTC when the reader has neither: the zone
 setting is still to do). The screen reuses the toolkit's month `Calendar` (extended with `Marked`, a dot under the days with events, and `OnMonth`),
 with **Today** and **New**, the heading of the day and **5 events a page**. Tapping an event (or **New**) opens the form: title, location, the day (with
-arrows), all day, start and end as `HH:MM`, and **repetition** (none, every day, week, month or year; a rule that came from a file or a server shows as *custom* and is kept); a bad time keeps the form open. **Not yet tried on the device.** Still to do (T67): the day, week and work
-week views (they need a time grid component in the toolkit), reminders in the form, and sync.
+arrows), all day, start and end as `HH:MM`, and **repetition** (none, every day, week, month or year; a rule that came from a file or a server shows as *custom* and is kept) and a **reminder** (none, 5, 15, 30 minutes, 1 hour or 1 day before; the reader does not ring it yet); a bad time keeps the form open. **Not yet tried on the device.** Still to do (T67): the day, week and work
+week views (they need a time grid component in the toolkit), ringing the reminders, and sync.
 
 ## The code
 

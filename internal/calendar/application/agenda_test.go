@@ -148,6 +148,18 @@ func TestARepeatingEntryIsSavedAndABadRuleRefused(t *testing.T) {
 	}
 }
 
+func TestAReminderIsKeptAndCleared(t *testing.T) {
+	a, st := agenda("")
+	e, _ := a.Add(Entry{Title: "x", Day: day(4), Start: 600, End: 660, Reminder: 15 * time.Minute})
+	if r := st.events[e.ID].Reminders; len(r) != 1 || r[0] != 15*time.Minute {
+		t.Fatalf("reminders = %v", r)
+	}
+	a.Change(e.ID, Entry{Title: "x", Day: day(4), Start: 600, End: 660})
+	if len(st.events[e.ID].Reminders) != 0 {
+		t.Error("the reminder was not cleared")
+	}
+}
+
 func TestChangeAndDelete(t *testing.T) {
 	a, st := agenda("")
 	e, _ := a.Add(Entry{Title: "a", Day: day(5), Start: 600, End: 660})

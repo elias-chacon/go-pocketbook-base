@@ -21,6 +21,8 @@ type editor struct {
 	allDay          *widget.Toggle
 	rule            string
 	repeat          *widget.Dropdown
+	remind          time.Duration
+	reminder        *widget.Dropdown
 	date, note      *widget.Label
 }
 
@@ -41,6 +43,9 @@ func (s *Screen) Edit(id string) {
 		return
 	}
 	in := application.Entry{Title: e.Title, Location: e.Location, Description: e.Description, AllDay: e.AllDay, Recurrence: e.Recurrence}
+	if len(e.Reminders) > 0 {
+		in.Reminder = e.Reminders[0]
+	}
 	if e.AllDay {
 		in.Day = dateOf(e.Start)
 	} else {
@@ -88,6 +93,8 @@ func (s *Screen) openEditor(e *editor, in application.Entry) {
 	e.allDay.ID = "edit-allday"
 	e.rule = in.Recurrence
 	e.repeat = s.repeatMenu(e)
+	e.remind = in.Reminder
+	e.reminder = s.reminderMenu(e)
 
 	e.date = widget.NewLabel("")
 	s.showDate()
@@ -102,7 +109,7 @@ func (s *Screen) openEditor(e *editor, in application.Entry) {
 	e.note = widget.NewLabel(s.notice)
 	e.note.Style.FontSize, e.note.Style.Color = widget.FontSmall, widget.Muted
 
-	form := widget.NewColumn(16, e.title, e.location, dateRow, e.allDay, widget.NewRow(12, e.start, e.end), e.repeat, e.note)
+	form := widget.NewColumn(16, e.title, e.location, dateRow, e.allDay, widget.NewRow(12, e.start, e.end), e.repeat, e.reminder, e.note)
 	form.Style.Padding = geom.XY(28, 28)
 	form.Style.FlexGrow = 1
 	root := widget.NewColumn(0, bar, form)
@@ -140,6 +147,39 @@ func (s *Screen) repeatMenu(e *editor) *widget.Dropdown {
 	}
 	d := widget.NewDropdown(s.repeatLabel(e.rule), items...)
 	d.ID = "edit-repeat"
+	return d
+}
+
+// The reminders the form offers (0 is none).
+var reminderChoices = []struct {
+	before time.Duration
+	key    string
+}{
+	{0, "cal.remind.none"}, {5 * time.Minute, "cal.remind.5m"}, {15 * time.Minute, "cal.remind.15m"},
+	{30 * time.Minute, "cal.remind.30m"}, {time.Hour, "cal.remind.1h"}, {24 * time.Hour, "cal.remind.1d"},
+}
+
+// reminderLabel names a reminder; one the form does not offer shows its minutes.
+func (s *Screen) reminderLabel(before time.Duration) string {
+	for _, r := range reminderChoices {
+		if r.before == before {
+			return s.t("cal.remind") + ": " + s.t(r.key)
+		}
+	}
+	return s.t("cal.remind") + ": " + s.t("cal.remind.minutes", int(before.Minutes()))
+}
+
+func (s *Screen) reminderMenu(e *editor) *widget.Dropdown {
+	var items []widget.MenuItem
+	for _, r := range reminderChoices {
+		r := r
+		items = append(items, widget.MenuItem{Label: s.t(r.key), OnSelect: func() {
+			e.remind = r.before
+			e.reminder.Text = s.reminderLabel(r.before)
+		}})
+	}
+	d := widget.NewDropdown(s.reminderLabel(e.remind), items...)
+	d.ID = "edit-reminder"
 	return d
 }
 
@@ -182,7 +222,7 @@ func splitClock(text string) (int, int, bool) {
 // entry reads the form.
 func (s *Screen) entry() (application.Entry, bool) {
 	e := s.editor
-	in := application.Entry{Title: e.title.Value, Location: e.location.Value, Day: e.day, AllDay: e.allDay.Checked, Recurrence: e.rule}
+	in := application.Entry{Title: e.title.Value, Location: e.location.Value, Day: e.day, AllDay: e.allDay.Checked, Recurrence: e.rule, Reminder: e.remind}
 	if in.AllDay {
 		return in, true
 	}

@@ -148,6 +148,8 @@ type Entry struct {
 	AllDay     bool
 	// Recurrence is an RRULE without the prefix ("FREQ=WEEKLY"); empty for an event that happens once.
 	Recurrence string
+	// Reminder is how long before the start to remind (0: no reminder).
+	Reminder time.Duration
 }
 
 // build turns an entry into an event on the person's clock. An end that is not after
@@ -159,6 +161,10 @@ func (a Agenda) build(e domain.Event, in Entry) (domain.Event, error) {
 	}
 	e.Title, e.Location, e.Description = in.Title, strings.TrimSpace(in.Location), in.Description
 	e.Recurrence = strings.TrimSpace(in.Recurrence)
+	e.Reminders = nil
+	if in.Reminder > 0 {
+		e.Reminders = []time.Duration{in.Reminder}
+	}
 	y, m, d := in.Day.Date()
 	if in.AllDay {
 		e.AllDay, e.TimeZone = true, ""
