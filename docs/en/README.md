@@ -37,6 +37,7 @@
 | 17 | [Productivity apps: decisions](17-productivity-apps-decisions.md) | ADR for the mail, task list and calendar apps, with the libraries tested on Go 1.17/ARM |
 | 18 | [Accounts and secrets](18-accounts-and-secrets.md) | the shared accounts context and the encrypted vault, and what it does and does not protect |
 | 19 | [Mail: domain and MIME](19-mail-domain-and-mime.md) | messages, drafts, replying and forwarding, and the MIME reader and writer |
+| 20 | [Calendar: domain and iCalendar](20-calendar-domain-and-icalendar.md) | events, recurrence, reminders, and reading and writing `.ics` files |
 
 ## Quick look
 

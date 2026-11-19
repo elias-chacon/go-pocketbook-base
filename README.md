@@ -196,7 +196,7 @@ Critério de pronto de **cada app** (herdado das regras do projeto): segue o con
 
 *App de calendário (`apps/calendar`, contexto `internal/calendar`)*
 
-- [ ] T66 Calendar: domínio (eventos, recorrência RRULE, fusos IANA, lembretes, participantes) e **iCalendar** (leitura e escrita de `.ics`), com **importação e exportação** de arquivos
+- [x] T66 Calendar ([capítulo 20](docs/pt-br/20-calendario-dominio-e-icalendar.md)): domínio (eventos, recorrência RRULE que mantém a hora local no horário de verão, fusos IANA e nomes do Windows do Outlook, lembretes, participantes, alterações de uma só aparição) e **iCalendar** (leitura e escrita de `.ics`, com avisos em vez de perder eventos), com **importação e exportação**. Testado com arquivos no estilo do Outlook e do Google, e compilado no SDK Go 1.17/ARM. A tela fica para a T67
 - [ ] T67 Calendar: interface no estilo do **calendário do Outlook** (dia, semana de trabalho, semana, mês, agenda, vários calendários, criar/editar/excluir, recorrência, lembretes, fuso horário)
 - [ ] T68 Calendar: sincronização por **CalDAV/WebDAV** (iCloud, Nextcloud, Fastmail…), **Google Calendar** e **Microsoft Graph** (OAuth2), e **Exchange local** (EWS)
 - [ ] T69 Calendar ↔ e-mail: convites e respostas (iTIP/iMIP: aceitar, recusar, talvez), criar evento a partir de um e-mail, e abrir o e-mail de um convite

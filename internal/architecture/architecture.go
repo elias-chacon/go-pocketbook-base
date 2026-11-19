@@ -49,6 +49,12 @@
 //	                domain          Message, Folder, Draft, Address, Reply, Forward
 //	                infrastructure  mime (RFC 5322 and MIME on the wire)
 //	              It depends on nothing but the kernel.
+//	calendar      the events of the future calendar app: events, recurrence, reminders,
+//	              the occurrences of a range, and the iCalendar (.ics) reader and writer.
+//	              Layers:
+//	                domain          Event, Occurrence, Calendar, Occurrences, Expand
+//	                infrastructure  icalendar (RFC 5545 on the wire)
+//	              It depends on nothing but the kernel.
 //	showcase      the content of the hello app: every widget on four pages.
 //
 // Outside internal/: apps/ (one composition root per app, free to wire any
@@ -109,6 +115,9 @@ const (
 	launcherInfra     = launcherDir + infrastructureLayer
 	launcherUI        = launcherDir + presentationLayer
 	accountsDir       = "internal/accounts"
+	calendarDir       = "internal/calendar"
+	calendarDomain    = calendarDir + domainLayer
+	calendarInfra     = calendarDir + infrastructureLayer
 	mailDir           = "internal/mail"
 	mailDomain        = mailDir + domainLayer
 	mailInfra         = mailDir + infrastructureLayer
@@ -155,13 +164,16 @@ var Rules = []Rule{
 	// The Mail: its own vocabulary only.
 	{mailDomain, []string{kernelDir, mailDomain}},
 	{mailInfra, []string{kernelDir, mailDomain, mailInfra}},
+	// The Calendar: its own vocabulary only.
+	{calendarDomain, []string{kernelDir, calendarDomain}},
+	{calendarInfra, []string{kernelDir, calendarDomain, calendarInfra}},
 	{architectureDir, nil},
 	{examplesDir, []string{kernelDir, localizationDir, toolkitDir, showcaseDir, examplesDir}},
 }
 
 // Contexts are the folders allowed directly under internal/. A new one must be
 // added here (and to the documentation above) on purpose.
-var Contexts = []string{"architecture", "accounts", "device", "installer", "kernel", "launcher", "localization", "mail", "platform", "showcase", "toolkit"}
+var Contexts = []string{"architecture", "accounts", "calendar", "device", "installer", "kernel", "launcher", "localization", "mail", "platform", "showcase", "toolkit"}
 
 // within reports whether dir is base or a folder below it.
 func within(dir, base string) bool { return dir == base || strings.HasPrefix(dir, base+"/") }
