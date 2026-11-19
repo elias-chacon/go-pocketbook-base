@@ -164,6 +164,46 @@ Legenda: `[x]` concluída · `[ ]` pendente. Ao concluir uma task, o MINOR é in
 - [ ] T47 Launcher: catálogo do GitHub (assets `<id>.zip` + `catalog.json` da última Release, não a pasta `apps/`, já que o repositório só tem código-fonte), download e instalação com um clique. **Feito no código e nos testes (servidor HTTP de teste), com o ícone de cada app (`apps/<id>/icon.png`, publicado na Release e mostrado nas linhas de *Disponíveis*); falta validar no aparelho: Wi-Fi, DNS, certificados HTTPS e uma Release publicada.**
 - [ ] T48 Launcher: configurações persistentes (tamanho dos ícones e da grade, idioma, imagem de fundo)
 
+**Apps de produtividade: e-mail, tarefas e calendário** (3 apps novos em `apps/`, integrados entre si; um contexto DDD por app, mais a fundação compartilhada)
+
+Visão: `apps/mail` (cliente de e-mail com visual parecido com o Outlook), `apps/tasks` (lista de tarefas integrada ao e-mail) e `apps/calendar` (calendário com as funcionalidades do calendário da Microsoft, integrado ao e-mail e capaz de importar arquivos de calendário). Os três compartilham **contas** (credenciais e OAuth), um **armazenamento local** e **intents** (um app abre outro com dados, ex.: "criar tarefa a partir deste e-mail"). Como o leitor roda um app por vez (`execve`), a integração acontece pelos dados compartilhados em disco e pelas intents, não por processos em paralelo.
+
+Critério de pronto de **cada app** (herdado das regras do projeto): segue o contrato de `apps/` (`app.json` em pt-BR e en, `icon.png`, `locales/`), entra na Release e no catálogo do Launcher, tem contexto próprio em `internal/` com as camadas DDD e regra de dependência, reutiliza os componentes existentes (qualquer componente base novo exige o seu pedido explícito, veja a T56), testes, documentação em `docs/en` e `docs/pt-br`, Sonar com 0 smells e validação no aparelho.
+
+*Fase 0: fundação compartilhada (antes dos apps)*
+
+- [ ] T51 Decisões de arquitetura (ADR em `docs/`): armazenamento local sem cgo e sem generics (Go 1.17), escolha entre bibliotecas (IMAP, SMTP, MIME, iCalendar, CalDAV) e código próprio, orçamento de memória (1 GB, um app por vez) e política **offline-first**. **Depende de você:** confirmar as escolhas antes de codar
+- [ ] T52 Contexto `accounts`: modelo de conta (provedor, protocolos, servidores), armazenamento seguro no leitor, e telas de cadastro de conta reutilizáveis pelos três apps (uma conta serve e-mail, tarefas e calendário)
+- [ ] T53 OAuth2 por **código de dispositivo** (RFC 8628, adequado a um e-reader sem navegador: o leitor mostra o código e o endereço, e você autoriza no celular) para Microsoft (Outlook.com e Microsoft 365) e Google, com renovação de tokens; senha de app como alternativa. **Depende de você:** registrar os aplicativos OAuth (client IDs) na Microsoft (Entra ID) e no Google
+- [ ] T54 Contexto `store`: armazenamento local compartilhado para mensagens, tarefas e eventos (cache, índices de busca, fila de operações offline), com limite de memória e de disco
+- [ ] T55 **Intents** entre apps: um app abre outro com dados e volta (estende `LauncherEnv` e o contrato do `app.json`), ex.: criar tarefa ou evento a partir de um e-mail, abrir o e-mail de origem
+- [ ] T56 Componentes de UI que os apps exigem: **rolagem** e lista virtualizada (B04), leitor de texto formatado (HTML simples), grade de calendário, árvore de pastas. **Depende de você:** pelas regras do projeto não crio componente base sem o seu pedido; esta tarefa é propor o desenho de cada um e pedir autorização
+- [ ] T57 Segurança e privacidade: tokens e senhas cifrados em repouso, permissões de arquivo restritas, **nenhum segredo em log** (pré-requisito: B09), verificação de certificado TLS, apagar a conta apaga os dados locais
+
+*App de e-mail (`apps/mail`, contexto `internal/mail`)*
+
+- [ ] T58 Mail: domínio (mensagem, pasta, conversa, anexo, rascunho), leitor de MIME (partes, codificações, charset, HTML → texto) e cache offline
+- [ ] T59 Mail: **IMAP + SMTP** (login por senha de app ou OAuth2 com XOAUTH2), sincronização de pastas e mensagens, envio, rascunhos e anexos
+- [ ] T60 Mail: **Microsoft Graph** (Outlook.com e Microsoft 365) por OAuth2, mesmo modelo de domínio
+- [ ] T61 Mail: **Exchange local** (EWS), para servidores que não usam Microsoft 365
+- [ ] T62 Mail: interface parecida com o **Outlook** adaptada ao e-ink e à tela retrato (pastas, lista de mensagens, leitura, responder/encaminhar, nova mensagem, busca, marcar/sinalizar, anexos), usando os componentes existentes
+
+*App de tarefas (`apps/tasks`, contexto `internal/tasks`)*
+
+- [ ] T63 Tasks: domínio (listas, tarefas, passos, prazo, prioridade, repetição, lembretes) e interface no estilo do Microsoft To Do / tarefas do Outlook (Meu Dia, Importante, Planejado, listas)
+- [ ] T64 Tasks: sincronização com o **Microsoft To Do** (Graph), **CalDAV** (VTODO) e Google Tasks
+- [ ] T65 Tasks ↔ e-mail: criar tarefa a partir de um e-mail, e-mail sinalizado vira tarefa, abrir o e-mail de origem da tarefa (intents da T55)
+
+*App de calendário (`apps/calendar`, contexto `internal/calendar`)*
+
+- [ ] T66 Calendar: domínio (eventos, recorrência RRULE, fusos IANA, lembretes, participantes) e **iCalendar** (leitura e escrita de `.ics`), com **importação e exportação** de arquivos
+- [ ] T67 Calendar: interface no estilo do **calendário do Outlook** (dia, semana de trabalho, semana, mês, agenda, vários calendários, criar/editar/excluir, recorrência, lembretes, fuso horário)
+- [ ] T68 Calendar: sincronização por **CalDAV/WebDAV** (iCloud, Nextcloud, Fastmail…), **Google Calendar** e **Microsoft Graph** (OAuth2), e **Exchange local** (EWS)
+- [ ] T69 Calendar ↔ e-mail: convites e respostas (iTIP/iMIP: aceitar, recusar, talvez), criar evento a partir de um e-mail, e abrir o e-mail de um convite
+- [ ] T70 Calendar: importar `.ics` de um anexo de e-mail, da pasta do leitor ou de uma assinatura por endereço (`webcal`), sem duplicar eventos
+
+Ordem sugerida: T51 → T52/T53/T54 → T57 → T55 → T58/T59/T62 (primeiro e-mail ponta a ponta, com IMAP) → T66/T67 (calendário local com `.ics`) → T63 (tarefas locais) → sincronizações (T60, T64, T68) → integrações entre apps (T65, T69, T70) → Exchange local (T61). Cada fase termina com validação no aparelho.
+
 **Bugs**
 
 ## Backlog
@@ -179,7 +219,7 @@ Ideias para próximas versões (ainda **não** feitas):
 - [ ] B07 Abas (tabs) e navegação por pilha de telas
 - [ ] B08 Slide-to-confirm (botão deslizante de confirmação)
 - [ ] B09 Remover o log de eventos de depuração (`DebugLog`) em builds de release
-- [ ] B10 (CAL) Especificar um app de calendário parecido com o google calendar usando go-pocketbook-base integrado e sincronizado com google, outlook, apple, importação e exportação de arquivos ical
+- [ ] B10 (CAL) Especificar um app de calendário parecido com o google calendar usando go-pocketbook-base integrado e sincronizado com google, outlook, apple, importação e exportação de arquivos ical. **Incorporado às tarefas T66 a T70** (app de calendário, junto com e-mail e tarefas)
 
 ## Versionamento
 
