@@ -44,6 +44,11 @@
 //	                infrastructure  jsonaccounts (accounts.json) and securefile (the
 //	                                encrypted vault of secrets)
 //	              It depends on nothing but the kernel.
+//	mail          the e-mail of the future mail app: messages, folders, drafts, the rules
+//	              of replying and forwarding, and the MIME reader and writer. Layers:
+//	                domain          Message, Folder, Draft, Address, Reply, Forward
+//	                infrastructure  mime (RFC 5322 and MIME on the wire)
+//	              It depends on nothing but the kernel.
 //	showcase      the content of the hello app: every widget on four pages.
 //
 // Outside internal/: apps/ (one composition root per app, free to wire any
@@ -104,6 +109,9 @@ const (
 	launcherInfra     = launcherDir + infrastructureLayer
 	launcherUI        = launcherDir + presentationLayer
 	accountsDir       = "internal/accounts"
+	mailDir           = "internal/mail"
+	mailDomain        = mailDir + domainLayer
+	mailInfra         = mailDir + infrastructureLayer
 	accountsDomain    = accountsDir + domainLayer
 	accountsApp       = accountsDir + applicationLayer
 	accountsInfra     = accountsDir + infrastructureLayer
@@ -144,13 +152,16 @@ var Rules = []Rule{
 	{accountsDomain, []string{kernelDir, accountsDomain}},
 	{accountsApp, []string{kernelDir, accountsDomain, accountsApp}},
 	{accountsInfra, []string{kernelDir, accountsDomain, accountsInfra}},
+	// The Mail: its own vocabulary only.
+	{mailDomain, []string{kernelDir, mailDomain}},
+	{mailInfra, []string{kernelDir, mailDomain, mailInfra}},
 	{architectureDir, nil},
 	{examplesDir, []string{kernelDir, localizationDir, toolkitDir, showcaseDir, examplesDir}},
 }
 
 // Contexts are the folders allowed directly under internal/. A new one must be
 // added here (and to the documentation above) on purpose.
-var Contexts = []string{"architecture", "accounts", "device", "installer", "kernel", "launcher", "localization", "platform", "showcase", "toolkit"}
+var Contexts = []string{"architecture", "accounts", "device", "installer", "kernel", "launcher", "localization", "mail", "platform", "showcase", "toolkit"}
 
 // within reports whether dir is base or a folder below it.
 func within(dir, base string) bool { return dir == base || strings.HasPrefix(dir, base+"/") }
