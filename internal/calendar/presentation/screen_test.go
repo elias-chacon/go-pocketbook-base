@@ -75,6 +75,14 @@ func newScreen(t *testing.T, titles ...string) (*Screen, *memStore, application.
 	return s, st, ag
 }
 
+func firstID(st *memStore) string {
+	id := ""
+	for k := range st.events {
+		id = k
+	}
+	return id
+}
+
 func byID(t *testing.T, s *Screen, id string) widget.Widget {
 	t.Helper()
 	var found widget.Widget
@@ -90,17 +98,18 @@ func byID(t *testing.T, s *Screen, id string) widget.Widget {
 	return found
 }
 
-func tapAt(s *Screen, x, y float64) {
-	s.Doc.HandlePointer(widget.PointerDown, x*s.Doc.Scale, y*s.Doc.Scale)
-	s.Doc.HandlePointer(widget.PointerUp, x*s.Doc.Scale, y*s.Doc.Scale)
-	s.Doc.Layout()
-}
-
 func tap(t *testing.T, s *Screen, id string) {
 	t.Helper()
 	s.Doc.Layout()
 	c := byID(t, s, id).Elem().Bounds.Center()
-	tapAt(s, c.X, c.Y)
+	s.Doc.HandlePointer(widget.PointerDown, c.X*s.Doc.Scale, c.Y*s.Doc.Scale)
+	s.Doc.HandlePointer(widget.PointerUp, c.X*s.Doc.Scale, c.Y*s.Doc.Scale)
+	s.Doc.Layout()
+}
+
+func title(t *testing.T, s *Screen) string {
+	t.Helper()
+	return byID(t, s, "cal-title").(*widget.Label).Text
 }
 
 func TestEveryTextIsTranslatedInBothLanguages(t *testing.T) {
@@ -112,117 +121,131 @@ func TestEveryTextIsTranslatedInBothLanguages(t *testing.T) {
 	}
 }
 
-func TestTheScreenShowsTodayAndItsEvents(t *testing.T) {
-	s, _, _ := newScreen(t, "Dentista", "Almoço")
-	if !s.Selected().Equal(day(20)) {
-		t.Fatalf("selected = %v", s.Selected())
+func TestItOpensOnTheMonthLikeOutlookNotOnADatePicker(t *testing.T) {
+	s, _, _ := newScreen(t, "Dentista")
+	if s.CurrentView() != MonthView || title(t, s) != "Maio 2026" {
+		t.Fatalf("view %v title %q", s.CurrentView(), title(t, s))
 	}
-	if got := byID(t, s, "cal-day").(*widget.Label).Text; got != "Qua, 20/05/2026" {
-		t.Errorf("heading = %q", got)
+	mv := byID(t, s, "cal-month").(*widget.MonthView)
+	if got := mv.Entries(day(20)); len(got) != 1 || got[0] != "08:00 Dentista" {
+		t.Errorf("the day lists its events: %v", got)
 	}
-	byID(t, s, "event-"+s.items[0].Event.ID)
-	if len(s.items) != 2 || !s.marks[20] {
-		t.Errorf("items = %d marks = %v", len(s.items), s.marks)
+	if got := mv.Entries(day(21)); len(got) != 0 {
+		t.Errorf("an empty day lists nothing: %v", got)
 	}
-}
-
-func TestTappingADayShowsItsEventsAndMonthsReloadTheMarks(t *testing.T) {
-	s, _, ag := newScreen(t, "hoje")
-	ag.Add(application.Entry{Title: "amanhã", Day: day(21), Start: 600, End: 660})
-	s.Select(day(20)) // reload with the new event marked
-	s.Doc.Layout()
-	cal := byID(t, s, "cal-month").(*widget.Calendar)
-	s.Select(day(21))
-	if len(s.items) != 1 || s.items[0].Event.Title != "amanhã" {
-		t.Errorf("items = %+v", s.items)
-	}
-	s.Select(time.Date(2026, 6, 3, 0, 0, 0, 0, time.UTC))
-	if cal.Month != time.June || len(s.items) != 0 {
-		t.Errorf("month = %v items = %d", cal.Month, len(s.items))
-	}
-	tap(t, s, "cal-today")
-	if !s.Selected().Equal(day(20)) || cal.Month != time.May {
-		t.Errorf("today: %v %v", s.Selected(), cal.Month)
+	if mv.Entries(day(1).AddDate(0, -3, 0)) != nil {
+		t.Error("a day outside the grid lists nothing")
 	}
 }
 
-func TestPagesAndKeys(t *testing.T) {
-	titles := make([]string, 7)
-	for i := range titles {
-		titles[i] = "evento " + strconv.Itoa(i)
+func TestTappingADayTwiceOpensItInTheDayView(t *testing.T) {
+	s, _, _ := newScreen(t, "Dentista")
+	mv := byID(t, s, "cal-month").(*widget.MonthView)
+	mv.Selected = day(21)
+	mv.OnChange(nil)
+	if !s.Selected().Equal(day(21)) || !strings.Contains(title(t, s), "Maio") {
+		t.Errorf("selected %v title %q", s.Selected(), title(t, s))
 	}
-	s, _, _ := newScreen(t, titles...)
-	if s.pages() != 2 {
-		t.Fatalf("pages = %d", s.pages())
+	mv.OnOpen(nil)
+	if s.CurrentView() != DayView || title(t, s) != "Qui, 21/05/2026" {
+		t.Errorf("view %v title %q", s.CurrentView(), title(t, s))
+	}
+}
+
+func TestTheViewMenuAndNavigationMoveThePeriod(t *testing.T) {
+	s, _, _ := newScreen(t)
+	byID(t, s, "cal-views").(*widget.Dropdown).Items[1].OnSelect() // work week
+	if s.CurrentView() != WorkWeekView || title(t, s) != "18/05 – 22/05/2026" {
+		t.Fatalf("work week: %v %q", s.CurrentView(), title(t, s))
 	}
 	tap(t, s, "cal-next")
-	if s.Page() != 1 || len(s.body.Children()) != 2 {
-		t.Errorf("page = %d rows = %d", s.Page(), len(s.body.Children()))
+	if title(t, s) != "25/05 – 29/05/2026" {
+		t.Errorf("next week: %q", title(t, s))
 	}
-	if !s.Key(true) || s.Page() != 0 {
-		t.Errorf("previous key: %d", s.Page())
+	byID(t, s, "cal-views").(*widget.Dropdown).Items[2].OnSelect() // week (Sunday first)
+	if title(t, s) != "24/05 – 30/05/2026" {
+		t.Errorf("week: %q", title(t, s))
 	}
-	s.GoTo(9)
-	if s.Page() != 1 {
-		t.Errorf("clamped = %d", s.Page())
+	tap(t, s, "cal-today")
+	byID(t, s, "cal-views").(*widget.Dropdown).Items[0].OnSelect() // day
+	tap(t, s, "cal-prev")
+	if title(t, s) != "Ter, 19/05/2026" {
+		t.Errorf("day: %q", title(t, s))
+	}
+	byID(t, s, "cal-views").(*widget.Dropdown).Items[3].OnSelect() // month
+	s.Select(time.Date(2026, 1, 31, 0, 0, 0, 0, time.UTC))
+	if !s.Key(false) || title(t, s) != "Fevereiro 2026" || s.Selected().Day() != 28 {
+		t.Errorf("the 31st must clamp to the end of the next month: %v %q", s.Selected(), title(t, s))
+	}
+	if !s.Key(true) || title(t, s) != "Janeiro 2026" {
+		t.Errorf("previous: %q", title(t, s))
 	}
 }
 
-func TestNewEventIsSavedOnTheSelectedDay(t *testing.T) {
-	s, st, _ := newScreen(t)
-	tap(t, s, "cal-new")
-	if s.Editing() != "" || s.editor == nil {
-		t.Fatal("the form did not open")
+func TestTheGridShowsEventsAndOpensThemOrNewOnesOnTouch(t *testing.T) {
+	s, st, _ := newScreen(t, "Dentista", "Almoço")
+	s.SetView(WorkWeekView)
+	g := byID(t, s, "cal-grid").(*widget.TimeGrid)
+	if len(g.Events) != 2 || g.Events[0].Title != "Dentista" || g.Events[0].Detail != "08:00–09:00" {
+		t.Fatalf("events = %+v", g.Events)
+	}
+	g.OnEvent(g.Events[0].ID)
+	if s.Editing() == "" || byID(t, s, "edit-title").(*widget.Input).Value != "Dentista" {
+		t.Fatal("the event did not open")
+	}
+	tap(t, s, "edit-back")
+	g = byID(t, s, "cal-grid").(*widget.TimeGrid)
+	g.OnSlot(time.Date(2026, 5, 21, 14, 30, 0, 0, time.UTC))
+	if byID(t, s, "edit-start").(*widget.Input).Value != "14:30" || byID(t, s, "edit-end").(*widget.Input).Value != "15:30" {
+		t.Error("a tap on an empty slot must start a one-hour event there")
 	}
 	byID(t, s, "edit-title").(*widget.Input).Value = "Reunião"
-	byID(t, s, "edit-location").(*widget.Input).Value = "Sala 2"
-	byID(t, s, "edit-start").(*widget.Input).Value = "14:00"
-	byID(t, s, "edit-end").(*widget.Input).Value = "15:30"
-	tap(t, s, "edit-nextday")
 	tap(t, s, "edit-save")
-	if len(st.events) != 1 {
-		t.Fatalf("events = %d", len(st.events))
+	if len(st.events) != 3 || !s.Selected().Equal(day(21)) {
+		t.Errorf("events %d selected %v", len(st.events), s.Selected())
 	}
-	for _, e := range st.events {
-		if e.Title != "Reunião" || e.Location != "Sala 2" || e.Start.Hour() != 14 || e.Start.Day() != 21 || e.Duration() != 90*time.Minute {
-			t.Errorf("event = %+v", e)
-		}
-	}
-	if !s.Selected().Equal(day(21)) || len(s.items) != 1 || s.editor != nil {
-		t.Errorf("after save: selected %v items %d", s.Selected(), len(s.items))
+	g = byID(t, s, "cal-grid").(*widget.TimeGrid)
+	g.OnDay(day(19))
+	if s.CurrentView() != DayView || !s.Selected().Equal(day(19)) {
+		t.Errorf("a day header opens the Day view: %v %v", s.CurrentView(), s.Selected())
 	}
 }
 
-func TestEditingAnEventChangesItAndAllDayIgnoresTimes(t *testing.T) {
+func TestTheGridWidensItsHoursToShowEarlyAndLateEvents(t *testing.T) {
+	s, _, ag := newScreen(t)
+	ag.Add(application.Entry{Title: "voo", Day: day(20), Start: 5 * 60, End: 6 * 60})
+	ag.Add(application.Entry{Title: "festa", Day: day(20), Start: 22 * 60, End: 23*60 + 30})
+	ag.Add(application.Entry{Title: "feriado", Day: day(20), AllDay: true})
+	s.Select(day(20))
+	s.SetView(DayView)
+	g := byID(t, s, "cal-grid").(*widget.TimeGrid)
+	if g.FirstHour != 5 || g.LastHour != 24 || len(g.Events) != 3 {
+		t.Errorf("hours %d..%d events %d", g.FirstHour, g.LastHour, len(g.Events))
+	}
+}
+
+func TestEditingChangesAnEventAndAllDayIgnoresTimes(t *testing.T) {
 	s, st, _ := newScreen(t, "a")
-	id := s.items[0].Event.ID
-	tap(t, s, "event-"+id)
-	if s.Editing() != id {
+	id := firstID(st)
+	s.Edit(id)
+	if s.Editing() != id || byID(t, s, "edit-start").(*widget.Input).Value != "08:00" {
 		t.Fatalf("editing %q", s.Editing())
 	}
-	if got := byID(t, s, "edit-start").(*widget.Input).Value; got != "08:00" {
-		t.Errorf("start = %q", got)
-	}
 	byID(t, s, "edit-title").(*widget.Input).Value = "b"
+	byID(t, s, "edit-description").(*widget.TextArea).Value = "levar exames"
 	tap(t, s, "edit-allday")
 	byID(t, s, "edit-start").(*widget.Input).Value = "lixo"
 	tap(t, s, "edit-prevday")
 	tap(t, s, "edit-save")
 	got := st.events[id]
-	if got.Title != "b" || !got.AllDay || got.Start.Day() != 19 {
+	if got.Title != "b" || got.Description != "levar exames" || !got.AllDay || got.Start.Day() != 19 {
 		t.Errorf("event = %+v", got)
-	}
-	// the all-day event is on the 19th now
-	s.Select(day(19))
-	if len(s.items) != 1 {
-		t.Errorf("19th: %d items", len(s.items))
 	}
 }
 
 func TestABadTimeOrAFailureKeepsTheFormOpen(t *testing.T) {
 	s, st, _ := newScreen(t, "a")
-	id := s.items[0].Event.ID
-	s.Edit(id)
+	s.Edit(firstID(st))
 	byID(t, s, "edit-start").(*widget.Input).Value = "25:99"
 	tap(t, s, "edit-save")
 	if s.editor == nil || !strings.Contains(s.editor.note.Text, "HH:MM") {
@@ -248,10 +271,10 @@ func TestABadTimeOrAFailureKeepsTheFormOpen(t *testing.T) {
 
 func TestDeleteRemovesTheEventAndNothingBreaksWithoutAForm(t *testing.T) {
 	s, st, _ := newScreen(t, "a")
-	tap(t, s, "event-"+s.items[0].Event.ID)
+	s.Edit(firstID(st))
 	tap(t, s, "edit-delete")
-	if len(st.events) != 0 || s.editor != nil || len(s.items) != 0 {
-		t.Errorf("events = %d items = %d", len(st.events), len(s.items))
+	if len(st.events) != 0 || s.editor != nil {
+		t.Errorf("events = %d", len(st.events))
 	}
 	s.Edit("missing")
 	if !strings.Contains(s.notice, "Não foi possível") {
@@ -260,9 +283,6 @@ func TestDeleteRemovesTheEventAndNothingBreaksWithoutAForm(t *testing.T) {
 	var none Screen
 	none.SaveEdit()
 	none.DeleteEdit()
-	if s.Key(true) != true {
-		t.Error("the page keys must work on the month")
-	}
 	s.NewEvent()
 	if s.Key(false) {
 		t.Error("the page keys must be left to the form")
@@ -279,6 +299,66 @@ func TestParseClock(t *testing.T) {
 		if _, ok := parseClock(bad); ok {
 			t.Errorf("%q accepted", bad)
 		}
+	}
+}
+
+func TestTheRepetitionIsChosenFromTheMenuAndKeptWhenCustom(t *testing.T) {
+	s, st, _ := newScreen(t, "yoga")
+	id := firstID(st)
+	s.Edit(id)
+	rep := byID(t, s, "edit-repeat").(*widget.Dropdown)
+	if !strings.Contains(rep.Text, "Não repete") {
+		t.Errorf("label = %q", rep.Text)
+	}
+	rep.Items[2].OnSelect()
+	if !strings.Contains(rep.Text, "Toda semana") {
+		t.Errorf("label = %q", rep.Text)
+	}
+	tap(t, s, "edit-save")
+	if st.events[id].Recurrence != "FREQ=WEEKLY" {
+		t.Fatalf("recurrence = %q", st.events[id].Recurrence)
+	}
+	e := st.events[id]
+	e.Recurrence = "FREQ=WEEKLY;BYDAY=MO,WE"
+	st.events[id] = e
+	s.Edit(id)
+	if !strings.Contains(byID(t, s, "edit-repeat").(*widget.Dropdown).Text, "Personalizada") {
+		t.Error("custom rule not shown as custom")
+	}
+	tap(t, s, "edit-save")
+	if st.events[id].Recurrence != "FREQ=WEEKLY;BYDAY=MO,WE" {
+		t.Errorf("custom rule lost: %q", st.events[id].Recurrence)
+	}
+}
+
+func TestTheReminderIsChosenAndSaved(t *testing.T) {
+	s, st, _ := newScreen(t, "dentista")
+	id := firstID(st)
+	s.Edit(id)
+	rem := byID(t, s, "edit-reminder").(*widget.Dropdown)
+	rem.Items[2].OnSelect()
+	if !strings.Contains(rem.Text, "15 minutos antes") {
+		t.Errorf("label = %q", rem.Text)
+	}
+	tap(t, s, "edit-save")
+	if r := st.events[id].Reminders; len(r) != 1 || r[0] != 15*time.Minute {
+		t.Fatalf("reminders = %v", r)
+	}
+	e := st.events[id]
+	e.Reminders = []time.Duration{45 * time.Minute}
+	st.events[id] = e
+	s.Edit(id)
+	if !strings.Contains(byID(t, s, "edit-reminder").(*widget.Dropdown).Text, "45 minutos") {
+		t.Error("an unusual reminder is not shown")
+	}
+}
+
+func TestAStoreFailureIsShownInsteadOfBreakingTheView(t *testing.T) {
+	s, st, _ := newScreen(t, "a")
+	st.err = errors.New("disco")
+	s.SetView(DayView)
+	if !strings.Contains(s.notice, "disco") {
+		t.Errorf("notice = %q", s.notice)
 	}
 }
 
@@ -302,8 +382,8 @@ func checkElement(t *testing.T, s *Screen, where string, w widget.Widget, screen
 	}
 }
 
-func TestEveryInteractiveElementReceivesItsOwnTouchAndNothingOverflows(t *testing.T) {
-	s, _, _ := newScreen(t, "a", "b", "c", "d", "e")
+func TestEveryViewFitsTheScreenAndEveryElementGetsItsTouch(t *testing.T) {
+	s, st, _ := newScreen(t, "a", "b", "c", "d", "e")
 	check := func(where string) {
 		t.Helper()
 		s.Doc.Layout()
@@ -313,59 +393,10 @@ func TestEveryInteractiveElementReceivesItsOwnTouchAndNothingOverflows(t *testin
 			return true
 		})
 	}
-	check("month")
-	s.Edit(s.items[0].Event.ID)
+	for _, v := range []View{MonthView, DayView, WorkWeekView, WeekView} {
+		s.SetView(v)
+		check("view " + strconv.Itoa(int(v)))
+	}
+	s.Edit(firstID(st))
 	check("editor")
-}
-
-func TestTheRepetitionIsChosenFromTheMenuAndKeptWhenCustom(t *testing.T) {
-	s, st, _ := newScreen(t, "yoga")
-	id := s.items[0].Event.ID
-	s.Edit(id)
-	rep := byID(t, s, "edit-repeat").(*widget.Dropdown)
-	if !strings.Contains(rep.Text, "Não repete") {
-		t.Errorf("label = %q", rep.Text)
-	}
-	rep.Items[2].OnSelect() // weekly
-	if !strings.Contains(rep.Text, "Toda semana") {
-		t.Errorf("label = %q", rep.Text)
-	}
-	tap(t, s, "edit-save")
-	if st.events[id].Recurrence != "FREQ=WEEKLY" {
-		t.Fatalf("recurrence = %q", st.events[id].Recurrence)
-	}
-	// a rule the form does not offer is shown as custom and survives a save
-	e := st.events[id]
-	e.Recurrence = "FREQ=WEEKLY;BYDAY=MO,WE"
-	st.events[id] = e
-	s.Edit(id)
-	if !strings.Contains(byID(t, s, "edit-repeat").(*widget.Dropdown).Text, "Personalizada") {
-		t.Error("custom rule not shown as custom")
-	}
-	tap(t, s, "edit-save")
-	if st.events[id].Recurrence != "FREQ=WEEKLY;BYDAY=MO,WE" {
-		t.Errorf("custom rule lost: %q", st.events[id].Recurrence)
-	}
-}
-
-func TestTheReminderIsChosenAndSaved(t *testing.T) {
-	s, st, _ := newScreen(t, "dentista")
-	id := s.items[0].Event.ID
-	s.Edit(id)
-	rem := byID(t, s, "edit-reminder").(*widget.Dropdown)
-	rem.Items[2].OnSelect() // 15 minutes
-	if !strings.Contains(rem.Text, "15 minutos antes") {
-		t.Errorf("label = %q", rem.Text)
-	}
-	tap(t, s, "edit-save")
-	if r := st.events[id].Reminders; len(r) != 1 || r[0] != 15*time.Minute {
-		t.Fatalf("reminders = %v", r)
-	}
-	e := st.events[id]
-	e.Reminders = []time.Duration{45 * time.Minute}
-	st.events[id] = e
-	s.Edit(id)
-	if !strings.Contains(byID(t, s, "edit-reminder").(*widget.Dropdown).Text, "45 minutos") {
-		t.Error("an unusual reminder is not shown")
-	}
 }

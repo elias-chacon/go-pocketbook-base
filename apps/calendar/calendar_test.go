@@ -54,7 +54,7 @@ func TestTheAppReopensOverTheSameDatabase(t *testing.T) {
 	b := newCalendarAt(testEnv(t), dir, "America/Sao_Paulo")
 	t.Cleanup(b.close)
 	b.Document().Layout()
-	if b.screen == nil || !strings.Contains(labels(b.Document()), "Calendário") {
+	if b.screen == nil || !strings.Contains(labels(b.Document()), "2026") {
 		t.Errorf("did not reopen:\n%s", labels(b.Document()))
 	}
 	if !b.Key(platform.KeyNext) || !b.Key(platform.KeyPrevious) || b.Key(platform.KeyMenu) {

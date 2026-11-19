@@ -55,13 +55,21 @@ alterações dele; um calendário que sumiu do servidor leva os seus eventos; e 
 ## O app Calendário
 
 O `apps/calendar` é a raiz de composição. Ele **não precisa de conta**: os eventos ficam no leitor, no banco compartilhado, sob a conta `local` (um
-calendário é criado na primeira execução). O caso de uso `Agenda` responde ao que as telas pedem: as **marcas de um mês** (quais dias têm algo), **o dia**
-(eventos de dia inteiro primeiro, depois por início, com os repetidos expandidos), **Add**, **Change** e **Delete**. Um evento de dia inteiro é uma **data**,
-não um instante, então nunca escorrega para o dia vizinho em outro fuso. O relógio vem de `TZ` ou `/etc/timezone` (UTC quando o leitor não tem nenhum: a
-configuração do fuso ainda falta). A tela reaproveita o `Calendar` mensal do toolkit (estendido com `Marked`, um ponto sob os dias com eventos, e `OnMonth`),
-com **Hoje** e **Novo**, o título do dia e **5 eventos por página**. Tocar num evento (ou em **Novo**) abre o formulário: título, local, o dia (com setas), dia
-inteiro, início e fim como `HH:MM` e **repetição** (nenhuma, todo dia, semana, mês ou ano; uma regra vinda de arquivo ou servidor aparece como *personalizada* e é mantida) e **lembrete** (nenhum, 5, 15, 30 minutos, 1 hora ou 1 dia antes; o leitor ainda não o toca); um horário inválido mantém o formulário aberto. **Ainda não testado no aparelho.** Falta (T67): as visões de dia, semana
-e semana útil (precisam de um componente de grade de horários no toolkit), tocar os lembretes, e a sincronização.
+calendário é criado na primeira execução). Ele se parece com o **calendário do Outlook**: uma barra de ferramentas (**Hoje**, anterior e próximo, o período, o
+menu de **visão** e **Novo**) sobre a visão de **Mês**, **Semana**, **Semana útil** ou **Dia**, sob a barra padrão do app (o nome do app com **Sobre** e **Sair**,
+como no Hello Go).
+
+- **Mês:** cada dia lista seus eventos (hora e título, "+N" quando há mais). Toque num dia para selecioná-lo e toque de novo para abri-lo na visão de Dia.
+- **Dia, Semana útil, Semana:** as horas ao lado e os eventos como blocos posicionados pelo horário (os que se sobrepõem dividem a largura), eventos de dia
+  inteiro numa faixa no alto e uma linha na hora atual. Toque num evento para editá-lo, num horário vazio para começar um evento ali, no cabeçalho de um dia
+  para abri-lo. As horas se ampliam para mostrar eventos cedo e tarde.
+- **O formulário do evento:** título, local, o dia (com setas), dia inteiro, início e fim como `HH:MM`, **repetir**, **lembrete** e **descrição**; um horário
+  inválido mantém o formulário aberto.
+
+As duas visões são componentes do toolkit compartilhado (**MonthView** e **TimeGrid**, [capítulo 6](06-componentes.md)). O caso de uso `Agenda` responde ao que
+as telas pedem: **Span** (o que acontece em cada um de N dias, numa só consulta), **Add**, **Change** e **Delete**. Um evento de dia inteiro é uma **data**, não um
+instante, então nunca escorrega para o dia vizinho em outro fuso. O relógio vem de `TZ` ou `/etc/timezone` (UTC quando o leitor não tem nenhum: a configuração
+do fuso ainda falta). **Ainda não testado no aparelho.** Falta (T67): tocar os lembretes, e a sincronização.
 
 ## O código
 

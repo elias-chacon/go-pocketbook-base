@@ -203,3 +203,17 @@ func TestZoneAndStoreErrors(t *testing.T) {
 		t.Error("the default clock gave zero")
 	}
 }
+
+func TestSpanGivesOneListPerDayFromASingleQuery(t *testing.T) {
+	a, _ := agenda("")
+	a.Add(Entry{Title: "tarde", Day: day(20), Start: 900, End: 960})
+	a.Add(Entry{Title: "feriado", Day: day(20), AllDay: true})
+	a.Add(Entry{Title: "outro", Day: day(22), Start: 600, End: 660})
+	got, err := a.Span(day(19), 5)
+	if err != nil || len(got) != 5 {
+		t.Fatalf("span = %d %v", len(got), err)
+	}
+	if len(got[0]) != 0 || len(got[1]) != 2 || got[1][0].Event.Title != "feriado" || len(got[3]) != 1 || len(got[4]) != 0 {
+		t.Errorf("span = %+v", got)
+	}
+}

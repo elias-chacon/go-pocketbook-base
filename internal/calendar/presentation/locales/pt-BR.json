@@ -31,5 +31,10 @@
   "cal.remind.30m": "30 minutos antes",
   "cal.remind.1h": "1 hora antes",
   "cal.remind.1d": "1 dia antes",
-  "cal.remind.minutes": "%d minutos antes"
+  "cal.remind.minutes": "%d minutos antes",
+  "cal.view.day": "Dia",
+  "cal.view.workweek": "Semana útil",
+  "cal.view.week": "Semana",
+  "cal.view.month": "Mês",
+  "cal.field.description": "Descrição"
 }

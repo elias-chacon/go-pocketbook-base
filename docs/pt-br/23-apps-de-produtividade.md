@@ -12,7 +12,7 @@ está o código. Os detalhes técnicos ficam nos capítulos [17](17-decisoes-app
 |---|---|---|---|---|
 | **E-mail** | `apps/mail` | Sim (IMAP com **senha de app**) | pastas, lista, leitura, responder, encaminhar, nova mensagem, apagar, busca, sincronizar, ler offline | abrir anexos, rascunhos no servidor, Outlook.com (OAuth) |
 | **Tarefas** | `apps/tasks` | Não (ficam no leitor) | visões Meu dia, Importante, Planejado, Atrasadas e Todas; adicionar, concluir, editar, apagar; tarefas que se repetem | lembretes na tela, sincronização |
-| **Calendário** | `apps/calendar` | Não (ficam no leitor) | mês com pontos nos dias com eventos, agenda do dia, criar, editar e apagar eventos (dia inteiro ou com horário) | visões de dia e semana, tocar os lembretes, sincronização, importar `.ics` |
+| **Calendário** | `apps/calendar` | Não (ficam no leitor) | visões Mês, Semana, Semana útil e Dia no estilo Outlook, criar, editar e apagar eventos (dia inteiro, com horário, que se repetem, com lembrete e descrição) | tocar os lembretes, sincronização, importar `.ics` |
 
 ## Como instalar
 
@@ -45,9 +45,10 @@ Tudo é lido do **cache offline**: sem rede você continua lendo o que já veio.
 
 ## Calendário
 
-- O app abre no **mês de hoje**. Um **ponto** marca os dias que têm eventos; **Hoje** volta para o dia de hoje.
-- Tocar num dia mostra a **agenda dele** embaixo (dia inteiro primeiro, depois por horário; **5 eventos por página**).
-- **Novo** (ou tocar num evento) abre o formulário: título, local, o dia (com setas), **dia inteiro** e início e fim como `HH:MM` **repetir** (todo dia, semana, mês ou ano) e **lembrar** (de 5 minutos a 1 dia antes).
+- Ele se parece com o **calendário do Outlook**: uma barra de ferramentas (**Hoje**, anterior e próximo, o período, o menu de **visão**: Dia, Semana útil, Semana ou Mês, e **Novo**).
+- **Mês:** cada dia lista seus eventos. Toque num dia para selecioná-lo; toque de novo para abri-lo na visão de Dia.
+- **Dia, Semana útil, Semana:** as horas ao lado e os eventos como blocos. Toque num evento para editá-lo, ou num horário vazio para começar um evento ali.
+- O formulário tem título, local, o dia (com setas), **dia inteiro**, início e fim como `HH:MM`, **repetir**, **lembrar** e **descrição**.
 - Um evento de **dia inteiro** é uma data, não um instante: ele não muda de dia por causa do fuso.
 - O fuso vem da variável `TZ` ou de `/etc/timezone`; sem nenhum dos dois, vale UTC (a configuração do fuso ainda falta).
 
@@ -100,6 +101,5 @@ tela novo vai para o **toolkit compartilhado**, nunca para dentro de um app: o `
 
 ## Próximos passos
 
-Anexos, marcadores e rascunhos no e-mail; lembretes nas tarefas; visões de dia e semana no calendário (com um componente de grade de
-horários no toolkit); sincronização (Graph, CalDAV, Exchange); integrações entre os apps (e-mail → tarefa, convite → evento). A lista completa e o
+Abrir anexos e o login OAuth do Outlook.com no e-mail; tocar os lembretes das tarefas e do calendário; sincronização (Graph, CalDAV, Exchange); integrações entre os apps (e-mail → tarefa, convite → evento). A lista completa e o
 estado de cada item estão nas tarefas **T51 a T70** do [README](../../README.md#tasks).

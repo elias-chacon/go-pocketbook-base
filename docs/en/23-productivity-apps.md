@@ -12,7 +12,7 @@ where the code is. The technical details are in chapters [17](17-productivity-ap
 |---|---|---|---|---|
 | **Mail** | `apps/mail` | Yes (IMAP with an **app password**) | folders, list, reading, reply, forward, new message, delete, search, sync, offline reading | opening attachments, drafts on the server, Outlook.com (OAuth) |
 | **Tasks** | `apps/tasks` | No (kept on the reader) | My Day, Important, Planned, Overdue and All views; add, tick, edit, delete; repeating tasks | reminders on screen, sync |
-| **Calendar** | `apps/calendar` | No (kept on the reader) | month with dots on the days with events, the day's agenda, create, edit and delete events (all-day or timed) | day and week views, ringing the reminders, sync, `.ics` import |
+| **Calendar** | `apps/calendar` | No (kept on the reader) | Outlook-style Month, Week, Work week and Day views, create, edit and delete events (all-day, timed, repeating, with reminder and description) | ringing the reminders, sync, `.ics` import |
 
 ## How to install
 
@@ -45,9 +45,10 @@ Everything is read from the **offline cache**: without a network you keep readin
 
 ## Calendar
 
-- The app opens on **today's month**. A **dot** marks the days that have events; **Today** goes back to today.
-- Tapping a day shows **its agenda** below (all-day first, then by time; **5 events a page**).
-- **New** (or tapping an event) opens the form: title, location, the day (with arrows), **all day** and start and end as `HH:MM`, **repeat** (every day, week, month or year) and **remind** (5 minutes to 1 day before).
+- It looks like the **Outlook calendar**: a toolbar (**Today**, previous and next, the period, the **view** menu: Day, Work week, Week or Month, and **New**).
+- **Month:** each day lists its events. Tap a day to select it; tap it again to open it in the Day view.
+- **Day, Work week, Week:** the hours down the side and the events as blocks. Tap an event to edit it, or an empty time to start an event there.
+- The form has title, location, the day (with arrows), **all day**, start and end as `HH:MM`, **repeat**, **remind** and a **description**.
 - An **all-day** event is a date, not an instant: it does not change day because of the time zone.
 - The zone comes from the `TZ` variable or `/etc/timezone`; with neither, UTC is used (the zone setting is still to do).
 
@@ -100,6 +101,5 @@ component goes to the **shared toolkit**, never inside an app: the toolkit's `Ca
 
 ## Next steps
 
-Attachments, flags and drafts in mail; reminders in tasks; day and week views in the calendar (with a time grid component in the
-toolkit); sync (Graph, CalDAV, Exchange); integrations between the apps (mail → task, invitation → event). The full list and the state of each item are in
+Opening attachments and OAuth sign-in for Outlook.com in mail; ringing the reminders of tasks and of the calendar; sync (Graph, CalDAV, Exchange); integrations between the apps (mail → task, invitation → event). The full list and the state of each item are in
 tasks **T51 to T70** of the [README](../../README.md#tasks).

@@ -109,12 +109,7 @@ func (a Agenda) Day(day time.Time) ([]domain.Occurrence, error) {
 			out = append(out, o)
 		}
 	}
-	sort.SliceStable(out, func(i, j int) bool {
-		if out[i].Event.AllDay != out[j].Event.AllDay {
-			return out[i].Event.AllDay
-		}
-		return out[i].Start.Before(out[j].Start)
-	})
+	sortDay(out)
 	return out, nil
 }
 
@@ -236,4 +231,35 @@ func slug(s string) string {
 		return b.String()[:12]
 	}
 	return b.String()
+}
+
+// Span returns what happens on each of n consecutive days from first: one list per day,
+// all-day events first and then by start. It reads the store once, so a month or a
+// week costs one query.
+func (a Agenda) Span(first time.Time, n int) ([][]domain.Occurrence, error) {
+	first = a.dayStart(first)
+	occ, err := a.occurrences(first, first.AddDate(0, 0, n))
+	if err != nil {
+		return nil, err
+	}
+	out := make([][]domain.Occurrence, n)
+	for i := range out {
+		day := first.AddDate(0, 0, i)
+		for _, o := range occ {
+			if a.onDay(o, day) {
+				out[i] = append(out[i], o)
+			}
+		}
+		sortDay(out[i])
+	}
+	return out, nil
+}
+
+func sortDay(list []domain.Occurrence) {
+	sort.SliceStable(list, func(i, j int) bool {
+		if list[i].Event.AllDay != list[j].Event.AllDay {
+			return list[i].Event.AllDay
+		}
+		return list[i].Start.Before(list[j].Start)
+	})
 }

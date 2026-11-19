@@ -32,6 +32,16 @@ apps/<id>/
 Compilar gera **um único arquivo**, `<id>.app`. Instalar é copiar esse arquivo para a pasta `applications` do leitor;
 nada mais. Um app é instalado, atualizado e executado sozinho: o Launcher é uma comodidade, não uma exigência.
 
+## Todo app segue o blueprint do Hello Go
+
+Todo app do repositório é um **plugin do Launcher que também se instala sem ele**: um `<id>.app` com seu próprio `app.json`, que se registra na primeira execução
+(assim o Launcher o lista e a tela inicial mostra seu ícone). O Hello Go é o modelo, e o `apps/contract_test.go` confere:
+
+- a **barra superior padrão**: um menu com o nome do app e **Sobre** (nome, descrição, versão) e **Sair** (volta ao Launcher que o abriu, ou à tela inicial). É o
+  `widget.AppChrome` do toolkit; o app a recebe com `platform.Chrome(env)` e a põe acima de cada tela sua (`cfg.Chrome.Wrap`). Um teste falha para o app que não a usa (o Hello é o modelo e o Launcher é o anfitrião em que os apps se plugam, então os dois ficam de fora);
+- o manifesto com textos em pt-BR e inglês, o `main.go` que o embute e chama `platform.Run`, e um `icon.png` opcional;
+- todas as telas feitas com os widgets do toolkit (um componente que falta é criado no toolkit, nunca no app).
+
 ## O manifesto (`app.json`)
 
 ```json

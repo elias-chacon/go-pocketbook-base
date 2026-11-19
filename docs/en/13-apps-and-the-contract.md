@@ -32,6 +32,17 @@ apps/<id>/
 Building it produces **a single file**, `<id>.app`. Installing is copying that file to the reader's `applications`
 folder; nothing else. An app is installed, updated and run on its own: the Launcher is a convenience, not a requirement.
 
+## Every app follows the Hello Go blueprint
+
+Every app of the repository is a **plugin of the Launcher that also installs without it**: one `<id>.app` with its own `app.json`, which registers itself on
+the first run (so the Launcher lists it, and the home screen shows its icon). Hello Go is the model, and `apps/contract_test.go` enforces it:
+
+- the **standard top bar**: a menu named after the app with **About** (name, description, version) and **Exit** (back to the Launcher that opened it, or to the
+  home screen). It is `widget.AppChrome` in the toolkit; an app gets it with `platform.Chrome(env)` and puts it above every screen of its (`cfg.Chrome.Wrap`).
+  A test fails for an app that does not use it (Hello is the model and the Launcher is the host the apps plug into, so both are exempt);
+- the manifest with pt-BR and English texts, the `main.go` that embeds it and calls `platform.Run`, and an optional `icon.png`;
+- all its screens built from the toolkit's widgets (a missing component is created in the toolkit, never in the app).
+
 ## The manifest (`app.json`)
 
 ```json

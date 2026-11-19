@@ -52,7 +52,7 @@ Ou baixe o arquivo do seu sistema na página de [Releases](https://github.com/el
 | **Hello Go** (`apps/hello`) | vitrine de todos os componentes; é o blueprint de todo app | testado no aparelho |
 | **E-mail** (`apps/mail`) | pastas, leitura página a página, responder, encaminhar, escrever, apagar, busca, leitura offline (IMAP com senha de app) | compila e passa nos testes; **não testado no aparelho** |
 | **Tarefas** (`apps/tasks`) | Meu dia, Importante, Planejado, Atrasadas; adicionar, concluir, editar; sem conta | compila e passa nos testes; **não testado no aparelho** |
-| **Calendário** (`apps/calendar`) | mês com pontos nos dias com eventos, agenda do dia, criar e editar eventos; sem conta | compila e passa nos testes; **não testado no aparelho** |
+| **Calendário** (`apps/calendar`) | visões Mês, Semana, Semana útil e Dia no estilo Outlook, criar e editar eventos; sem conta | compila e passa nos testes; **não testado no aparelho** |
 
 Guia de uso, o que falta e o que foi verificado: [capítulo 23](docs/pt-br/23-apps-de-produtividade.md). Todos estão na Release e aparecem no catálogo do Launcher.
 
@@ -209,7 +209,7 @@ Critério de pronto de **cada app** (herdado das regras do projeto): segue o con
 *App de calendário (`apps/calendar`, contexto `internal/calendar`)*
 
 - [x] T66 Calendar ([capítulo 20](docs/pt-br/20-calendario-dominio-e-icalendar.md)): domínio (eventos, recorrência RRULE que mantém a hora local no horário de verão, fusos IANA e nomes do Windows do Outlook, lembretes, participantes, alterações de uma só aparição) e **iCalendar** (leitura e escrita de `.ics`, com avisos em vez de perder eventos), com **importação e exportação**. Testado com arquivos no estilo do Outlook e do Google, e compilado no SDK Go 1.17/ARM. O cache de eventos também está feito (`sqlstore`: `Between` pronto para o `Expand`, com as alterações de uma só aparição). A tela fica para a T67
-- [ ] T67 Calendar (**primeira tela pronta**: `apps/calendar` mostra o mês com pontos nos dias com eventos, a agenda do dia e um formulário de evento, sem conta; repete eventos (dia, semana, mês, ano); guarda lembretes (ainda não tocam); **falta** dia/semana/semana útil, tocar os lembretes e testar no aparelho): interface no estilo do **calendário do Outlook** (dia, semana de trabalho, semana, mês, agenda, vários calendários, criar/editar/excluir, recorrência, lembretes, fuso horário)
+- [ ] T67 Calendar (**primeira tela pronta**: `apps/calendar` tem as visões Mês, Semana, Semana útil e Dia no estilo Outlook (componentes `MonthView` e `TimeGrid` do toolkit) e um formulário de evento com descrição, sem conta; repete eventos e guarda lembretes (ainda não tocam); **falta** tocar os lembretes e testar no aparelho): interface no estilo do **calendário do Outlook** (dia, semana de trabalho, semana, mês, agenda, vários calendários, criar/editar/excluir, recorrência, lembretes, fuso horário)
 - [ ] T68 Calendar: sincronização por **CalDAV/WebDAV** (iCloud, Nextcloud, Fastmail…), **Google Calendar** e **Microsoft Graph** (OAuth2), e **Exchange local** (EWS)
 - [ ] T69 Calendar ↔ e-mail: convites e respostas (iTIP/iMIP: aceitar, recusar, talvez), criar evento a partir de um e-mail, e abrir o e-mail de um convite
 - [ ] T70 Calendar: importar `.ics` de um anexo de e-mail, da pasta do leitor ou de uma assinatura por endereço (`webcal`), sem duplicar eventos

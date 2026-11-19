@@ -55,13 +55,20 @@ with it; a calendar that went away on the server takes its events; and removing 
 ## The Calendar app
 
 `apps/calendar` is the composition root. It needs **no account**: the events live on the reader, in the shared database, under the account `local` (a
-calendar is created on the first run). The `Agenda` use case answers what the screens ask: the **marks of a month** (which days have something), **the
-day** (all-day events first, then by start, repeating ones expanded), **Add**, **Change** and **Delete**. An all-day event is a **date**, not an instant, so
-it never slips to the neighbouring day in another time zone. The clock comes from `TZ` or `/etc/timezone` (UTC when the reader has neither: the zone
-setting is still to do). The screen reuses the toolkit's month `Calendar` (extended with `Marked`, a dot under the days with events, and `OnMonth`),
-with **Today** and **New**, the heading of the day and **5 events a page**. Tapping an event (or **New**) opens the form: title, location, the day (with
-arrows), all day, start and end as `HH:MM`, and **repetition** (none, every day, week, month or year; a rule that came from a file or a server shows as *custom* and is kept) and a **reminder** (none, 5, 15, 30 minutes, 1 hour or 1 day before; the reader does not ring it yet); a bad time keeps the form open. **Not yet tried on the device.** Still to do (T67): the day, week and work
-week views (they need a time grid component in the toolkit), ringing the reminders, and sync.
+calendar is created on the first run). It looks like the **Outlook calendar**: a toolbar (**Today**, previous and next, the period, the **view** menu and
+**New**) over the **Month**, **Week**, **Work week** or **Day** view, under the standard app bar (the app name with **About** and **Exit**, as in Hello Go).
+
+- **Month:** every day lists its events (time and title, "+N" when there are more). Tap a day to select it and tap it again to open it in the Day view.
+- **Day, Work week, Week:** the hours down the side and the events as blocks placed by time (overlapping ones share the width), all-day events in a strip on
+  top and a line at the current time. Tap an event to edit it, an empty time to start an event there, a day header to open that day. The hours widen to show
+  early and late events.
+- **The event form:** title, location, the day (with arrows), all day, start and end as `HH:MM`, **repeat**, **reminder** and a **description**; a bad time
+  keeps the form open.
+
+The two views are components of the shared toolkit (**MonthView** and **TimeGrid**, [chapter 6](06-components.md)). The `Agenda` use case answers what the
+screens ask: **Span** (what happens on each of N days, from one query), **Add**, **Change** and **Delete**. An all-day event is a **date**, not an instant, so it
+never slips to the neighbouring day in another time zone. The clock comes from `TZ` or `/etc/timezone` (UTC when the reader has neither: the zone setting is
+still to do). **Not yet tried on the device.** Still to do (T67): ringing the reminders, and sync.
 
 ## The code
 

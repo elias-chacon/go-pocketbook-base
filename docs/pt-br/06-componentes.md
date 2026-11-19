@@ -562,6 +562,68 @@ func CalendarExample() widget.Widget {
 }
 ```
 
+## Visão de mês e grade de horários
+
+![month view](../components/monthview.png)
+
+Os dois componentes de um app de **agenda**, como o calendário do Outlook. O **MonthView** é um mês em que cada dia lista o que há nele (algumas linhas e
+"+N") e tocar no dia selecionado de novo o abre. O **TimeGrid** são as visões de **dia, semana útil e semana**: uma coluna por dia, as horas ao lado,
+os eventos como blocos posicionados pelo horário (os que se sobrepõem dividem a largura), uma faixa para eventos de dia inteiro e um cabeçalho que se toca. O
+[Calendário](#calendário) pequeno é o seletor de data; estes dois são para ler uma agenda.
+
+![time grid](../components/timegrid.png)
+
+| | |
+|---|---|
+| Criar | `widget.NewMonthView(selected)`, `widget.NewTimeGrid(days...)` |
+| MonthView | `Locale`, `Year`, `Month`, `Selected`, `Today`, `Entries(day) []string`, `ShiftMonth(delta)` |
+| TimeGrid | `Days`, `Events []GridEvent{ID, Title, Detail, Start, End, AllDay}`, `FirstHour`/`LastHour` (7 e 21 por padrão), `Today`, `Now` (desenha uma linha na hora atual) |
+| Eventos | MonthView: `OnChange`, `OnOpen`, `OnMonth`; TimeGrid: `OnEvent(id)`, `OnSlot(at)` (um horário vazio, arredondado a 30 minutos), `OnDay(day)` |
+
+Os horários de um `GridEvent` devem estar no mesmo fuso que `Days`: o que se desenha é o relógio de parede.
+
+```go
+// examples/components/schedule.go#MonthViewExample
+// MonthViewExample shows a month like the month view of Outlook: every day lists
+// what is on it, and a second tap on the selected day opens it.
+func MonthViewExample() widget.Widget {
+	month := widget.NewMonthView(time.Now())
+	month.Locale = widget.LocalePTBR
+	month.Entries = func(day time.Time) []string {
+		if day.Weekday() == time.Friday {
+			return []string{"09:00 Reunião", "14:00 Dentista"}
+		}
+		return nil
+	}
+	month.OnChange = func(e *widget.Event) { fmt.Println("selected:", month.Selected.Format("2006-01-02")) }
+	month.OnOpen = func(e *widget.Event) { fmt.Println("open:", month.Selected.Format("2006-01-02")) }
+	return month
+}
+```
+
+```go
+// examples/components/schedule.go#TimeGridExample
+// TimeGridExample shows a work week: the hours down the side and the events as blocks.
+func TimeGridExample() widget.Widget {
+	monday := time.Date(2026, 11, 16, 0, 0, 0, 0, time.UTC)
+	days := make([]time.Time, 5)
+	for i := range days {
+		days[i] = monday.AddDate(0, 0, i)
+	}
+	grid := widget.NewTimeGrid(days...)
+	grid.Locale = widget.LocalePTBR
+	grid.Today = days[2]
+	grid.Events = []widget.GridEvent{
+		{ID: "a", Title: "Reunião", Detail: "09:00–10:30", Start: monday.Add(9 * time.Hour), End: monday.Add(10*time.Hour + 30*time.Minute)},
+		{ID: "b", Title: "Dentista", Detail: "10:00–11:00", Start: monday.Add(10 * time.Hour), End: monday.Add(11 * time.Hour)},
+		{ID: "c", Title: "Feriado", Start: days[3], End: days[3].AddDate(0, 0, 1), AllDay: true},
+	}
+	grid.OnEvent = func(id string) { fmt.Println("event:", id) }
+	grid.OnSlot = func(at time.Time) { fmt.Println("new event at", at.Format("2006-01-02 15:04")) }
+	return grid
+}
+```
+
 ## Card
 
 ![card](../components/card.png)

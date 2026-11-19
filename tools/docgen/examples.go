@@ -75,6 +75,8 @@ func examples() []example {
 		{"chips", 640, 0, chipsExample, nil},
 		{"calendar", 640, 0, calendarExample, nil},
 		{"card", 640, 0, cardExample, nil},
+		{"monthview", 1000, 0, monthViewExample, nil},
+		{"timegrid", 1000, 0, timeGridExample, nil},
 		{"pager", 760, 0, pagerExample, nil},
 		{"textpager", 760, 0, textPagerExample, nil},
 		{"image", 760, 0, imageExample, nil},
@@ -314,6 +316,43 @@ func chipsExample() widget.Widget {
 		tags.AppendChild(c)
 	}
 	return widget.NewColumn(16, captioned("seleção (o chip marcado fica preenchido e com visto)", multi), captioned("removíveis (toque no ×)", tags))
+}
+
+func monthViewExample() widget.Widget {
+	m := widget.NewMonthView(time.Date(2026, 11, 18, 0, 0, 0, 0, time.UTC))
+	m.Locale = widget.LocalePTBR
+	m.Today = time.Date(2026, 11, 13, 0, 0, 0, 0, time.UTC)
+	m.Entries = func(day time.Time) []string {
+		switch {
+		case day.Month() != time.November:
+			return nil
+		case day.Day() == 18:
+			return []string{"09:00 Reunião", "14:00 Dentista", "Feriado", "17:00 Yoga", "19:00 Jantar"}
+		case day.Weekday() == time.Friday:
+			return []string{"10:00 Revisão"}
+		}
+		return nil
+	}
+	return m
+}
+
+func timeGridExample() widget.Widget {
+	monday := time.Date(2026, 11, 16, 0, 0, 0, 0, time.UTC)
+	days := make([]time.Time, 5)
+	for i := range days {
+		days[i] = monday.AddDate(0, 0, i)
+	}
+	g := widget.NewTimeGrid(days...)
+	g.Locale = widget.LocalePTBR
+	g.Today = days[2]
+	g.FirstHour, g.LastHour = 8, 14
+	g.Events = []widget.GridEvent{
+		{ID: "a", Title: "Reunião", Detail: "09:00–10:30", Start: monday.Add(9 * time.Hour), End: monday.Add(10*time.Hour + 30*time.Minute)},
+		{ID: "b", Title: "Dentista", Detail: "10:00–11:00", Start: monday.Add(10 * time.Hour), End: monday.Add(11 * time.Hour)},
+		{ID: "c", Title: "Almoço", Start: days[2].Add(12 * time.Hour), End: days[2].Add(13 * time.Hour)},
+		{ID: "d", Title: "Feriado", Start: days[3], End: days[3].AddDate(0, 0, 1), AllDay: true},
+	}
+	return g
 }
 
 func calendarExample() widget.Widget {

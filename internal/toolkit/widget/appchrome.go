@@ -29,17 +29,17 @@ func (c AppChrome) Bar(doc *Document) *MenuBar {
 		items = append(items, MenuItem{Separator: true}, MenuItem{Label: c.LabelExit, Icon: gfx.IconClose, OnSelect: c.Exit})
 	}
 	bar := NewMenuBar(&Menu{Label: c.Title, Items: items})
-	bar.ID = "app-bar"
+	bar.ID = "chrome-bar"
 	return bar
 }
 
 // Wrap puts the bar above a screen's root and returns the new root. A chrome that is
 // not enabled leaves the root as it is.
-func (c AppChrome) Wrap(doc *Document, root *Panel) *Panel {
+func (c AppChrome) Wrap(doc *Document, root Widget) Widget {
 	if !c.Enabled() {
 		return root
 	}
-	root.Style.FlexGrow = 1
+	root.Elem().Style.FlexGrow = 1
 	outer := NewColumn(0, c.Bar(doc), root)
 	outer.Style.Background = Paper
 	return outer

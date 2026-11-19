@@ -12,11 +12,14 @@ import (
 	"go-pocketbook-base/internal/toolkit/widget"
 )
 
+const descriptionRows = 5
+
 // editor is the screen of one event ("" id: a new one).
 type editor struct {
 	id              string
 	day             time.Time
 	title, location *widget.Input
+	description     *widget.TextArea
 	start, end      *widget.Input
 	allDay          *widget.Toggle
 	rule            string
@@ -33,6 +36,17 @@ func (s *Screen) NewEvent() {
 		start = 22
 	}
 	s.openEditor(&editor{day: s.selected}, application.Entry{Day: s.selected, Start: start * 60, End: (start + 1) * 60})
+}
+
+// NewEventAt opens an empty event starting at a time (a tap on an empty slot of the grid).
+func (s *Screen) NewEventAt(at time.Time) {
+	start := at.Hour()*60 + at.Minute()
+	end := start + 60
+	if end > 24*60-1 {
+		end = 24*60 - 1
+	}
+	day := dateOf(at)
+	s.openEditor(&editor{day: day}, application.Entry{Day: day, Start: start, End: end})
 }
 
 // Edit opens an event.
@@ -69,7 +83,7 @@ func (s *Screen) openEditor(e *editor, in application.Entry) {
 	s.editor = e
 	back := widget.NewButton(s.t("cal.back"))
 	back.ID = "edit-back"
-	back.OnClick = func(*widget.Event) { s.showMonth() }
+	back.OnClick = func(*widget.Event) { s.show() }
 	save := widget.NewButton(s.t("cal.save"))
 	save.ID = "edit-save"
 	save.OnClick = func(*widget.Event) { s.SaveEdit() }
@@ -86,6 +100,9 @@ func (s *Screen) openEditor(e *editor, in application.Entry) {
 
 	e.title = s.field("edit-title", s.t("cal.field.title"), in.Title)
 	e.location = s.field("edit-location", s.t("cal.field.location"), in.Location)
+	e.description = widget.NewTextArea(s.t("cal.field.description"), descriptionRows)
+	e.description.ID, e.description.Value = "edit-description", in.Description
+	e.description.Style.Width = widget.Pct(100)
 	e.start = s.field("edit-start", s.t("cal.field.start"), clock(in.Start))
 	e.end = s.field("edit-end", s.t("cal.field.end"), clock(in.End))
 	e.allDay = widget.NewSwitch(s.t("cal.field.allday"), in.AllDay)
@@ -108,7 +125,7 @@ func (s *Screen) openEditor(e *editor, in application.Entry) {
 	e.note = widget.NewLabel(s.notice)
 	e.note.Style.FontSize, e.note.Style.Color = widget.FontSmall, widget.Muted
 
-	form := widget.NewColumn(16, e.title, e.location, dateRow, e.allDay, widget.NewRow(12, e.start, e.end), e.repeat, e.reminder, e.note)
+	form := widget.NewColumn(16, e.title, e.location, dateRow, e.allDay, widget.NewRow(12, e.start, e.end), e.repeat, e.reminder, e.description, e.note)
 	form.Style.Padding = geom.XY(28, 28)
 	form.Style.FlexGrow = 1
 	root := widget.NewColumn(0, bar, form)
@@ -221,7 +238,7 @@ func splitClock(text string) (int, int, bool) {
 // entry reads the form.
 func (s *Screen) entry() (application.Entry, bool) {
 	e := s.editor
-	in := application.Entry{Title: e.title.Value, Location: e.location.Value, Day: e.day, AllDay: e.allDay.Checked, Recurrence: e.rule, Reminder: e.remind}
+	in := application.Entry{Title: e.title.Value, Location: e.location.Value, Description: e.description.Value, Day: e.day, AllDay: e.allDay.Checked, Recurrence: e.rule, Reminder: e.remind}
 	if in.AllDay {
 		return in, true
 	}
@@ -255,7 +272,7 @@ func (s *Screen) SaveEdit() {
 		return
 	}
 	s.notice, s.selected = "", dateOf(in.Day)
-	s.showMonth()
+	s.show()
 }
 
 // DeleteEdit deletes the event and shows its day.
@@ -270,5 +287,5 @@ func (s *Screen) DeleteEdit() {
 		return
 	}
 	s.notice = ""
-	s.showMonth()
+	s.show()
 }

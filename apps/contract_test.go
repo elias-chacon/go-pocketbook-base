@@ -99,3 +99,36 @@ func TestAnIconPNGIsA128x128Picture(t *testing.T) {
 		}
 	}
 }
+
+// Every app is a plugin of the Launcher that also installs without it: it is one
+// <id>.app with its own app.json, registers itself, and follows the Hello Go blueprint,
+// whose standard top bar has the app name with About and Exit (back to the Launcher or
+// the home screen). Hello draws its own menu (it is the model); every other app must
+// build the standard bar with platform.Chrome and put it above its screens.
+func TestEveryAppFollowsTheHelloBlueprint(t *testing.T) {
+	for _, dir := range appDirs(t) {
+		if dir == "hello" || dir == "launcher" {
+			continue // the model itself, and the host the others plug into
+		}
+		t.Run(dir, func(t *testing.T) {
+			files, err := filepath.Glob(filepath.Join(dir, "*.go"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			var source strings.Builder
+			for _, f := range files {
+				if strings.HasSuffix(f, "_test.go") {
+					continue
+				}
+				data, err := os.ReadFile(f)
+				if err != nil {
+					t.Fatal(err)
+				}
+				source.Write(data)
+			}
+			if !strings.Contains(source.String(), "platform.Chrome(") {
+				t.Errorf("apps/%s must show the standard top bar (About and Exit): pass platform.Chrome(env) to its screens, as apps/mail does", dir)
+			}
+		})
+	}
+}
