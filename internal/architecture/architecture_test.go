@@ -165,6 +165,8 @@ func TestTheRuleItself(t *testing.T) {
 		{"internal/accounts/domain", "internal/platform/domain", false},
 		{"internal/mail/domain", "internal/accounts/domain", false},
 		{"internal/calendar/domain", "internal/mail/domain", false},
+		{"internal/tasks/domain", "internal/mail/domain", false},
+		{"internal/tasks/domain", "internal/toolkit/widget", false},
 		{"internal/calendar/infrastructure/icalendar", "internal/calendar/domain", true},
 		{"internal/calendar/infrastructure/icalendar", "internal/toolkit/widget", false},
 		{"internal/mail/infrastructure/mime", "internal/mail/domain", true},

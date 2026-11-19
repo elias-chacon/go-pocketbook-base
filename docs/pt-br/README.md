@@ -40,6 +40,7 @@ Ele traz:
 | 18 | [Contas e segredos](18-contas-e-segredos.md) | o contexto de contas compartilhado e o cofre cifrado, e o que ele protege e o que não protege |
 | 19 | [E-mail: domínio e MIME](19-email-dominio-e-mime.md) | mensagens, rascunhos, responder e encaminhar, e o leitor e escritor de MIME |
 | 20 | [Calendário: domínio e iCalendar](20-calendario-dominio-e-icalendar.md) | eventos, recorrência, lembretes, e a leitura e escrita de arquivos `.ics` |
+| 21 | [Tarefas: domínio](21-tarefas-dominio.md) | tarefas, passos, prazos, repetição e as visões inteligentes |
 
 ## Uma olhada rápida
 

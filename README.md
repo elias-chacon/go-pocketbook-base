@@ -190,7 +190,7 @@ Critério de pronto de **cada app** (herdado das regras do projeto): segue o con
 
 *App de tarefas (`apps/tasks`, contexto `internal/tasks`)*
 
-- [ ] T63 Tasks: domínio (listas, tarefas, passos, prazo, prioridade, repetição, lembretes) e interface no estilo do Microsoft To Do / tarefas do Outlook (Meu Dia, Importante, Planejado, listas)
+- [ ] T63 Tasks: domínio (listas, tarefas, passos, prazo, prioridade, repetição, lembretes) e interface no estilo do Microsoft To Do / tarefas do Outlook (Meu Dia, Importante, Planejado, listas). **Feito o domínio** ([capítulo 21](docs/pt-br/21-tarefas-dominio.md)): visões, concluir com repetição (a próxima conta a partir de hoje se foi com atraso), passos e contagens, testado. **Falta:** a interface
 - [ ] T64 Tasks: sincronização com o **Microsoft To Do** (Graph), **CalDAV** (VTODO) e Google Tasks
 - [ ] T65 Tasks ↔ e-mail: criar tarefa a partir de um e-mail, e-mail sinalizado vira tarefa, abrir o e-mail de origem da tarefa (intents da T55)
 

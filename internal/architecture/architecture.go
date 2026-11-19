@@ -55,6 +55,10 @@
 //	                domain          Event, Occurrence, Calendar, Occurrences, Expand
 //	                infrastructure  icalendar (RFC 5545 on the wire)
 //	              It depends on nothing but the kernel.
+//	tasks         the to-do list of the future tasks app: tasks, lists, steps, due dates,
+//	              repetition and the smart views (My Day, Important, Planned). Layer:
+//	                domain          Task, List, Step, View, Complete, Filter, Count
+//	              It depends on nothing but the kernel.
 //	showcase      the content of the hello app: every widget on four pages.
 //
 // Outside internal/: apps/ (one composition root per app, free to wire any
@@ -118,6 +122,8 @@ const (
 	calendarDir       = "internal/calendar"
 	calendarDomain    = calendarDir + domainLayer
 	calendarInfra     = calendarDir + infrastructureLayer
+	tasksDir          = "internal/tasks"
+	tasksDomain       = tasksDir + domainLayer
 	mailDir           = "internal/mail"
 	mailDomain        = mailDir + domainLayer
 	mailInfra         = mailDir + infrastructureLayer
@@ -167,13 +173,15 @@ var Rules = []Rule{
 	// The Calendar: its own vocabulary only.
 	{calendarDomain, []string{kernelDir, calendarDomain}},
 	{calendarInfra, []string{kernelDir, calendarDomain, calendarInfra}},
+	// The Tasks: its own vocabulary only.
+	{tasksDomain, []string{kernelDir, tasksDomain}},
 	{architectureDir, nil},
 	{examplesDir, []string{kernelDir, localizationDir, toolkitDir, showcaseDir, examplesDir}},
 }
 
 // Contexts are the folders allowed directly under internal/. A new one must be
 // added here (and to the documentation above) on purpose.
-var Contexts = []string{"architecture", "accounts", "calendar", "device", "installer", "kernel", "launcher", "localization", "mail", "platform", "showcase", "toolkit"}
+var Contexts = []string{"architecture", "accounts", "calendar", "device", "installer", "kernel", "launcher", "localization", "mail", "platform", "showcase", "tasks", "toolkit"}
 
 // within reports whether dir is base or a folder below it.
 func within(dir, base string) bool { return dir == base || strings.HasPrefix(dir, base+"/") }
