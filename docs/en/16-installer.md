@@ -42,7 +42,7 @@ leaves half an app) and registers the app **the same way the app does on its fir
 | | `…/infrastructure/readerfs` | writes the app to the reader and calls the registration |
 | | `…/infrastructure/locale` | the computer's language |
 | presentation | `internal/installer/presentation` | the console conversation (waits for Enter at the end, so a double-clicked window does not vanish) |
-| composition root | `cmd/pbinstaller` | wires everything, embeds `payload/`, knows each app's icon |
+| composition root | `cmd/pbinstaller` | wires everything and embeds `payload/` (each app's `.app`, manifest and `icon.png`) |
 
 The context does not depend on the platform: the composition root hands it the registration function, and the architecture test
 (chapter 14) keeps it that way.
@@ -57,7 +57,7 @@ go run ./tools/release    # stages the payload and builds the installers into ./
 `tools/release` copies each `dist/applications/<id>.app` and its `apps/<id>/app.json` into `cmd/pbinstaller/payload`, builds the
 installer for Windows (amd64), Linux (amd64) and macOS (amd64, arm64) with the version in the binary, gives the Windows one the
 Launcher's icon (`tools/release/syso.go` writes the Windows resource file itself, so nothing is downloaded), packs each as a zip
-or tar.gz, zips every app (`<id>.zip` with the `<id>.app` and its `app.json`; GitHub refuses release files named `*.app`), writes `catalog.json` (id, version, zip name, size, SHA-256 and manifest of each app: what the Launcher reads) and `SHA256SUMS`.
+or tar.gz, zips every app (`<id>.zip` with the `<id>.app` and its `app.json`; GitHub refuses release files named `*.app`), writes `catalog.json` (id, version, zip name, icon, size, SHA-256 and manifest of each app: what the Launcher reads), publishes each app's `icon.png` as `<id>.png` and `SHA256SUMS`.
 
 ## Continuous integration and releases are two workflows
 

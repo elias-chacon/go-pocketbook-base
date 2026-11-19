@@ -10,6 +10,8 @@ contract. `apps/hello` is the blueprint: it is a real, working app and the templ
 ```
 apps/<id>/
   app.json     the manifest (embedded in the program)
+  icon.png     (optional) the icon, 128x128: the release publishes it so the Launcher shows the app before it is
+               installed, and the installers use it as the icon on the home screen
   main.go      embeds app.json and calls platform.Run
   *.go         the app: a factory that builds the screen
   locales/     (optional) translations, pt-BR and en
@@ -103,7 +105,9 @@ The app's own `Key(key platform.Key) bool` method (in `hello.go`) is how it reac
 2. Edit `apps/myapp/app.json`: `"id": "myapp"`, titles and descriptions in pt-BR and en.
 3. Replace the screen in `newHello` (rename it) and drop what you do not need.
 4. `go test ./...`: the **contract test** (`apps/contract_test.go`) checks every folder of `apps/`: a valid manifest,
-   the id equal to the folder, `main.go` embedding `app.json` and calling `platform.Run`, and complete `locales/`.
+   the id equal to the folder, `main.go` embedding `app.json` and calling `platform.Run`, complete `locales/` and, if there is an
+   `icon.png`, a 128x128 PNG. The apps of this repository draw their icon in code; `go run ./tools/appicons` writes the file from
+   that drawing (a test fails when it is out of date).
 5. `.\build.ps1 -App myapp` and copy `dist/applications/myapp.app` to the reader.
 
 Write the texts in **Portuguese (pt-BR)** with English as the fallback, through [`internal/localization/i18n`](12-internationalization.md).

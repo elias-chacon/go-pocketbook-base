@@ -1,8 +1,10 @@
 package application
 
 import (
+	"bytes"
 	"errors"
 	"image"
+	"image/png"
 	"reflect"
 	"strings"
 	"testing"
@@ -289,5 +291,54 @@ func TestDefaultIconHasTheInitialAndAnInvertedVariant(t *testing.T) {
 	}
 	if initial("  livros") != "L" || initial("") != "?" || initial("é") != "É" {
 		t.Errorf("initials: %q %q %q", initial("  livros"), initial(""), initial("é"))
+	}
+}
+
+func pngOf(t *testing.T, img image.Image) []byte {
+	t.Helper()
+	var b bytes.Buffer
+	if err := png.Encode(&b, img); err != nil {
+		t.Fatal(err)
+	}
+	return b.Bytes()
+}
+
+func TestIconFromImageScalesToGrayAndInvertsTheFocusedOne(t *testing.T) {
+	src := image.NewGray(image.Rect(0, 0, 64, 64)) // black
+	icon := IconFromImage(src)
+
+	normal, focused := icon(128, false).(*image.Gray), icon(128, true).(*image.Gray)
+	if normal.Bounds().Dx() != 128 || focused.Bounds().Dy() != 128 {
+		t.Fatalf("size %v", normal.Bounds())
+	}
+	if normal.GrayAt(64, 64).Y > 5 || focused.GrayAt(64, 64).Y < 250 {
+		t.Errorf("black on the normal one, white on the focused one: %d %d", normal.GrayAt(64, 64).Y, focused.GrayAt(64, 64).Y)
+	}
+}
+
+func TestATransparentPartOfAnIconShowsWhite(t *testing.T) {
+	src := image.NewRGBA(image.Rect(0, 0, 32, 32)) // fully transparent
+	if v := IconFromImage(src)(64, false).(*image.Gray).GrayAt(10, 10).Y; v != 255 {
+		t.Errorf("transparent = white, got %d", v)
+	}
+	// FitContain leaves margins when the picture is not square
+	wide := image.NewGray(image.Rect(0, 0, 64, 16))
+	if v := IconFromImage(wide)(64, false).(*image.Gray).GrayAt(32, 2).Y; v != 255 {
+		t.Errorf("the margin is white, got %d", v)
+	}
+}
+
+func TestIconFromPNGDecodesOrReportsAnError(t *testing.T) {
+	icon, err := IconFromPNG(pngOf(t, image.NewGray(image.Rect(0, 0, 128, 128))))
+	if err != nil || icon(128, false) == nil {
+		t.Fatalf("%v", err)
+	}
+	if _, err := IconFromPNG([]byte("not an image")); err == nil {
+		t.Error("garbage is an error")
+	}
+	// a huge picture is shrunk while decoding, not kept whole
+	big, err := IconFromPNG(pngOf(t, image.NewGray(image.Rect(0, 0, 2000, 2000))))
+	if err != nil || big(32, false).Bounds().Dx() != 32 {
+		t.Errorf("%v", err)
 	}
 }

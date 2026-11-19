@@ -165,6 +165,8 @@ func TestTheRuleItself(t *testing.T) {
 		{"internal/launcher/infrastructure/github", "internal/platform/domain", true},
 		{"internal/launcher/infrastructure/appinstaller", "internal/launcher/infrastructure/github", true},
 		{"internal/launcher/infrastructure/appinstaller", "internal/platform", false},
+		{"internal/launcher/infrastructure/iconcache", "internal/launcher/infrastructure/github", true},
+		{"internal/launcher/infrastructure/iconcache", "internal/toolkit/gfx", false},
 		{"internal/installer/application", "internal/installer/domain", true},
 		{"internal/installer/application", "internal/installer/infrastructure/drives", false},
 		{"internal/installer/infrastructure/readerfs", "internal/installer/domain", true},

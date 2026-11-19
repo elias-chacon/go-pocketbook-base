@@ -22,8 +22,8 @@ O `apps/launcher` é o App Launcher do ecossistema: a tela inicial dos apps feit
 - **Instalação com um toque.** As linhas de *Disponíveis* vêm da **última Release do GitHub** do repositório
   (`elias-chacon/go-pocketbook-base`): cada app é um `<id>.zip` (o `<id>.app` e o seu `app.json`) e um `catalog.json` os lista com manifesto, tamanho e SHA-256, então a lista custa um download pequeno.
   Tocar numa linha mostra *Baixando…*, baixa o zip, confere o tamanho e o SHA-256, extrai o `<id>.app` para `applications/`, registra na tela
-  inicial (com o ícone padrão: o app só desenha o próprio se for executado, e a tela inicial mantém o primeiro ícone) e o move
-  para *Instalados*. A lista fica guardada por 5 minutos. Precisa do Wi-Fi ligado; sem ele (ou sem release) a seção mostra o erro.
+  inicial (com o ícone que o app publicou como `icon.png`, ou o padrão) e o move
+  para *Instalados*. Cada linha de *Disponíveis* mostra esse ícone (baixado uma vez e guardado em `applications/.pbgo/cache/icons`). A lista fica guardada por 5 minutos. Precisa do Wi-Fi ligado; sem ele (ou sem release) a seção mostra o erro.
 - Textos em português (pt-BR) com inglês como fallback, no idioma escolhido nas configurações compartilhadas.
 
 ## Como um app é executado, e como volta
@@ -48,6 +48,7 @@ Launcher ──exec──► app          (PBGO_LAUNCHER=/…/launcher.app)
 | application | `internal/launcher/application` | `Home`: os blocos dos apps instalados e a abertura de um; `Search`: apps instalados e disponíveis para uma busca |
 | infrastructure | `internal/launcher/infrastructure/processlauncher` | inicia um app substituindo o processo |
 | | `…/infrastructure/github` | o `Catalog`: o `catalog.json` da última release e os apps que ele lista (guardados por 5 min) |
+| | `…/infrastructure/iconcache` | baixa os ícones (PNG) do catálogo e os guarda no leitor |
 | | `…/infrastructure/appinstaller` | o `Installer`: baixa o zip, confere tamanho e SHA-256, extrai o `<id>.app` por um arquivo temporário, registra |
 | presentation | `internal/launcher/presentation` | a tela inicial, com os widgets do toolkit (`Image`, `Grid`, `Label`…) |
 | raiz de composição | `apps/launcher` | liga a plataforma ao contexto; carrega os ícones BMP |

@@ -10,6 +10,8 @@ O `apps/hello` é o blueprint: é um app de verdade, funcionando, e o modelo de 
 ```
 apps/<id>/
   app.json     o manifesto (embutido no programa)
+  icon.png     (opcional) o ícone, 128x128: a release o publica para o Launcher mostrar o app antes de instalá-lo, e os
+               instaladores o usam como ícone na tela inicial
   main.go      embute o app.json e chama platform.Run
   *.go         o app: uma fábrica que monta a tela
   locales/     (opcional) traduções, pt-BR e en
@@ -103,7 +105,9 @@ iniciem nele (o `apps/hello` faz isso em `OnLangChange`).
 2. Edite `apps/meuapp/app.json`: `"id": "meuapp"`, títulos e descrições em pt-BR e en.
 3. Troque a tela em `newHello` (renomeie) e apague o que não precisar.
 4. `go test ./...`: o **teste de contrato** (`apps/contract_test.go`) confere toda pasta de `apps/`: manifesto válido, id igual
-   à pasta, `main.go` embutindo o `app.json` e chamando `platform.Run`, e `locales/` completos.
+   à pasta, `main.go` embutindo o `app.json` e chamando `platform.Run`, `locales/` completos e, se houver `icon.png`, um PNG 128x128. Os
+   apps deste repositório desenham o ícone em código; `go run ./tools/appicons` gera o arquivo a partir desse desenho (um teste
+   falha quando ele está desatualizado).
 5. `.\build.ps1 -App meuapp` e copie `dist/applications/meuapp.app` para o leitor.
 
 Escreva os textos em **português (pt-BR)** com inglês como fallback, pelo [`internal/localization/i18n`](12-internacionalizacao.md).

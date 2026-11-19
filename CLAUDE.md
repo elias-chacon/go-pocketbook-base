@@ -20,6 +20,7 @@ go run ./tools/bumpversion build|minor|major    # edit .version
 make dist [APP=name]                            # same on Linux/macOS/WSL
 .\scripts\sonar.ps1                             # tests with -coverpkg + SonarQube scan (needs SONAR_GLOBAL_TOKEN)
 .\scripts\install.ps1 -Drive F: [-All]          # developer copy of the built .app(s) to a USB-mounted reader
+go run ./tools/appicons                         # write apps/<id>/icon.png from the icons the apps draw in code (a test fails when stale)
 go run ./tools/coverage                         # coverage that counts, from coverage.out (-badge file.json writes the shields.io badge)
 go run ./tools/release                          # stage the payload, build the installers + SHA256SUMS into ./release (after build.ps1 -All)
 go run ./cmd/pbinstaller [-drive F:\]           # the installer for people (needs the staged payload)

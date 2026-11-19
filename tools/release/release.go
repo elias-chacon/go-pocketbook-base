@@ -132,10 +132,17 @@ func packageApp(distApps, appsDir, outDir, id, version string) (github.IndexEntr
 		return github.IndexEntry{}, err
 	}
 	sum := sha256.Sum256(buf.Bytes())
-	return github.IndexEntry{
+	entry := github.IndexEntry{
 		ID: id, Version: version, Asset: asset, Size: int64(buf.Len()),
 		SHA256: hex.EncodeToString(sum[:]), Manifest: json.RawMessage(manifest),
-	}, nil
+	}
+	if icon, ok := iconOf(appsDir, id); ok { // published next to the zip, for the Launcher to show
+		entry.Icon = github.IconAsset(id)
+		if err := os.WriteFile(filepath.Join(outDir, entry.Icon), icon, 0o644); err != nil {
+			return github.IndexEntry{}, err
+		}
+	}
+	return entry, nil
 }
 
 // writeCatalog writes catalog.json, the list of the apps of the release.
@@ -168,9 +175,23 @@ func stage(distApps, appsDir, payload, version string) ([]string, error) {
 		if err := os.WriteFile(filepath.Join(payload, id+".json"), manifest, 0o644); err != nil {
 			return nil, err
 		}
+		if icon, ok := iconOf(appsDir, id); ok { // optional: without it the home screen gets the default icon
+			if err := os.WriteFile(filepath.Join(payload, github.IconAsset(id)), icon, 0o644); err != nil {
+				return nil, err
+			}
+		}
 		ids = append(ids, id)
 	}
 	return ids, os.WriteFile(filepath.Join(payload, "VERSION"), []byte(version+"\n"), 0o644)
+}
+
+// iconFile is the name of an app's icon inside apps/<id>/.
+const iconFile = "icon.png"
+
+// iconOf reads apps/<id>/icon.png, which an app may ship.
+func iconOf(appsDir, id string) ([]byte, bool) {
+	data, err := os.ReadFile(filepath.Join(appsDir, id, iconFile))
+	return data, err == nil
 }
 
 func copyFile(from, to string) error {

@@ -26,20 +26,26 @@ import (
 	"go-pocketbook-base/internal/installer/infrastructure/readerfs"
 	"go-pocketbook-base/internal/installer/presentation"
 	"go-pocketbook-base/internal/kernel/version"
-	launcherui "go-pocketbook-base/internal/launcher/presentation"
 	"go-pocketbook-base/internal/platform"
-	"go-pocketbook-base/internal/showcase"
 )
 
-// payload is what tools/release stages: <id>.app, <id>.json (the manifest) and VERSION.
+// payload is what tools/release stages: <id>.app, <id>.json (the manifest), the
+// optional <id>.png (the icon) and VERSION.
 //
 //go:embed payload
 var payload embed.FS
 
-// icons are the apps that draw their own icon; any other app gets the default one.
-var icons = map[string]func(size int, focused bool) image.Image{
-	"hello":    func(size int, focused bool) image.Image { return showcase.RenderIcon(size, focused) },
-	"launcher": launcherui.RenderIcon,
+// iconOf is the icon an app ships (its icon.png, carried in the payload); an app
+// without one, or with one that cannot be read, gets the default icon (nil).
+func iconOf(p domain.Package) func(size int, focused bool) image.Image {
+	if len(p.Icon) == 0 {
+		return nil
+	}
+	icon, err := platform.IconFromPNG(p.Icon)
+	if err != nil {
+		return nil
+	}
+	return icon
 }
 
 func main() {
@@ -58,7 +64,7 @@ func main() {
 			Finder: drives.Finder{},
 			Source: embedded.Source{FS: files},
 			Deployer: readerfs.Deployer{Register: func(root string, p domain.Package) (bool, error) {
-				return platform.RegisterOnDrive(root, p.Manifest, icons[p.ID], p.Version)
+				return platform.RegisterOnDrive(root, p.Manifest, iconOf(p), p.Version)
 			}},
 		},
 	}

@@ -1,7 +1,9 @@
 package application
 
 import (
+	"bytes"
 	"image"
+	"image/color"
 	"strings"
 	"unicode"
 
@@ -35,4 +37,41 @@ func initial(title string) string {
 		return string(unicode.ToUpper(r))
 	}
 	return "?"
+}
+
+// IconFromImage makes an icon renderer from a picture (the icon an app ships as
+// icon.png). The picture is scaled to fit the requested size, laid on white and
+// turned into the 8-bit gray the home screen wants; focused is its negative.
+func IconFromImage(img image.Image) domain.IconRenderer {
+	return func(size int, focused bool) image.Image {
+		rgba := gfx.Resize(img, size, size, gfx.FitContain)
+		out := image.NewGray(image.Rect(0, 0, size, size))
+		for y := 0; y < size; y++ {
+			for x := 0; x < size; x++ {
+				c := rgba.RGBAAt(x, y)
+				white := 255 - int(c.A) // the transparent part shows the white under it
+				v := (299*(int(c.R)+white) + 587*(int(c.G)+white) + 114*(int(c.B)+white)) / 1000
+				if v > 255 {
+					v = 255
+				}
+				if focused {
+					v = 255 - v
+				}
+				out.SetGray(x, y, color.Gray{Y: uint8(v)})
+			}
+		}
+		return out
+	}
+}
+
+// maxIconEdge bounds a decoded icon: an icon is a few dozen kilobytes, not a photo.
+const maxIconEdge = 512
+
+// IconFromPNG is IconFromImage for the bytes of an icon.png (or any image format).
+func IconFromPNG(data []byte) (domain.IconRenderer, error) {
+	img, err := gfx.Decode(bytes.NewReader(data), maxIconEdge, maxIconEdge)
+	if err != nil {
+		return nil, err
+	}
+	return IconFromImage(img), nil
 }

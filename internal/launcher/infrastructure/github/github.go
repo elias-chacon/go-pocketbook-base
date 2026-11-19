@@ -25,6 +25,9 @@ const DefaultBaseURL = "https://api.github.com"
 // CatalogAsset is the name of the release file that lists the apps.
 const CatalogAsset = "catalog.json"
 
+// IconAsset is the name of the release file that holds the icon of app id.
+func IconAsset(id string) string { return id + ".png" }
+
 // AppAsset is the name of the release file that holds app id: a zip with
 // <id>.app and app.json. (GitHub refuses release files named *.app.)
 func AppAsset(id string) string { return id + ".zip" }
@@ -38,9 +41,10 @@ type Index struct {
 type IndexEntry struct {
 	ID       string          `json:"id"`
 	Version  string          `json:"version"`
-	Asset    string          `json:"asset"`  // the zip's name in the release
-	Size     int64           `json:"size"`   // of the zip
-	SHA256   string          `json:"sha256"` // of the zip, hex
+	Asset    string          `json:"asset"`          // the zip's name in the release
+	Icon     string          `json:"icon,omitempty"` // the icon's name in the release ("" when the app has none)
+	Size     int64           `json:"size"`           // of the zip
+	SHA256   string          `json:"sha256"`         // of the zip, hex
 	Manifest json.RawMessage `json:"manifest"`
 }
 
@@ -117,7 +121,7 @@ func (c *Catalog) List(lang string) ([]domain.Listing, error) {
 		out = append(out, domain.Listing{
 			ID: e.ID, Title: m.TitleIn(lang), Description: m.DescriptionIn(lang),
 			Version: strings.TrimPrefix(e.Version, "v"), URL: url, Size: e.Size, SHA256: e.SHA256,
-			Manifest: e.Manifest,
+			Manifest: e.Manifest, IconURL: urls[e.Icon],
 		})
 	}
 	c.list, c.langs, c.at = out, lang, now

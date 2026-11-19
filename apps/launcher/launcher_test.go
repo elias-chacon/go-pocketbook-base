@@ -3,7 +3,11 @@ package main
 import (
 	"bytes"
 	"errors"
+	"go-pocketbook-base/internal/launcher/infrastructure/iconcache"
 	"image"
+	"image/png"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -154,5 +158,31 @@ func TestTheNetworkWrappersPassTheAnswersThrough(t *testing.T) {
 	}
 	if err := (loggedInstaller{inner: stubInstaller{err: boom}}).Install(list[0]); err != boom {
 		t.Errorf("%v", err)
+	}
+}
+
+func TestTheRegistrarUsesThePublishedIconOrTheDefaultOne(t *testing.T) {
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, image.NewGray(image.Rect(0, 0, 32, 32))); err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/missing.png" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Write(buf.Bytes())
+	}))
+	defer srv.Close()
+	reg := iconRegistrar{icons: iconcache.Cache{Client: srv.Client(), Dir: t.TempDir()}}
+
+	icon := reg.iconOf(domain.Listing{ID: "a", Version: "1", IconURL: srv.URL + "/a.png"})
+	if icon == nil || icon(64, false).Bounds().Dx() != 64 {
+		t.Error("the published icon becomes the home screen icon")
+	}
+	for _, l := range []domain.Listing{{ID: "b"}, {ID: "c", Version: "1", IconURL: srv.URL + "/missing.png"}} {
+		if reg.iconOf(l) != nil {
+			t.Errorf("%s: without a usable icon the default one is used", l.ID)
+		}
 	}
 }

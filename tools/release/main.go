@@ -70,6 +70,9 @@ func run() error {
 		}
 		entries = append(entries, entry)
 		files = append(files, entry.Asset)
+		if entry.Icon != "" {
+			files = append(files, entry.Icon)
+		}
 	}
 	if err := writeCatalog(outDir, entries); err != nil {
 		return err

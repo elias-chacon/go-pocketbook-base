@@ -18,6 +18,7 @@ package platform
 
 import (
 	"errors"
+	"image"
 	"os"
 	"path"
 	"path/filepath"
@@ -64,6 +65,12 @@ func Logf(format string, args ...interface{}) { reader.Logf(format, args...) }
 
 // ParseManifest decodes and validates an app.json.
 func ParseManifest(data []byte) (Manifest, error) { return domain.ParseManifest(data) }
+
+// IconFromImage makes the launcher icon of an app from a picture (its icon.png).
+func IconFromImage(img image.Image) domain.IconRenderer { return application.IconFromImage(img) }
+
+// IconFromPNG is IconFromImage for the bytes of an icon.png.
+func IconFromPNG(data []byte) (domain.IconRenderer, error) { return application.IconFromPNG(data) }
 
 // DefaultIcon is the launcher icon of an app that has none of its own.
 func DefaultIcon(title string) domain.IconRenderer { return application.DefaultIcon(title) }

@@ -1,6 +1,6 @@
 // Package embedded is the domain.PackageSource of an installer that carries its
 // apps inside its own executable: a folder (an embed.FS) with <id>.app and its
-// <id>.json manifest side by side, plus an optional VERSION file.
+// <id>.json manifest side by side (and an optional <id>.png icon), plus an optional VERSION file.
 package embedded
 
 import (
@@ -39,7 +39,8 @@ func (s Source) Packages() ([]domain.Package, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%s has no manifest: %w", e.Name(), err)
 		}
-		out = append(out, domain.Package{ID: id, Version: version, Manifest: manifest, Binary: binary})
+		icon, _ := fs.ReadFile(s.FS, id+".png") // optional
+		out = append(out, domain.Package{ID: id, Version: version, Manifest: manifest, Binary: binary, Icon: icon})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
 	return out, nil

@@ -47,3 +47,17 @@ func TestAnEmptyOrUnreadableFolder(t *testing.T) {
 type failing struct{}
 
 func (failing) Open(string) (fs.File, error) { return nil, errors.New("boom") }
+
+func TestAnIconNextToTheAppIsCarriedAndItIsOptional(t *testing.T) {
+	fsys := fstest.MapFS{
+		"a.app": {Data: []byte("A")}, "a.json": {Data: []byte("{}")}, "a.png": {Data: []byte("PNG")},
+		"b.app": {Data: []byte("B")}, "b.json": {Data: []byte("{}")},
+	}
+	pkgs, err := Source{FS: fsys}.Packages()
+	if err != nil || len(pkgs) != 2 {
+		t.Fatalf("%v %v", pkgs, err)
+	}
+	if string(pkgs[0].Icon) != "PNG" || pkgs[1].Icon != nil {
+		t.Errorf("icons: %q %q", pkgs[0].Icon, pkgs[1].Icon)
+	}
+}

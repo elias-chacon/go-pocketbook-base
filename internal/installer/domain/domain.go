@@ -24,6 +24,7 @@ type Package struct {
 	Version  string
 	Manifest []byte // the app.json
 	Binary   []byte // the <id>.app
+	Icon     []byte // the app's icon.png (nil: the home screen gets the default icon)
 }
 
 // Outcome is the result of installing one Package.

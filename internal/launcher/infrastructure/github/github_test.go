@@ -29,13 +29,14 @@ func server(t *testing.T, hits *int32, withCatalog bool) *httptest.Server {
 		}
 		fmt.Fprintf(w, `{"tag_name":"v1.2.3","assets":[%[2]s
 			{"name":"hello.zip","browser_download_url":"%[1]s/dl/hello.zip"},
+			{"name":"hello.png","browser_download_url":"%[1]s/dl/hello.png"},
 			{"name":"books.zip","browser_download_url":"%[1]s/dl/books.zip"},
 			{"name":"stray.app","browser_download_url":"%[1]s/dl/stray"},
 			{"name":"SHA256SUMS","browser_download_url":"%[1]s/dl/sums"}]}`, srv.URL, catalog)
 	})
 	mux.HandleFunc("/dl/catalog.json", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `{"apps":[
-			{"id":"hello","version":"v1.2.3","asset":"hello.zip","size":4096,"sha256":"abc","manifest":%[1]s},
+			{"id":"hello","version":"v1.2.3","asset":"hello.zip","icon":"hello.png","size":4096,"sha256":"abc","manifest":%[1]s},
 			{"id":"books","version":"1.0.0","asset":"books.zip","size":1,"sha256":"d","manifest":%[1]s},
 			{"id":"notes","version":"1.0.0","asset":"notes.zip","size":1,"sha256":"e","manifest":%[1]s},
 			{"id":"broken","version":"1.0.0","asset":"hello.zip","size":1,"sha256":"f","manifest":{"id":"broken"}}]}`, helloManifest)
@@ -57,6 +58,9 @@ func TestTheCatalogListsTheAppsOfTheLatestReleaseInTheLanguage(t *testing.T) {
 	l := list[0]
 	if l.ID != "hello" || l.Title != "Hello" || l.Description != "Showcase" || l.Version != "1.2.3" {
 		t.Errorf("%+v", l)
+	}
+	if !strings.HasSuffix(l.IconURL, "/dl/hello.png") {
+		t.Errorf("the icon of the release: %q", l.IconURL)
 	}
 	if !strings.HasSuffix(l.URL, "/dl/hello.zip") || l.Size != 4096 || l.SHA256 != "abc" || string(l.Manifest) != helloManifest {
 		t.Errorf("download data: %+v", l)
@@ -155,9 +159,9 @@ func TestTheDefaultBaseURLIsGitHub(t *testing.T) {
 	}
 }
 
-func TestAppAssetsAreZips(t *testing.T) {
-	if AppAsset("hello") != "hello.zip" {
-		t.Error(AppAsset("hello"))
+func TestAppAssetsAreZipsAndIconsArePNGs(t *testing.T) {
+	if AppAsset("hello") != "hello.zip" || IconAsset("hello") != "hello.png" {
+		t.Error(AppAsset("hello"), IconAsset("hello"))
 	}
 }
 

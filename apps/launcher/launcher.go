@@ -4,12 +4,14 @@ import (
 	"image"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"go-pocketbook-base/internal/launcher/application"
 	"go-pocketbook-base/internal/launcher/domain"
 	"go-pocketbook-base/internal/launcher/infrastructure/appinstaller"
 	"go-pocketbook-base/internal/launcher/infrastructure/github"
+	"go-pocketbook-base/internal/launcher/infrastructure/iconcache"
 	"go-pocketbook-base/internal/launcher/infrastructure/processlauncher"
 	"go-pocketbook-base/internal/launcher/presentation"
 	"go-pocketbook-base/internal/platform"
@@ -41,6 +43,8 @@ func newLauncher(env platform.Env) platform.App {
 	if client == nil {
 		client = &http.Client{Timeout: httpTimeout}
 	}
+	icons := iconcache.Cache{Client: client, Dir: filepath.Join(platform.DefaultRoot, "applications", ".pbgo", "cache", "icons")}
+	registrar := iconRegistrar{icons: icons}
 	catalog := &loggedCatalog{inner: &github.Catalog{Client: client, Owner: repoOwner, Repo: repoName}}
 	return &launcher{home: presentation.NewHome(presentation.Config{
 		Width: env.Width, Height: env.Height, Keyboard: env.Keyboard,
@@ -54,9 +58,16 @@ func newLauncher(env platform.Env) platform.App {
 		IconFor: iconFor,
 		Notice:  env.Notice,
 		Catalog: catalog, Installer: loggedInstaller{inner: appinstaller.Installer{
-			Client: client, Root: platform.DefaultRoot, Register: register,
+			Client: client, Root: platform.DefaultRoot, Register: registrar.register,
 		}},
 		Flush: env.Flush,
+		ListingIcon: func(l domain.Listing) image.Image {
+			img, err := icons.Image(l)
+			if err != nil && err != iconcache.ErrNoIcon {
+				platform.Logf("icon %s: %v", l.ID, err)
+			}
+			return img
+		},
 	})}
 }
 
@@ -83,11 +94,24 @@ func (i loggedInstaller) Install(l domain.Listing) error {
 }
 
 // register puts a downloaded app on the home screen with the platform's own
-// registration. Its icon is the default one (the initial of the title): the app
-// is not run here, so it cannot draw its own.
-func register(root string, l domain.Listing) error {
-	_, err := platform.RegisterOnDrive(root, l.Manifest, nil, l.Version)
+// registration. The app is not run here, so it cannot draw its own icon: it uses
+// the icon.png the release published for it.
+func (i iconRegistrar) register(root string, l domain.Listing) error {
+	_, err := platform.RegisterOnDrive(root, l.Manifest, i.iconOf(l), l.Version)
 	return err
+}
+
+// iconRegistrar registers downloaded apps with the icon the catalog published
+// (already in the cache from the search), or the default one without it.
+type iconRegistrar struct{ icons iconcache.Cache }
+
+func (i iconRegistrar) iconOf(l domain.Listing) func(size int, focused bool) image.Image {
+	img, err := i.icons.Image(l)
+	if err != nil {
+		platform.Logf("icon %s: %v (the default icon is used)", l.ID, err)
+		return nil
+	}
+	return platform.IconFromImage(img)
 }
 
 // Document implements platform.App.

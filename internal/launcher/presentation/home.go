@@ -44,8 +44,11 @@ type Config struct {
 	Installer domain.Installer
 	// Flush paints pending changes now; it is called before a download blocks the
 	// screen so the message is seen (nil: no flush).
-	Flush    func()
-	IconSize float64 // 0 = DefaultIconSize
+	Flush func()
+	// ListingIcon is the icon of an app of the catalog, shown in its row (nil, or a
+	// nil result: the row has no icon).
+	ListingIcon func(l domain.Listing) image.Image
+	IconSize    float64 // 0 = DefaultIconSize
 	// IconFor loads the icon of a tile (nil results draw nothing); the composition
 	// root decides where icons come from and what to show when one is missing.
 	IconFor func(t domain.Tile) image.Image
@@ -56,6 +59,8 @@ type Config struct {
 const (
 	searchRows   = 3
 	availableMax = 4
+	// listingIconSize is the edge of the icon in a row of the catalog, in design pixels.
+	listingIconSize = 72
 )
 
 // Home is the main screen: a paged grid of the installed apps and a search field
@@ -291,7 +296,15 @@ func (h *Home) listing(l domain.Listing) widget.Widget {
 	title.Style.FlexGrow = 1
 	version := widget.NewLabel("v" + l.Version)
 	version.Style.FontSize, version.Style.Color = widget.FontSmall, widget.Muted
-	row := widget.NewRow(12, title, version)
+	children := []widget.Widget{title, version}
+	if h.cfg.ListingIcon != nil {
+		if img := h.cfg.ListingIcon(l); img != nil {
+			icon := widget.NewImage(img)
+			icon.Style.Width, icon.Style.Height = widget.Px(listingIconSize), widget.Px(listingIconSize)
+			children = append([]widget.Widget{icon}, children...)
+		}
+	}
+	row := widget.NewRow(12, children...)
 	row.ID = "avail-" + l.ID
 	row.Style.Padding = geom.XY(14, 20)
 	row.Style.BorderColor, row.Style.BorderWidth, row.Style.BorderRadius = widget.Mid, 2, widget.Radius

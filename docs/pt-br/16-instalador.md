@@ -42,7 +42,7 @@ deixa meio app) e registra o app **do mesmo jeito que o app faz na primeira exec
 | | `…/infrastructure/readerfs` | grava o app no leitor e chama o registro |
 | | `…/infrastructure/locale` | o idioma do computador |
 | presentation | `internal/installer/presentation` | a conversa no console (espera o Enter no fim, para a janela aberta com dois cliques não sumir) |
-| raiz de composição | `cmd/pbinstaller` | liga tudo, embute `payload/`, conhece o ícone de cada app |
+| raiz de composição | `cmd/pbinstaller` | liga tudo e embute `payload/` (o `.app`, o manifesto e o `icon.png` de cada app) |
 
 O contexto não depende da plataforma: a raiz de composição entrega a ele a função de registro, e o teste de arquitetura
 (capítulo 14) garante isso.
@@ -57,7 +57,7 @@ go run ./tools/release    # prepara o payload e gera os instaladores em ./releas
 O `tools/release` copia cada `dist/applications/<id>.app` e o seu `apps/<id>/app.json` para `cmd/pbinstaller/payload`, compila o
 instalador para Windows (amd64), Linux (amd64) e macOS (amd64, arm64) com a versão no binário, dá ao do Windows o ícone do
 Launcher (o `tools/release/syso.go` escreve o arquivo de recursos do Windows por conta própria, então nada é baixado), empacota cada um em zip ou
-tar.gz, compacta cada app (`<id>.zip` com o `<id>.app` e o seu `app.json`; o GitHub recusa arquivos de release chamados `*.app`), escreve o `catalog.json` (id, versão, nome do zip, tamanho, SHA-256 e manifesto de cada app: é o que o Launcher lê) e o `SHA256SUMS`.
+tar.gz, compacta cada app (`<id>.zip` com o `<id>.app` e o seu `app.json`; o GitHub recusa arquivos de release chamados `*.app`), escreve o `catalog.json` (id, versão, nome do zip, ícone, tamanho, SHA-256 e manifesto de cada app: é o que o Launcher lê), publica o `icon.png` de cada app como `<id>.png` e o `SHA256SUMS`.
 
 ## Integração contínua e releases são dois workflows
 

@@ -226,3 +226,38 @@ func TestTheCatalogIsWrittenInTheFormatTheLauncherReads(t *testing.T) {
 		t.Error("an output folder that does not exist")
 	}
 }
+
+func TestAnAppsIconTravelsInThePayloadTheReleaseAndTheCatalog(t *testing.T) {
+	root := t.TempDir()
+	write(t, filepath.Join(root, "dist", "hello.app"), "H")
+	write(t, filepath.Join(root, "dist", "plain.app"), "P")
+	for _, id := range []string{"hello", "plain"} {
+		write(t, filepath.Join(root, "apps", id, "app.json"), `{"id":"`+id+`"}`)
+	}
+	write(t, filepath.Join(root, "apps", "hello", "icon.png"), "PNGDATA")
+	payload, out := filepath.Join(root, "payload"), filepath.Join(root, "out")
+	os.MkdirAll(payload, 0o755)
+	os.MkdirAll(out, 0o755)
+
+	if _, err := stage(filepath.Join(root, "dist"), filepath.Join(root, "apps"), payload, "1"); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := os.ReadFile(filepath.Join(payload, "hello.png")); string(got) != "PNGDATA" {
+		t.Errorf("the payload carries the icon: %q", got)
+	}
+	if _, err := os.Stat(filepath.Join(payload, "plain.png")); err == nil {
+		t.Error("an app without an icon has none in the payload")
+	}
+
+	with, err := packageApp(filepath.Join(root, "dist"), filepath.Join(root, "apps"), out, "hello", "1")
+	if err != nil || with.Icon != "hello.png" {
+		t.Fatalf("%+v %v", with, err)
+	}
+	if got, _ := os.ReadFile(filepath.Join(out, "hello.png")); string(got) != "PNGDATA" {
+		t.Errorf("the release carries the icon: %q", got)
+	}
+	without, err := packageApp(filepath.Join(root, "dist"), filepath.Join(root, "apps"), out, "plain", "1")
+	if err != nil || without.Icon != "" {
+		t.Errorf("%+v %v", without, err)
+	}
+}

@@ -3,6 +3,7 @@
 package apps
 
 import (
+	"image/png"
 	"os"
 	"path/filepath"
 	"strings"
@@ -74,6 +75,27 @@ func checkApp(t *testing.T, dir string) {
 			if missing := tr.Missing(lang); len(missing) > 0 {
 				t.Errorf("locales/%s.json lacks: %v", lang, missing)
 			}
+		}
+	}
+}
+
+// An app may ship icon.png: the release publishes it so the Launcher can show the
+// app before it is installed, and it is the app's icon on the home screen.
+func TestAnIconPNGIsA128x128Picture(t *testing.T) {
+	for _, dir := range appDirs(t) {
+		f, err := os.Open(filepath.Join(dir, "icon.png"))
+		if os.IsNotExist(err) {
+			continue // optional: the platform draws a default icon
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		cfg, err := png.DecodeConfig(f)
+		f.Close()
+		if err != nil {
+			t.Errorf("%s/icon.png is not a PNG: %v", dir, err)
+		} else if cfg.Width != 128 || cfg.Height != 128 {
+			t.Errorf("%s/icon.png is %dx%d, it must be 128x128", dir, cfg.Width, cfg.Height)
 		}
 	}
 }

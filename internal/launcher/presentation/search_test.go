@@ -243,3 +243,36 @@ func TestWithoutAnInstallerTheRowsOnlyShow(t *testing.T) {
 		t.Error("a row without an installer is not tappable")
 	}
 }
+
+func TestAnAvailableRowShowsTheIconOfTheCatalogWhenThereIsOne(t *testing.T) {
+	with := map[string]bool{"web00": true} // web01 has no icon
+	h := NewHome(Config{
+		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"),
+		Catalog: catalog{list: listings(2)},
+		ListingIcon: func(l domain.Listing) image.Image {
+			if with[l.ID] {
+				return image.NewGray(image.Rect(0, 0, 128, 128))
+			}
+			return nil
+		},
+		Home: application.Home{Apps: registry{}, Launcher: &launcher{}, SelfID: "launcher"},
+	})
+	h.Search("web")
+	h.Doc.Layout()
+
+	images := func(id string) int {
+		n := 0
+		for _, c := range find(h, id).Elem().Children() {
+			if _, ok := c.(*widget.Image); ok {
+				n++
+			}
+		}
+		return n
+	}
+	if images("avail-web00") != 1 || images("avail-web01") != 0 {
+		t.Errorf("web00 shows its icon, web01 does not: %d %d", images("avail-web00"), images("avail-web01"))
+	}
+	if b := find(h, "avail-web00").Elem().Bounds; b.Bottom() > h.Doc.H {
+		t.Errorf("the row fits the screen: %+v", b)
+	}
+}
