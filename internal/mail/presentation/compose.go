@@ -73,6 +73,9 @@ func joinAddresses(list []domain.Address) string {
 
 // Compose shows the form for a draft.
 func (s *Screen) Compose(d domain.Draft) {
+	if d.ID == "" && s.cfg.Signature != "" && !strings.Contains(d.Body, s.cfg.Signature) {
+		d.Body += "\n\n-- \n" + s.cfg.Signature
+	}
 	f := &composer{draft: d}
 	s.form = f
 	f.to = s.field("mail-to", s.t("mail.to"), joinAddresses(d.To))

@@ -88,3 +88,9 @@ de entrar.** O Google não permite o fluxo por código para o Gmail, então o Gm
 | | `…/infrastructure/oauthdevice` | o `Authorizer`: o fluxo de código de dispositivo e a renovação, com a configuração da Microsoft |
 
 O contexto só depende do núcleo compartilhado (`kernel`): o teste de arquitetura (capítulo 14) confere.
+
+## Editando uma conta
+
+O app de e-mail tem o botão **Conta** ao lado da busca. Ele abre o editor de conta (`internal/accounts/presentation/editor.go`): o nome exibido, o login (quando não é o endereço), uma **nova senha** (vazio mantém a guardada), os servidores de **entrada (IMAP)** e de **saída (SMTP)**, cada um com host, porta e proteção (**TLS** ou **STARTTLS**), e a **assinatura** que termina toda mensagem nova. **Testar** conecta com o que está digitado e diz por que falhou (por exemplo "senha de app necessária"); **Remover conta** pede dois toques. Uma conta OAuth2 (Outlook.com) só edita o nome e a assinatura. POP não é oferecido: o IMAP mantém o e-mail no servidor e todo provedor listado aqui o aceita.
+
+Google: o Gmail não permite o escopo de e-mail no fluxo por código que um leitor consegue fazer, então a conta Google entra com uma **senha de app** (verificação em duas etapas ligada, depois "Senhas de app" na conta Google); a senha normal é recusada pelo servidor, e o **Testar** mostra isso.

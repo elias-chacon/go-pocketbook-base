@@ -66,6 +66,10 @@ type Config struct {
 	Flush func()
 	// Now is the clock (time.Now when nil); the dates of the list depend on it.
 	Now func() time.Time
+	// Signature is added to the end of every new message.
+	Signature string
+	// OnAccount opens the account settings (nil: no Account button).
+	OnAccount func()
 	// Notice is shown at the first paint (a message from the composition root).
 	Notice string
 }
@@ -223,6 +227,12 @@ func (s *Screen) showList() {
 	s.search.OnSubmit = func(*widget.Event) { s.Search(s.search.Value) }
 	s.search.OnChange = s.search.OnSubmit
 	bar := widget.NewRow(12, s.search, drafts)
+	if s.cfg.OnAccount != nil {
+		account := widget.NewButton(s.t("mail.account"))
+		account.ID = "mail-account"
+		account.OnClick = func(*widget.Event) { s.cfg.OnAccount() }
+		bar.AppendChild(account)
+	}
 	bar.Style.Padding = geom.XY(0, 28)
 
 	s.body = widget.NewColumn(8)

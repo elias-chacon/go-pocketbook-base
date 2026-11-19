@@ -88,3 +88,9 @@ instead of signing in.** Google does not allow the code flow for Gmail, so Gmail
 | | `…/infrastructure/oauthdevice` | the `Authorizer`: the device code flow and token renewal, with Microsoft's configuration |
 
 The context depends only on the shared kernel: the architecture test (chapter 14) checks it.
+
+## Editing an account
+
+The mail app has an **Account** button next to the search field. It opens the account editor (`internal/accounts/presentation/editor.go`): the name shown, the login (when it is not the address), a **new password** (blank keeps the stored one), the **incoming (IMAP)** and **outgoing (SMTP)** servers each with host, port and protection (**TLS** or **STARTTLS**), and the **signature** that ends every new message. **Test** connects with what is typed and says why it failed (for example "app password required"); **Remove account** asks to be tapped twice. An OAuth2 account (Outlook.com) only edits the name and the signature. POP is not offered: IMAP keeps the mail on the server and is what every provider listed here supports.
+
+Google: Gmail does not allow its mail scope on the code flow a reader can do, so a Google account signs in with an **app password** (2-step verification on, then "App passwords" in the Google account); the normal password is refused by the server, and **Test** shows that.

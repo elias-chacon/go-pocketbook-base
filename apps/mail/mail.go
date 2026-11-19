@@ -131,7 +131,8 @@ func (m *mail) open(acc accounts.Account) {
 	}
 	m.screen = presentation.NewScreen(presentation.Config{
 		Width: m.env.Width, Height: m.env.Height, Doc: m.doc, Chrome: platform.Chrome(m.env), Tr: presentation.NewTranslator(m.env.Lang),
-		Mailbox: box, Flush: m.env.Flush,
+		Mailbox: box, Flush: m.env.Flush, Signature: acc.Signature,
+		OnAccount: func() { m.editAccount(acc) },
 	})
 }
 
@@ -143,4 +144,40 @@ func (m *mail) fail(err error) {
 	root := widget.NewColumn(0, text)
 	root.Style.Background = widget.Paper
 	m.doc.SetRoot(root)
+}
+
+// editAccount shows the settings of the account: servers, security, login, password and
+// signature. Saving opens the mailbox again with them.
+func (m *mail) editAccount(acc accounts.Account) {
+	m.screen = nil
+	accountsui.NewEditor(accountsui.EditorConfig{
+		Width: m.env.Width, Height: m.env.Height, Doc: m.doc, Chrome: platform.Chrome(m.env), Tr: accountsui.NewTranslator(m.env.Lang),
+		Account: acc, Manager: m.accounts, Test: m.testConnection(acc),
+		OnSaved:   m.open,
+		OnRemoved: m.start,
+		OnBack:    func() { m.open(acc) },
+	})
+	m.doc.ResetFrame()
+}
+
+// testConnection connects to the server with the settings typed, and lists the folders.
+func (m *mail) testConnection(acc accounts.Account) func(accounts.Account, string) error {
+	return func(edited accounts.Account, password string) error {
+		_, secret, err := m.accounts.Credentials(acc.ID)
+		if err != nil {
+			return err
+		}
+		if password != "" {
+			secret.Password = password
+		}
+		backend, err := backendFor(edited, secret, nil, httpClient(m.env.HTTP))
+		if err != nil {
+			return err
+		}
+		if closer, ok := backend.(interface{ Close() }); ok {
+			defer closer.Close()
+		}
+		_, err = backend.Folders()
+		return err
+	}
 }

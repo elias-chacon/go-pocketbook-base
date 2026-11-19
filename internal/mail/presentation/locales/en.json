@@ -56,5 +56,6 @@
   "mail.drafts.empty": "No drafts.",
   "mail.savedraft": "Save draft",
   "mail.draft.saved": "Draft saved.",
-  "mail.draft.failed": "Could not use drafts: %s"
+  "mail.draft.failed": "Could not use drafts: %s",
+  "mail.account": "Account"
 }

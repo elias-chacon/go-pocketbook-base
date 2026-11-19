@@ -56,5 +56,6 @@
   "mail.drafts.empty": "Nenhum rascunho.",
   "mail.savedraft": "Salvar rascunho",
   "mail.draft.saved": "Rascunho salvo.",
-  "mail.draft.failed": "Não foi possível usar os rascunhos: %s"
+  "mail.draft.failed": "Não foi possível usar os rascunhos: %s",
+  "mail.account": "Conta"
 }

@@ -588,3 +588,27 @@ func TestNoDraftsSaysSo(t *testing.T) {
 		t.Error("unexpected form")
 	}
 }
+
+func TestNewMessageEndsWithTheSignatureOnce(t *testing.T) {
+	b := &fakeBox{}
+	s := NewScreen(Config{Width: 1404, Height: 1872, Tr: NewTranslator("en"), Mailbox: b, Signature: "Ana Souza", Now: func() time.Time { return clock }})
+	s.NewMessage()
+	body := byID(t, s, "mail-body-text").(*widget.TextArea).Value
+	if body != "\n\n-- \nAna Souza" {
+		t.Fatalf("body = %q", body)
+	}
+	s.Compose(domain.Draft{Body: body})
+	if got := byID(t, s, "mail-body-text").(*widget.TextArea).Value; strings.Count(got, "Ana Souza") != 1 {
+		t.Fatalf("signature repeated: %q", got)
+	}
+}
+
+func TestAccountButtonOpensTheSettings(t *testing.T) {
+	opened := false
+	s := NewScreen(Config{Width: 1404, Height: 1872, Tr: NewTranslator("en"), Mailbox: &fakeBox{}, OnAccount: func() { opened = true }, Now: func() time.Time { return clock }})
+	s.Doc.Layout()
+	tap(t, s, "mail-account")
+	if !opened {
+		t.Fatal("the Account button did nothing")
+	}
+}

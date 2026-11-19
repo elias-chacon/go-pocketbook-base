@@ -72,13 +72,14 @@ type Endpoint struct {
 
 // Account is an identity at a provider and the services it gives access to.
 type Account struct {
-	ID       string                 `json:"id"` // lower-case slug, unique, names the account's data
-	Name     string                 `json:"name"`
-	Email    string                 `json:"email"`
-	Provider string                 `json:"provider"` // a preset's ID, "custom" when none
-	Auth     Auth                   `json:"auth"`
-	Username string                 `json:"username,omitempty"` // the login when it is not the address
-	Services map[Service][]Endpoint `json:"services"`
+	ID        string                 `json:"id"` // lower-case slug, unique, names the account's data
+	Name      string                 `json:"name"`
+	Email     string                 `json:"email"`
+	Provider  string                 `json:"provider"` // a preset's ID, "custom" when none
+	Auth      Auth                   `json:"auth"`
+	Username  string                 `json:"username,omitempty"`  // the login when it is not the address
+	Signature string                 `json:"signature,omitempty"` // text added to the end of new messages
+	Services  map[Service][]Endpoint `json:"services"`
 }
 
 var idPattern = regexp.MustCompile(`^[a-z][a-z0-9_-]{0,31}$`)
