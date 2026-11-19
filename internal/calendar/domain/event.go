@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	_ "time/tzdata" // the reader may have no zoneinfo, and expanding a repeating event needs its zone
 
 	"github.com/teambition/rrule-go"
 )

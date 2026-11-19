@@ -195,3 +195,18 @@ Code that only runs on the reader (`cmd/`, `internal/device/inkview`) is exclude
 packages that run on the PC, and keep the reader glue thin.
 
 Next: [Troubleshooting →](11-troubleshooting.md)
+
+## Testing on an emulated reader (ARM)
+
+Everything that does not touch the screen can be tested on the reader's own processor without the reader: `.\scripts\arm-test.ps1`
+compiles the tests of every pure-Go package (`internal/**`) for **ARMv7 with the SDK's Go 1.17** and runs them under `qemu-arm` in an Alpine
+container (no privileges, no changes to Docker). The container has **no zoneinfo and no system libraries**, like the reader, so a test that
+forgot to carry what it needs fails there: that is how the time zone database was found missing in the calendar domain.
+
+| It checks | It cannot check |
+|---|---|
+| the code builds and runs on ARM with the SDK's Go (SQLite, the AES-GCM vault, MIME, iCalendar, daylight saving, rendering) | InkView (it needs `libinkview` and the screen) |
+| the behaviour without zoneinfo or a C library | the FAT filesystem of the reader's storage (it needs a privileged mount) |
+| | real speed and memory: the emulation is slow and says nothing about the e-ink panel |
+
+All 44 packages pass this way. A test of the whole app on the device is still the only way to check the screen, the touch, Wi-Fi and the FAT volume.

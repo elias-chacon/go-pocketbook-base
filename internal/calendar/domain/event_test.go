@@ -62,7 +62,7 @@ func TestAWeeklyEventRepeatsAndSkipsItsExceptions(t *testing.T) {
 func TestARepeatingEventKeepsItsLocalTimeAcrossDaylightSaving(t *testing.T) {
 	ny, err := time.LoadLocation("America/New_York")
 	if err != nil {
-		t.Skip("no time zone database on this machine")
+		t.Fatalf("the domain carries the time zone database, so this must load: %v", err)
 	}
 	e := Event{
 		Title: "Stand-up", TimeZone: "America/New_York", Recurrence: "FREQ=WEEKLY",

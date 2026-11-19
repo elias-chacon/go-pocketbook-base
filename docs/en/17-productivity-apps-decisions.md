@@ -18,7 +18,7 @@ reason and, where it could be measured, the **evidence**. The choices were made 
 
 | # | Subject | Decision | Reason and evidence |
 |---|---|---|---|
-| 1 | Local storage (T54) | **Pure-Go SQLite**, `modernc.org/sqlite` v1.14.8, behind a `store` port | It built with the SDK's Go 1.17 for ARM in 19 s and runs on the PC without `gcc`. Cost: **+5.5 MB** per app that uses it (a test binary went from 1 MB to 6.8 MB). **Not verified:** running on ARM (the Docker here has no emulation), so the first step of T54 is to run it on the reader |
+| 1 | Local storage (T54) | **Pure-Go SQLite**, `modernc.org/sqlite` v1.14.8, behind a `store` port | It built with the SDK's Go 1.17 for ARM in 19 s and runs on the PC without `gcc`. Cost: **+5.5 MB** per app that uses it (a test binary went from 1 MB to 6.8 MB). **Verified on emulated ARMv7** (all the storage tests pass under `qemu-arm` with the SDK's Go 1.17, `scripts/arm-test.ps1`); **not verified:** the real reader and its FAT volume, so the first run of an app that uses it is still a test to do there |
 | 2 | Queries and search | SQL with indexes and simple `LIKE`/FTS; **always paginated** | Avoids loading the whole inbox; a small `PRAGMA cache_size` (about 2 MB) |
 | 3 | IMAP (T59) | `github.com/emersion/go-imap` **v1.2.1** | Builds on Go 1.17/ARM. **v2** needs Go 1.18 and is out |
 | 4 | SMTP (T59) | **standard library `net/smtp`**, with our own `smtp.Auth` for XOAUTH2 | `go-smtp` v0.26 **does not build** on Go 1.17 (it uses `errors.Join` and `strings.Cut`). `net/smtp` already does STARTTLS, PLAIN and LOGIN |

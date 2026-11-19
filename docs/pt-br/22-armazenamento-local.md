@@ -25,9 +25,9 @@ O banco não sabe o que é uma mensagem ou um evento: cada contexto escreve as s
 
 ## O que ainda não foi verificado
 
-**A execução em ARM, no aparelho.** O código compila para ARM e passa em todos os testes no PC, mas o Docker daqui não tem emulação ARM, então
-o SQLite nunca rodou no PocketBook. É a primeira coisa a validar quando um app o usar; se falhar, a alternativa é um arquivo próprio atrás da
-mesma porta.
+**O leitor de verdade.** O SQLite está verificado em **ARMv7 emulado** (todos os testes do armazenamento passam no `qemu-arm` com o Go 1.17 do SDK:
+`scripts/arm-test.ps1`), mas não rodou no PocketBook em si, e a emulação não confere o **volume FAT** onde o banco vai ficar. É a primeira coisa a validar
+quando um app o usar; se falhar, a alternativa é um arquivo próprio atrás da mesma porta.
 
 ## O código
 

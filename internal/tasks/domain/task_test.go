@@ -30,7 +30,7 @@ func TestATaskNeedsATitleAndARepeatingOneNeedsADueDate(t *testing.T) {
 }
 
 func TestDayIsMidnightUTCOfTheCalendarDay(t *testing.T) {
-	ny, _ := time.LoadLocation("America/New_York")
+	ny := time.FixedZone("EST", -5*3600) // no zone database needed: the reader may not have one
 	got := Day(time.Date(2026, 3, 10, 23, 30, 0, 0, ny))
 	if !got.Equal(day(2026, 3, 10)) || got.Location() != time.UTC {
 		t.Errorf("%v", got)

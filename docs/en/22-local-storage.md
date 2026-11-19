@@ -24,9 +24,9 @@ The database does not know what a message or an event is: each context writes it
 
 ## What has not been verified yet
 
-**Running on ARM, on the device.** The code builds for ARM and passes every test on the PC, but the Docker here has no ARM emulation, so SQLite
-has never run on the PocketBook. It is the first thing to validate when an app uses it; if it fails, the fallback is our own file behind the
-same port.
+**The real reader.** SQLite is verified on **emulated ARMv7** (all the storage tests pass under `qemu-arm` with the SDK's Go 1.17: `scripts/arm-test.ps1`),
+but it has not run on the PocketBook itself, and the emulation cannot check the **FAT volume** the database will live on. It is the first thing to
+validate when an app uses it; if it fails, the fallback is our own file behind the same port.
 
 ## The code
 

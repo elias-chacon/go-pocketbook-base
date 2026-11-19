@@ -195,3 +195,18 @@ O código que só roda no leitor (`cmd/`, `internal/device/inkview`) fica fora d
 no PC e a cola do leitor bem fina.
 
 Próxima: [Solução de problemas →](11-solucao-de-problemas.md)
+
+## Testando num leitor emulado (ARM)
+
+Tudo o que não toca a tela pode ser testado no processador do próprio leitor, sem o leitor: o `.\scripts\arm-test.ps1` compila os testes de
+todo pacote em Go puro (`internal/**`) para **ARMv7 com o Go 1.17 do SDK** e os executa com o `qemu-arm` num contêiner Alpine (sem privilégios e
+sem mexer no Docker). O contêiner **não tem zoneinfo nem bibliotecas do sistema**, como o leitor, então um teste que esqueceu de levar o que precisa
+falha ali: foi assim que se descobriu a falta do banco de fusos no domínio do calendário.
+
+| O que ele confere | O que ele não confere |
+|---|---|
+| o código compila e roda em ARM com o Go do SDK (SQLite, o cofre AES-GCM, MIME, iCalendar, horário de verão, renderização) | o InkView (precisa da `libinkview` e da tela) |
+| o comportamento sem zoneinfo e sem biblioteca C | o sistema de arquivos FAT do armazenamento do leitor (precisa de uma montagem privilegiada) |
+| | velocidade e memória reais: a emulação é lenta e não diz nada do painel e-ink |
+
+Os 44 pacotes passam assim. Um teste do app inteiro no aparelho continua sendo o único jeito de conferir a tela, o toque, o Wi-Fi e o volume FAT.
