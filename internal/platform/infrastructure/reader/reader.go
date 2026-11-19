@@ -6,10 +6,13 @@ package reader
 
 import (
 	"image"
+	"net/http"
 	"path/filepath"
+	"time"
 
 	"go-pocketbook-base/internal/device/desktop"
 	"go-pocketbook-base/internal/device/inkview"
+	"go-pocketbook-base/internal/device/network"
 	"go-pocketbook-base/internal/platform/application"
 	"go-pocketbook-base/internal/platform/domain"
 	"go-pocketbook-base/internal/toolkit/widget"
@@ -135,6 +138,9 @@ func (d DesktopRegistrar) Register(r domain.Registration) (bool, error) {
 func IconPath(root, id string) string {
 	return filepath.Join(root, "applications", "icons", id+".bmp")
 }
+
+// HTTPClient is the network client of the reader (see device/network).
+func HTTPClient(timeout time.Duration) *http.Client { return network.New(timeout) }
 
 // Logf writes to the on-device debug log (see inkview.DebugLog).
 func Logf(format string, args ...interface{}) { inkview.Logf(format, args...) }

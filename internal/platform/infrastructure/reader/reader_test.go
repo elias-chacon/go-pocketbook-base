@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"go-pocketbook-base/internal/device/inkview"
 	"go-pocketbook-base/internal/platform/application"
@@ -148,5 +149,12 @@ func TestTheRegistrarPutsTheAppOnTheHomeScreen(t *testing.T) {
 	}
 	if _, err := (DesktopRegistrar{Root: t.TempDir()}).Register(r); err == nil {
 		t.Error("no view.json under the root is an error")
+	}
+}
+
+func TestHTTPClientIsTheReadersNetworkClientWithTheGivenTimeout(t *testing.T) {
+	c := HTTPClient(7 * time.Second)
+	if c == nil || c.Timeout != 7*time.Second {
+		t.Errorf("%+v", c)
 	}
 }

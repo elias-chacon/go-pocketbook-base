@@ -21,7 +21,7 @@ import (
 const (
 	repoOwner = "elias-chacon"
 	repoName  = "go-pocketbook-base"
-	// httpTimeout bounds every request: a download of a few megabytes over Wi-Fi.
+	// httpTimeout is the client's timeout when the platform gives none (tests).
 	httpTimeout = 60 * time.Second
 )
 
@@ -37,8 +37,11 @@ func newLauncher(env platform.Env) platform.App {
 	if err != nil {
 		self = "" // an app started by us then cannot find its way back: it just ends
 	}
-	client := &http.Client{Timeout: httpTimeout}
-	catalog := &github.Catalog{Client: client, Owner: repoOwner, Repo: repoName}
+	client := env.HTTP // the platform's: it works on the reader's network
+	if client == nil {
+		client = &http.Client{Timeout: httpTimeout}
+	}
+	catalog := &loggedCatalog{inner: &github.Catalog{Client: client, Owner: repoOwner, Repo: repoName}}
 	return &launcher{home: presentation.NewHome(presentation.Config{
 		Width: env.Width, Height: env.Height, Keyboard: env.Keyboard,
 		Tr:   presentation.NewTranslator(env.Lang),
@@ -50,11 +53,33 @@ func newLauncher(env platform.Env) platform.App {
 		},
 		IconFor: iconFor,
 		Notice:  env.Notice,
-		Catalog: catalog, Installer: appinstaller.Installer{
+		Catalog: catalog, Installer: loggedInstaller{inner: appinstaller.Installer{
 			Client: client, Root: platform.DefaultRoot, Register: register,
-		},
+		}},
 		Flush: env.Flush,
 	})}
+}
+
+// loggedCatalog and loggedInstaller write what goes wrong on the network to the
+// app's log, where it can be read from the reader's drive.
+type loggedCatalog struct{ inner domain.Catalog }
+
+func (c *loggedCatalog) List(lang string) ([]domain.Listing, error) {
+	list, err := c.inner.List(lang)
+	if err != nil {
+		platform.Logf("catalog: %v", err)
+	}
+	return list, err
+}
+
+type loggedInstaller struct{ inner domain.Installer }
+
+func (i loggedInstaller) Install(l domain.Listing) error {
+	err := i.inner.Install(l)
+	if err != nil {
+		platform.Logf("install %s: %v", l.ID, err)
+	}
+	return err
 }
 
 // register puts a downloaded app on the home screen with the platform's own

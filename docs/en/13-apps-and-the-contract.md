@@ -45,7 +45,7 @@ folder; nothing else. An app is installed, updated and run on its own: the Launc
    Launcher reads to know what is installed. It runs on every start, so the record always has the current version.
 3. The platform reads the shared **settings** (`applications/.pbgo/settings.json`: today the language) and starts InkView.
 4. Once the screen size is known the platform calls your **factory** with an `platform.Env`: screen size, system keyboard,
-   `Exit`, the first-run notice, the manifest, the language and the version. It returns an `platform.App`, which only has to
+   `Exit`, the first-run notice, the manifest, the language, the version and `HTTP`, the network client that works on the reader (its Linux has no `resolv.conf` and no IPv6, which the standard client needs; `internal/device/network`). Use `env.HTTP` for any request. It returns an `platform.App`, which only has to
    give its `*widget.Document`.
 5. From then on the platform does the plumbing: touch, the system keyboard, **partial repaint** (full refresh every 10 updates
    to clear e-ink ghosting), and the keys: left and Menu close a popup, then a modal (`doc.HandleBack()`); keys the platform does not use go

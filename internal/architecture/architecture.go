@@ -12,7 +12,8 @@
 //	              drawing) and widget (the Document aggregate, elements, layout,
 //	              touch). It knows nothing of the reader or of apps.
 //	device        the e-reader as an outside system: inkview (the cgo binding)
-//	              and desktop (registering an icon on the home screen). The
+//	              desktop (registering an icon on the home screen) and network
+//	              (an HTTP client that works on the reader's Linux). The
 //	              anti-corruption layer: the rest of the code never sees InkView.
 //	localization  languages: i18n (pt-BR first, English fallback).
 //	platform      what an app of this project is. Three layers:

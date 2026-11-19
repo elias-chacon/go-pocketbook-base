@@ -6,6 +6,8 @@
 package application
 
 import (
+	"net/http"
+
 	"image"
 
 	"go-pocketbook-base/internal/platform/domain"
@@ -43,6 +45,9 @@ type Env struct {
 	// (a download) calls it first so the screen says why; normally the platform
 	// repaints by itself once the handler returns.
 	Flush func()
+	// HTTP is the client to use for the network: it works on the reader's Linux
+	// (no resolv.conf, no IPv6), which the standard one does not. Nil in tests.
+	HTTP *http.Client
 }
 
 // App is what an app gives the platform: the screen.

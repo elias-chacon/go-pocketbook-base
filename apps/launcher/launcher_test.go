@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"image"
 	"os"
 	"path/filepath"
@@ -125,5 +126,33 @@ func TestNewLauncherUsesItsOwnIdSoItDoesNotListItself(t *testing.T) {
 	})
 	if !found {
 		t.Error("with only itself installed the home is empty")
+	}
+}
+
+type stubCatalog struct {
+	list []domain.Listing
+	err  error
+}
+
+func (c stubCatalog) List(string) ([]domain.Listing, error) { return c.list, c.err }
+
+type stubInstaller struct{ err error }
+
+func (i stubInstaller) Install(domain.Listing) error { return i.err }
+
+func TestTheNetworkWrappersPassTheAnswersThrough(t *testing.T) {
+	boom := errors.New("offline")
+	list := []domain.Listing{{ID: "x"}}
+	if got, err := (&loggedCatalog{inner: stubCatalog{list: list}}).List("en"); err != nil || len(got) != 1 {
+		t.Errorf("%v %v", got, err)
+	}
+	if _, err := (&loggedCatalog{inner: stubCatalog{err: boom}}).List("en"); err != boom {
+		t.Errorf("the error is returned (and logged): %v", err)
+	}
+	if err := (loggedInstaller{inner: stubInstaller{}}).Install(list[0]); err != nil {
+		t.Error(err)
+	}
+	if err := (loggedInstaller{inner: stubInstaller{err: boom}}).Install(list[0]); err != boom {
+		t.Errorf("%v", err)
 	}
 }

@@ -45,7 +45,7 @@ O `platform.ParseManifest` valida e o `TitleIn(idioma)` escolhe o texto como o [
    lê para saber o que está instalado. Isso roda a cada início, então o registro sempre tem a versão atual.
 3. A plataforma lê as **configurações** compartilhadas (`applications/.pbgo/settings.json`: hoje o idioma) e inicia o InkView.
 4. Quando o tamanho da tela é conhecido a plataforma chama a sua **fábrica** com um `platform.Env`: tamanho da tela, teclado do
-   sistema, `Exit`, o aviso da primeira execução, o manifesto, o idioma e a versão. Ela devolve um `platform.App`, que só
+   sistema, `Exit`, o aviso da primeira execução, o manifesto, o idioma, a versão e o `HTTP`, o cliente de rede que funciona no leitor (o Linux dele não tem `resolv.conf` nem IPv6, que o cliente padrão exige; `internal/device/network`). Use `env.HTTP` em qualquer requisição. Ela devolve um `platform.App`, que só
    precisa entregar o seu `*widget.Document`.
 5. Daí em diante a plataforma cuida da instalação elétrica: toque, teclado do sistema, **repintura parcial** (refresh completo a cada
    10 atualizações para limpar o ghosting do e-ink) e as teclas: esquerda e Menu fecham um popup e depois uma modal

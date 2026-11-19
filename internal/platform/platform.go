@@ -21,6 +21,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 
 	"go-pocketbook-base/internal/kernel/version"
 	"go-pocketbook-base/internal/platform/application"
@@ -52,8 +53,14 @@ const (
 	KeyMenu     = application.KeyMenu
 )
 
+// httpTimeout bounds every request of Env.HTTP: a download of a few megabytes over Wi-Fi.
+const httpTimeout = 60 * time.Second
+
 // DefaultRoot is the user storage of the reader (what RegisterOnDrive takes on the reader itself).
 const DefaultRoot = application.DefaultRoot
+
+// Logf writes to the app's on-device log (applications/<id>.log).
+func Logf(format string, args ...interface{}) { reader.Logf(format, args...) }
 
 // ParseManifest decodes and validates an app.json.
 func ParseManifest(data []byte) (Manifest, error) { return domain.ParseManifest(data) }
@@ -92,7 +99,7 @@ func Run(cfg Config, factory Factory) error {
 
 	env := Env{
 		Manifest: m, Lang: lang, Version: version.Value, Notice: notice,
-		Settings: settings, Apps: apps,
+		Settings: settings, Apps: apps, HTTP: reader.HTTPClient(httpTimeout),
 	}
 	screen := &reader.Screen{}
 	// InkView ends the process when the app closes, so going back to the Launcher
