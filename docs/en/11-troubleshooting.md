@@ -18,14 +18,15 @@ Problems seen while building this project on a PB741, with the cause and the fix
 | Dragging a slider is slow | The e-ink redraws the whole screen | The platform coalesces repaints, skips move events and sends only the changed areas to the panel (partial refresh) |
 | A symbol (✓, →) shows as a box | The built-in fonts lack that glyph | Draw an icon (`c.Icon`) or use another symbol |
 | Text ends with "…" | It does not fit its box | Give the element more width (`FlexGrow`, `Width`) or shorter text |
-| The app does nothing at all when opened | It crashed before drawing | Read `applications/hello.log` (written by the demo) |
+| The app does nothing at all when opened | It crashed before drawing | Read `applications/hello.log` (create `applications/.pbgo/debug` for the full trace) |
 
 ### Reading the event log
 
-The demo writes `applications/hello.log` with every InkView event and what the app decided. Connect the
-reader, open the file and look for `main start` (a new run), `info before/after` (screen and panel state),
-`pointer up (x,y) … hit=` and `install:` (the first-run result). In your own app set
-`inkview.DebugLog = "/mnt/ext1/applications/<name>.log"` and use `inkview.Logf(format, args...)`.
+Every app writes `applications/<id>.log` (the platform sets it up). By default it holds only **errors** (`platform.Errorf`: a failed
+download, a failed registration), and it starts again when it passes 64 KB. To trace everything, create an empty file
+`applications/.pbgo/debug` on the reader (or run with `PBGO_DEBUG=1`): the log then also has every InkView event and the app's steps
+(`platform.Logf`). Connect the reader, open the file and look for `main start` (a new run), `info before/after` (screen and panel state)
+and `register:` (the first-run result). Never log a password, a token or the text of a message.
 
 ## Building
 

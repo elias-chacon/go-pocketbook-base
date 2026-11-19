@@ -142,8 +142,17 @@ func IconPath(root, id string) string {
 // HTTPClient is the network client of the reader (see device/network).
 func HTTPClient(timeout time.Duration) *http.Client { return network.New(timeout) }
 
-// Logf writes to the on-device debug log (see inkview.DebugLog).
+// Logf writes a trace line to the app's log, only in verbose mode (see SetVerbose).
 func Logf(format string, args ...interface{}) { inkview.Logf(format, args...) }
 
 // SetLogFile chooses the debug log file.
 func SetLogFile(path string) { inkview.DebugLog = path }
+
+// Errorf writes what went wrong to the app's log, always.
+func Errorf(format string, args ...interface{}) { inkview.Errorf(format, args...) }
+
+// SetVerbose turns the trace of events and steps on or off.
+func SetVerbose(on bool) { inkview.Verbose = on }
+
+// ResetLog empties a log that has grown too big.
+func ResetLog() { inkview.ResetLog() }

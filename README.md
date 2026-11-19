@@ -215,10 +215,10 @@ Ideias para próximas versões (ainda **não** feitas):
 - [x] B03 Atualização parcial da tela (`PartialUpdate`) para interações mais rápidas (feita na T40)
 - [ ] B04 Container com rolagem (scroll) e `overflow`
 - [ ] B05 Tratar rotação (`EVT_ORIENTATION`)
-- [ ] B06 Diálogo/modal e toast
-- [ ] B07 Abas (tabs) e navegação por pilha de telas
-- [ ] B08 Slide-to-confirm (botão deslizante de confirmação)
-- [ ] B09 Remover o log de eventos de depuração (`DebugLog`) em builds de release
+- [x] B06 Diálogo/modal (feito na T38; o toast não foi necessário)
+- [x] B07 Abas (feitas na T41; a navegação por pilha de telas ainda não existe)
+- [x] B08 Slide-to-confirm (feito na T32 e na T39)
+- [x] B09 Log de depuração fora do caminho normal: o log (`applications/<id>.log`) grava só **erros**; o rastro de eventos e passos só com o modo detalhado (arquivo `applications/.pbgo/debug` no leitor, ou `PBGO_DEBUG=1`), e o log recomeça quando passa de 64 KB
 - [ ] B10 (CAL) Especificar um app de calendário parecido com o google calendar usando go-pocketbook-base integrado e sincronizado com google, outlook, apple, importação e exportação de arquivos ical. **Incorporado às tarefas T66 a T70** (app de calendário, junto com e-mail e tarefas)
 
 ## Versionamento

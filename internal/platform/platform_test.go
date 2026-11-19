@@ -106,3 +106,20 @@ func TestRegisterOnDriveInstallsFromThePCWithTheReadersPaths(t *testing.T) {
 		t.Error("a drive without the reader's system folder is an error")
 	}
 }
+
+func TestVerboseModeIsAskedForWithAMarkerFileOrTheEnvironment(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("PBGO_DEBUG", "")
+	if verboseRequested(root) {
+		t.Error("a release is quiet")
+	}
+	os.MkdirAll(filepath.Join(root, "applications", ".pbgo"), 0o755)
+	os.WriteFile(filepath.Join(root, "applications", ".pbgo", "debug"), nil, 0o644)
+	if !verboseRequested(root) {
+		t.Error("the marker file turns the trace on")
+	}
+	t.Setenv("PBGO_DEBUG", "1")
+	if !verboseRequested(t.TempDir()) {
+		t.Error("so does PBGO_DEBUG")
+	}
+}

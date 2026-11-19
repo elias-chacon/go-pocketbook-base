@@ -18,14 +18,15 @@ Problemas encontrados ao construir este projeto em um PB741, com a causa e a cor
 | Arrastar um slider é lento | O e-ink redesenha a tela inteira | A plataforma agrupa os redesenhos, ignora eventos de movimento e envia ao painel só as áreas que mudaram (atualização parcial) |
 | Um símbolo (✓, →) aparece como quadrado | As fontes embutidas não têm esse glifo | Desenhe um ícone (`c.Icon`) ou use outro símbolo |
 | O texto termina em "…" | Não cabe na caixa | Dê mais largura ao elemento (`FlexGrow`, `Width`) ou use um texto menor |
-| O app não faz nada ao abrir | Ele travou antes de desenhar | Leia `applications/hello.log` (gravado pela demo) |
+| O app não faz nada ao abrir | Ele travou antes de desenhar | Leia `applications/hello.log` (crie `applications/.pbgo/debug` para o rastro completo) |
 
 ### Lendo o log de eventos
 
-A demo grava `applications/hello.log` com cada evento do InkView e o que o app decidiu. Conecte o leitor, abra o arquivo e procure
-`main start` (uma nova execução), `info before/after` (estado da tela e do painel), `pointer up (x,y) … hit=` e `install:` (o
-resultado da primeira execução). No seu app defina `inkview.DebugLog = "/mnt/ext1/applications/<nome>.log"` e use
-`inkview.Logf(formato, args...)`.
+Todo app grava `applications/<id>.log` (a plataforma configura). Por padrão ele guarda só **erros** (`platform.Errorf`: um download
+que falhou, um registro que falhou) e recomeça ao passar de 64 KB. Para rastrear tudo, crie um arquivo vazio
+`applications/.pbgo/debug` no leitor (ou rode com `PBGO_DEBUG=1`): o log passa a ter também cada evento do InkView e os passos do app
+(`platform.Logf`). Conecte o leitor, abra o arquivo e procure `main start` (uma nova execução), `info before/after` (estado da tela e
+do painel) e `register:` (o resultado da primeira execução). Nunca grave senha, token ou o texto de uma mensagem no log.
 
 ## Compilação
 

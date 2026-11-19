@@ -60,8 +60,24 @@ const httpTimeout = 60 * time.Second
 // DefaultRoot is the user storage of the reader (what RegisterOnDrive takes on the reader itself).
 const DefaultRoot = application.DefaultRoot
 
-// Logf writes to the app's on-device log (applications/<id>.log).
+// Logf writes a trace line to the app's log (applications/<id>.log). Nothing is
+// written unless verbose mode is on: create the file applications/.pbgo/debug on
+// the reader (or set PBGO_DEBUG=1) and the log traces every event and step.
 func Logf(format string, args ...interface{}) { reader.Logf(format, args...) }
+
+// Errorf writes what went wrong to the same log, always. Never pass it a
+// password, a token or the text of a message.
+func Errorf(format string, args ...interface{}) { reader.Errorf(format, args...) }
+
+// verboseRequested reports whether the trace was asked for: the marker file
+// applications/.pbgo/debug exists on the reader, or PBGO_DEBUG is set.
+func verboseRequested(root string) bool {
+	if os.Getenv("PBGO_DEBUG") != "" {
+		return true
+	}
+	_, err := os.Stat(filepath.Join(root, "applications", ".pbgo", "debug"))
+	return err == nil
+}
 
 // ParseManifest decodes and validates an app.json.
 func ParseManifest(data []byte) (Manifest, error) { return domain.ParseManifest(data) }
@@ -91,6 +107,8 @@ func Run(cfg Config, factory Factory) error {
 
 	// Event log for on-device debugging.
 	reader.SetLogFile(filepath.Join(root, "applications", m.ID+".log"))
+	reader.ResetLog()
+	reader.SetVerbose(verboseRequested(root))
 	reader.Logf("main start id=%s version=%s lang=%s args=%q", m.ID, version.Value, lang, os.Args)
 
 	exe, err := os.Executable()
@@ -129,7 +147,7 @@ func returnToLauncher(self string, askedToExit bool, launcher string, exec func(
 	}
 	reader.Logf("returning to the launcher: %s", target)
 	if err := exec(target, os.Environ()); err != nil {
-		reader.Logf("could not return to the launcher: %v", err)
+		reader.Errorf("could not return to the launcher: %v", err)
 	}
 }
 

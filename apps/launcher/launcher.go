@@ -64,7 +64,7 @@ func newLauncher(env platform.Env) platform.App {
 		ListingIcon: func(l domain.Listing) image.Image {
 			img, err := icons.Image(l)
 			if err != nil && err != iconcache.ErrNoIcon {
-				platform.Logf("icon %s: %v", l.ID, err)
+				platform.Errorf("icon %s: %v", l.ID, err)
 			}
 			return img
 		},
@@ -78,7 +78,7 @@ type loggedCatalog struct{ inner domain.Catalog }
 func (c *loggedCatalog) List(lang string) ([]domain.Listing, error) {
 	list, err := c.inner.List(lang)
 	if err != nil {
-		platform.Logf("catalog: %v", err)
+		platform.Errorf("catalog: %v", err)
 	}
 	return list, err
 }
@@ -88,7 +88,7 @@ type loggedInstaller struct{ inner domain.Installer }
 func (i loggedInstaller) Install(l domain.Listing) error {
 	err := i.inner.Install(l)
 	if err != nil {
-		platform.Logf("install %s: %v", l.ID, err)
+		platform.Errorf("install %s: %v", l.ID, err)
 	}
 	return err
 }
@@ -108,7 +108,7 @@ type iconRegistrar struct{ icons iconcache.Cache }
 func (i iconRegistrar) iconOf(l domain.Listing) func(size int, focused bool) image.Image {
 	img, err := i.icons.Image(l)
 	if err != nil {
-		platform.Logf("icon %s: %v (the default icon is used)", l.ID, err)
+		platform.Errorf("icon %s: %v (the default icon is used)", l.ID, err)
 		return nil
 	}
 	return platform.IconFromImage(img)
