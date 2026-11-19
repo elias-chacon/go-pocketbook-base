@@ -21,6 +21,7 @@ type DraftAttachment struct {
 
 // Draft is a message being written.
 type Draft struct {
+	ID          string // set when the draft is kept on the reader
 	AccountID   string
 	From        Address
 	To, Cc, Bcc []Address

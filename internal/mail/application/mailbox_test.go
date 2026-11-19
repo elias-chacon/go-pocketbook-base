@@ -106,3 +106,61 @@ func TestSendChecksTheDraftAndUsesTheBackend(t *testing.T) {
 		t.Errorf("err = %v", err)
 	}
 }
+
+type memDrafts struct {
+	list []domain.Draft
+}
+
+func (m *memDrafts) SaveDraft(d domain.Draft) (domain.Draft, error) {
+	if d.ID == "" {
+		d.ID = "d1"
+		m.list = append(m.list, d)
+		return d, nil
+	}
+	for i := range m.list {
+		if m.list[i].ID == d.ID {
+			m.list[i] = d
+		}
+	}
+	return d, nil
+}
+func (m *memDrafts) Drafts(string) ([]domain.Draft, error) { return m.list, nil }
+func (m *memDrafts) DeleteDraft(id string) error {
+	for i := range m.list {
+		if m.list[i].ID == id {
+			m.list = append(m.list[:i], m.list[i+1:]...)
+		}
+	}
+	return nil
+}
+
+func TestADraftIsKeptAndRemovedWhenTheMessageIsSent(t *testing.T) {
+	mb, be := composeBox()
+	if _, err := mb.SaveDraft(mb.New()); !errors.Is(err, ErrNoDrafts) {
+		t.Errorf("err = %v", err)
+	}
+	if list, err := mb.DraftList(); err != nil || list != nil {
+		t.Errorf("list = %v %v", list, err)
+	}
+	mb.DeleteDraft("x") // no store: nothing to do
+	ds := &memDrafts{}
+	mb.Drafts = ds
+	d := mb.New()
+	d.To = []domain.Address{{Email: "bia@example.org"}}
+	saved, err := mb.SaveDraft(d)
+	if err != nil || saved.ID == "" || saved.AccountID != "a1" || saved.From.Email != "eu@example.org" {
+		t.Fatalf("saved = %+v %v", saved, err)
+	}
+	if list, _ := mb.DraftList(); len(list) != 1 {
+		t.Fatalf("list = %v", list)
+	}
+	be.sendEr = errors.New("recusado")
+	mb.Send(saved)
+	if len(ds.list) != 1 {
+		t.Error("a failed send removed the draft")
+	}
+	be.sendEr = nil
+	if err := mb.Send(saved); err != nil || len(ds.list) != 0 {
+		t.Errorf("send: %v drafts %d", err, len(ds.list))
+	}
+}

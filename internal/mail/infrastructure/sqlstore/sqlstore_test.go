@@ -305,3 +305,35 @@ func TestTheStoreFailsCleanlyWhenTheDatabaseIsClosed(t *testing.T) {
 		t.Errorf("SetFlags: %v", err)
 	}
 }
+
+func TestDraftsRoundTripNewestFirstAndAreErasedWithTheAccount(t *testing.T) {
+	s, db := newStore(t)
+	d1, err := s.SaveDraft(domain.Draft{AccountID: "ana", Subject: "um", To: []domain.Address{{Email: "a@b.org"}}, Attachments: []domain.DraftAttachment{{Name: "x.txt", Data: []byte("oi")}}})
+	if err != nil || d1.ID == "" {
+		t.Fatalf("d1 = %+v %v", d1, err)
+	}
+	d2, _ := s.SaveDraft(domain.Draft{AccountID: "ana", Subject: "dois"})
+	d1.Subject = "um editado"
+	if _, err := s.SaveDraft(d1); err != nil { // same id: replaces, and is the newest now
+		t.Fatal(err)
+	}
+	list, err := s.Drafts("ana")
+	if err != nil || len(list) != 2 || list[0].ID != d1.ID || list[0].Subject != "um editado" || string(list[0].Attachments[0].Data) != "oi" || list[1].ID != d2.ID {
+		t.Fatalf("list = %+v %v", list, err)
+	}
+	if other, _ := s.Drafts("bia"); len(other) != 0 {
+		t.Error("drafts of another account")
+	}
+	if err := s.DeleteDraft(d2.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.DeleteDraft(d2.ID); err != domain.ErrNotFound {
+		t.Errorf("err = %v", err)
+	}
+	if err := db.EraseAccount("ana"); err != nil {
+		t.Fatal(err)
+	}
+	if list, _ := s.Drafts("ana"); len(list) != 0 {
+		t.Error("the drafts survived the account")
+	}
+}

@@ -43,6 +43,9 @@ type Mailbox interface {
 	Reply(id string, all bool, attribution string) (domain.Draft, error)
 	Forward(id, header string) (domain.Draft, error)
 	Send(d domain.Draft) error
+	SaveDraft(d domain.Draft) (domain.Draft, error)
+	DraftList() ([]domain.Draft, error)
+	DeleteDraft(id string) error
 	MarkRead(id string, read bool) error
 	SetFlagged(id string, flagged bool) error
 	Delete(id string) error
@@ -203,6 +206,9 @@ func (s *Screen) showList() {
 	compose := widget.NewButton(s.t("mail.new"))
 	compose.ID = "mail-new"
 	compose.OnClick = func(*widget.Event) { s.NewMessage() }
+	drafts := widget.NewButton(s.t("mail.drafts"))
+	drafts.ID = "mail-drafts"
+	drafts.OnClick = func(*widget.Event) { s.ShowDrafts() }
 	head := widget.NewRow(12, title, folders, sync, compose)
 	head.Style.Padding = geom.XY(28, 28)
 	head.Style.AlignItems = widget.AlignCenter
@@ -214,7 +220,7 @@ func (s *Screen) showList() {
 	s.search.Style.FlexGrow = 1
 	s.search.OnSubmit = func(*widget.Event) { s.Search(s.search.Value) }
 	s.search.OnChange = s.search.OnSubmit
-	bar := widget.NewRow(0, s.search)
+	bar := widget.NewRow(12, s.search, drafts)
 	bar.Style.Padding = geom.XY(0, 28)
 
 	s.body = widget.NewColumn(8)

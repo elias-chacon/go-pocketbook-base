@@ -3,6 +3,7 @@ package presentation
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -27,6 +28,8 @@ type fakeBox struct {
 	markErr, deleteErr     error
 	syncResult             application.Result
 	replyErr, sendErr      error
+	draftErr               error
+	drafts                 []domain.Draft
 	flagged                []bool
 	sent                   []domain.Draft
 }
@@ -523,5 +526,65 @@ func TestBccIsSentAndABadOneStopsTheSend(t *testing.T) {
 	s.SendDraft()
 	if len(b.sent) != 1 || !s.Composing() {
 		t.Error("a bad Bcc was sent")
+	}
+}
+
+func (b *fakeBox) SaveDraft(d domain.Draft) (domain.Draft, error) {
+	if b.draftErr != nil {
+		return d, b.draftErr
+	}
+	if d.ID == "" {
+		d.ID = "d" + strconv.Itoa(len(b.drafts)+1)
+	}
+	b.drafts = append(b.drafts, d)
+	return d, nil
+}
+func (b *fakeBox) DraftList() ([]domain.Draft, error) { return b.drafts, b.draftErr }
+func (b *fakeBox) DeleteDraft(string) error           { return nil }
+
+func TestADraftIsSavedListedAndReopened(t *testing.T) {
+	b := newBox(3)
+	s := newScreen(b)
+	tap(t, s, "mail-new")
+	byID(t, s, "mail-to").(*widget.Input).Value = "bia@example.org"
+	byID(t, s, "mail-subject").(*widget.Input).Value = "ideia"
+	tap(t, s, "mail-savedraft")
+	if len(b.drafts) != 1 || b.drafts[0].Subject != "ideia" || s.Composing() {
+		t.Fatalf("drafts = %+v composing %v", b.drafts, s.Composing())
+	}
+	if !strings.Contains(s.cfg.Notice, "Rascunho salvo") {
+		t.Errorf("notice = %q", s.cfg.Notice)
+	}
+	tap(t, s, "mail-drafts")
+	tap(t, s, "draft-d1")
+	if !s.Composing() || byID(t, s, "mail-subject").(*widget.Input).Value != "ideia" {
+		t.Error("the draft did not reopen")
+	}
+	byID(t, s, "mail-to").(*widget.Input).Value = "lixo"
+	s.SaveDraft()
+	if len(b.drafts) != 1 || !s.Composing() {
+		t.Error("a draft with a bad address was kept")
+	}
+	b.draftErr = errors.New("disco")
+	byID(t, s, "mail-to").(*widget.Input).Value = "bia@example.org"
+	s.SaveDraft()
+	if !s.Composing() || !strings.Contains(s.form.note.Text, "disco") {
+		t.Errorf("note = %q", s.form.note.Text)
+	}
+	s.CancelCompose()
+	s.ShowDrafts() // the store fails: a notice, no panic
+	if !strings.Contains(s.cfg.Notice, "disco") {
+		t.Errorf("notice = %q", s.cfg.Notice)
+	}
+	var none Screen
+	none.SaveDraft()
+}
+
+func TestNoDraftsSaysSo(t *testing.T) {
+	s := newScreen(newBox(1))
+	tap(t, s, "mail-drafts")
+	tap(t, s, "drafts-back")
+	if s.Composing() {
+		t.Error("unexpected form")
 	}
 }

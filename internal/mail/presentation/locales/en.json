@@ -51,5 +51,10 @@
   "mail.forwarded": "---------- Forwarded message ----------\nFrom: %s\nDate: %s\nSubject: %s",
   "mail.flag": "Flag",
   "mail.unflag": "Unflag",
-  "mail.bcc": "Bcc"
+  "mail.bcc": "Bcc",
+  "mail.drafts": "Drafts",
+  "mail.drafts.empty": "No drafts.",
+  "mail.savedraft": "Save draft",
+  "mail.draft.saved": "Draft saved.",
+  "mail.draft.failed": "Could not use drafts: %s"
 }

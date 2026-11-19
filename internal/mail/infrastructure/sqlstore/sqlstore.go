@@ -39,6 +39,12 @@ CREATE TABLE mail_messages (
 );
 CREATE INDEX mail_messages_folder ON mail_messages (account_id, folder_id, date DESC);
 `},
+	{Version: 2, SQL: `
+CREATE TABLE mail_drafts (
+	id TEXT PRIMARY KEY, account_id TEXT NOT NULL, saved INTEGER NOT NULL, body TEXT NOT NULL
+);
+CREATE INDEX mail_drafts_account ON mail_drafts (account_id, saved DESC);
+`},
 }
 
 // Store implements domain.MessageStore.
@@ -49,7 +55,7 @@ func New(s *storage.Store) (*Store, error) {
 	if err := s.Migrate(Module, migrations); err != nil {
 		return nil, err
 	}
-	for _, table := range []string{"mail_folders", "mail_messages"} {
+	for _, table := range []string{"mail_folders", "mail_messages", "mail_drafts"} {
 		if err := s.RegisterAccountTable(table); err != nil {
 			return nil, err
 		}

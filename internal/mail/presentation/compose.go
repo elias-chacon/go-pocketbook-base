@@ -94,7 +94,10 @@ func (s *Screen) Compose(d domain.Draft) {
 	cancel := widget.NewButton(s.t("mail.cancel"))
 	cancel.ID = "mail-cancel"
 	cancel.OnClick = func(*widget.Event) { s.CancelCompose() }
-	bar := widget.NewRow(12, title, cancel, send)
+	save := widget.NewButton(s.t("mail.savedraft"))
+	save.ID = "mail-savedraft"
+	save.OnClick = func(*widget.Event) { s.SaveDraft() }
+	bar := widget.NewRow(12, title, cancel, save, send)
 	bar.Style.Padding = geom.XY(28, 28)
 	bar.Style.AlignItems = widget.AlignCenter
 	paper(bar)
@@ -115,12 +118,8 @@ func (s *Screen) CancelCompose() {
 	s.showList()
 }
 
-// SendDraft sends what was written. A message that does not go stays on the screen.
-func (s *Screen) SendDraft() {
-	f := s.form
-	if f == nil {
-		return
-	}
+// read copies the form into a draft; an address that cannot be read is an error.
+func (f *composer) read() (domain.Draft, error) {
 	d := f.draft
 	var err error
 	lists := []struct {
@@ -129,15 +128,99 @@ func (s *Screen) SendDraft() {
 	}{{f.to, &d.To}, {f.cc, &d.Cc}, {f.bcc, &d.Bcc}}
 	for _, l := range lists {
 		if *l.into, err = domain.ParseAddressList(l.field.Value); err != nil {
-			break
+			return d, err
 		}
 	}
+	d.Subject, d.Body = f.subject.Value, f.body.Value
+	return d, nil
+}
+
+// SaveDraft keeps the message for later and goes back to the list.
+func (s *Screen) SaveDraft() {
+	f := s.form
+	if f == nil {
+		return
+	}
+	d, err := f.read()
 	if err != nil {
 		f.note.Text = s.t("mail.badaddress", err.Error())
 		s.Doc.Invalidate()
 		return
 	}
-	d.Subject, d.Body = f.subject.Value, f.body.Value
+	if _, err := s.cfg.Mailbox.SaveDraft(d); err != nil {
+		f.note.Text = s.t("mail.draft.failed", err.Error())
+		s.Doc.Invalidate()
+		return
+	}
+	s.form = nil
+	s.cfg.Notice = s.t("mail.draft.saved")
+	s.showList()
+}
+
+// ShowDrafts lists the saved drafts: tapping one opens it to go on writing.
+func (s *Screen) ShowDrafts() {
+	drafts, err := s.cfg.Mailbox.DraftList()
+	if err != nil {
+		s.say(s.t("mail.draft.failed", err.Error()))
+		return
+	}
+	back := widget.NewButton(s.t("mail.back"))
+	back.ID = "drafts-back"
+	back.OnClick = func(*widget.Event) { s.showList() }
+	title := widget.NewLabel(s.t("mail.drafts"))
+	title.Style.FontSize, title.Style.Bold, title.Style.FlexGrow = widget.FontTitle, true, 1
+	bar := widget.NewRow(12, title, back)
+	bar.Style.Padding = geom.XY(28, 28)
+	bar.Style.AlignItems = widget.AlignCenter
+	paper(bar)
+
+	body := widget.NewColumn(8)
+	body.Style.Padding = geom.XY(8, 28)
+	body.Style.FlexGrow = 1
+	if len(drafts) == 0 {
+		empty := widget.NewLabel(s.t("mail.drafts.empty"))
+		empty.Style.Color, empty.Style.Padding = widget.Muted, geom.All(28)
+		body.AppendChild(empty)
+	}
+	for i, d := range drafts {
+		if i >= rowsPerPage {
+			break
+		}
+		d := d
+		who := joinAddresses(d.To)
+		if who == "" {
+			who = s.t("mail.nobody")
+		}
+		to := widget.NewLabel(who)
+		to.Style.Bold = true
+		subject := widget.NewLabel(orElse(d.Subject, s.t("mail.nosubject")))
+		row := widget.NewColumn(2, to, subject)
+		row.ID = "draft-" + d.ID
+		row.Style.Padding = geom.XY(12, 20)
+		row.Style.BorderColor, row.Style.BorderWidth, row.Style.BorderRadius = widget.Mid, 2, widget.Radius
+		paper(row)
+		row.OnClick = func(*widget.Event) { s.Compose(d) }
+		body.AppendChild(row)
+	}
+	s.root = widget.NewColumn(0, bar, body)
+	s.root.Style.Background = widget.Paper
+	s.Doc.SetRoot(s.root)
+	s.Doc.ResetFrame()
+	s.Doc.Invalidate()
+}
+
+// SendDraft sends what was written. A message that does not go stays on the screen.
+func (s *Screen) SendDraft() {
+	f := s.form
+	if f == nil {
+		return
+	}
+	d, err := f.read()
+	if err != nil {
+		f.note.Text = s.t("mail.badaddress", err.Error())
+		s.Doc.Invalidate()
+		return
+	}
 	f.note.Text = s.t("mail.sending")
 	s.Doc.Invalidate()
 	if s.cfg.Flush != nil {

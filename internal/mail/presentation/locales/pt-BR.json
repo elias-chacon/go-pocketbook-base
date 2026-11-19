@@ -51,5 +51,10 @@
   "mail.forwarded": "---------- Mensagem encaminhada ----------\nDe: %s\nData: %s\nAssunto: %s",
   "mail.flag": "Sinalizar",
   "mail.unflag": "Tirar sinal",
-  "mail.bcc": "Cco"
+  "mail.bcc": "Cco",
+  "mail.drafts": "Rascunhos",
+  "mail.drafts.empty": "Nenhum rascunho.",
+  "mail.savedraft": "Salvar rascunho",
+  "mail.draft.saved": "Rascunho salvo.",
+  "mail.draft.failed": "Não foi possível usar os rascunhos: %s"
 }

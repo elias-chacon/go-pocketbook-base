@@ -120,8 +120,9 @@ func (m *mail) open(acc accounts.Account) {
 		return
 	}
 	box := mailapp.Mailbox{
-		Sync: mailapp.Sync{AccountID: acc.ID, Backend: backend, Store: m.store},
-		Me:   maildomain.Address{Name: acc.Name, Email: acc.Email},
+		Sync:   mailapp.Sync{AccountID: acc.ID, Backend: backend, Store: m.store},
+		Me:     maildomain.Address{Name: acc.Name, Email: acc.Email},
+		Drafts: m.store,
 	}
 	m.screen = presentation.NewScreen(presentation.Config{
 		Width: m.env.Width, Height: m.env.Height, Doc: m.doc, Tr: presentation.NewTranslator(m.env.Lang),

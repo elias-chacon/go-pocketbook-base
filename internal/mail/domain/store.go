@@ -31,6 +31,17 @@ func (q Query) Page() int {
 	return q.Limit
 }
 
+// DraftStore is the port to the drafts kept on the reader: messages being written
+// that were not sent yet. They live only on the reader.
+type DraftStore interface {
+	// SaveDraft keeps a draft (a new one gets an ID) and returns it.
+	SaveDraft(d Draft) (Draft, error)
+	// Drafts lists the drafts of an account, the most recently saved first.
+	Drafts(accountID string) ([]Draft, error)
+	// DeleteDraft removes a draft.
+	DeleteDraft(id string) error
+}
+
 // MessageStore is the port to the messages kept on the reader. The screens read only
 // from it (offline-first); the synchronization writes to it.
 type MessageStore interface {
