@@ -60,8 +60,8 @@ calendário é criado na primeira execução). O caso de uso `Agenda` responde a
 não um instante, então nunca escorrega para o dia vizinho em outro fuso. O relógio vem de `TZ` ou `/etc/timezone` (UTC quando o leitor não tem nenhum: a
 configuração do fuso ainda falta). A tela reaproveita o `Calendar` mensal do toolkit (estendido com `Marked`, um ponto sob os dias com eventos, e `OnMonth`),
 com **Hoje** e **Novo**, o título do dia e **5 eventos por página**. Tocar num evento (ou em **Novo**) abre o formulário: título, local, o dia (com setas), dia
-inteiro, início e fim como `HH:MM`; um horário inválido mantém o formulário aberto. **Ainda não testado no aparelho.** Falta (T67): as visões de dia, semana
-e semana útil (precisam de um componente de grade de horários no toolkit), repetição e lembretes no formulário, e a sincronização.
+inteiro, início e fim como `HH:MM` e **repetição** (nenhuma, todo dia, semana, mês ou ano; uma regra vinda de arquivo ou servidor aparece como *personalizada* e é mantida); um horário inválido mantém o formulário aberto. **Ainda não testado no aparelho.** Falta (T67): as visões de dia, semana
+e semana útil (precisam de um componente de grade de horários no toolkit), lembretes no formulário, e a sincronização.
 
 ## O código
 

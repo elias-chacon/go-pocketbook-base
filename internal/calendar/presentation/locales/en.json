@@ -16,5 +16,12 @@
   "cal.field.allday": "All day",
   "cal.badtime": "Type the times as HH:MM, for example 09:30.",
   "cal.date": "Date: %s",
-  "cal.untitled": "(no title)"
+  "cal.untitled": "(no title)",
+  "cal.repeat": "Repeat",
+  "cal.repeat.none": "Does not repeat",
+  "cal.repeat.daily": "Every day",
+  "cal.repeat.weekly": "Every week",
+  "cal.repeat.monthly": "Every month",
+  "cal.repeat.yearly": "Every year",
+  "cal.repeat.custom": "Custom"
 }

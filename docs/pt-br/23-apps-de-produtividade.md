@@ -12,7 +12,7 @@ está o código. Os detalhes técnicos ficam nos capítulos [17](17-decisoes-app
 |---|---|---|---|---|
 | **E-mail** | `apps/mail` | Sim (IMAP com **senha de app**) | pastas, lista, leitura, responder, encaminhar, nova mensagem, apagar, busca, sincronizar, ler offline | anexos, marcadores, rascunhos, Cco no formulário, Outlook.com (OAuth) |
 | **Tarefas** | `apps/tasks` | Não (ficam no leitor) | visões Meu dia, Importante, Planejado, Atrasadas e Todas; adicionar, concluir, editar, apagar; tarefas que se repetem | listas, lembretes e repetição na tela, sincronização |
-| **Calendário** | `apps/calendar` | Não (ficam no leitor) | mês com pontos nos dias com eventos, agenda do dia, criar, editar e apagar eventos (dia inteiro ou com horário) | visões de dia e semana, repetição e lembretes no formulário, sincronização, importar `.ics` |
+| **Calendário** | `apps/calendar` | Não (ficam no leitor) | mês com pontos nos dias com eventos, agenda do dia, criar, editar e apagar eventos (dia inteiro ou com horário) | visões de dia e semana, lembretes no formulário, sincronização, importar `.ics` |
 
 ## Como instalar
 
@@ -45,7 +45,7 @@ Tudo é lido do **cache offline**: sem rede você continua lendo o que já veio.
 
 - O app abre no **mês de hoje**. Um **ponto** marca os dias que têm eventos; **Hoje** volta para o dia de hoje.
 - Tocar num dia mostra a **agenda dele** embaixo (dia inteiro primeiro, depois por horário; **5 eventos por página**).
-- **Novo** (ou tocar num evento) abre o formulário: título, local, o dia (com setas), **dia inteiro** e início e fim como `HH:MM`.
+- **Novo** (ou tocar num evento) abre o formulário: título, local, o dia (com setas), **dia inteiro** e início e fim como `HH:MM` e **repetir** (todo dia, semana, mês ou ano).
 - Um evento de **dia inteiro** é uma data, não um instante: ele não muda de dia por causa do fuso.
 - O fuso vem da variável `TZ` ou de `/etc/timezone`; sem nenhum dos dois, vale UTC (a configuração do fuso ainda falta).
 

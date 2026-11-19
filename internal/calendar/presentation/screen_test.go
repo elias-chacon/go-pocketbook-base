@@ -317,3 +317,33 @@ func TestEveryInteractiveElementReceivesItsOwnTouchAndNothingOverflows(t *testin
 	s.Edit(s.items[0].Event.ID)
 	check("editor")
 }
+
+func TestTheRepetitionIsChosenFromTheMenuAndKeptWhenCustom(t *testing.T) {
+	s, st, _ := newScreen(t, "yoga")
+	id := s.items[0].Event.ID
+	s.Edit(id)
+	rep := byID(t, s, "edit-repeat").(*widget.Dropdown)
+	if !strings.Contains(rep.Text, "Não repete") {
+		t.Errorf("label = %q", rep.Text)
+	}
+	rep.Items[2].OnSelect() // weekly
+	if !strings.Contains(rep.Text, "Toda semana") {
+		t.Errorf("label = %q", rep.Text)
+	}
+	tap(t, s, "edit-save")
+	if st.events[id].Recurrence != "FREQ=WEEKLY" {
+		t.Fatalf("recurrence = %q", st.events[id].Recurrence)
+	}
+	// a rule the form does not offer is shown as custom and survives a save
+	e := st.events[id]
+	e.Recurrence = "FREQ=WEEKLY;BYDAY=MO,WE"
+	st.events[id] = e
+	s.Edit(id)
+	if !strings.Contains(byID(t, s, "edit-repeat").(*widget.Dropdown).Text, "Personalizada") {
+		t.Error("custom rule not shown as custom")
+	}
+	tap(t, s, "edit-save")
+	if st.events[id].Recurrence != "FREQ=WEEKLY;BYDAY=MO,WE" {
+		t.Errorf("custom rule lost: %q", st.events[id].Recurrence)
+	}
+}

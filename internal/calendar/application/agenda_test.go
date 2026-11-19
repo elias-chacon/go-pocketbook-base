@@ -134,6 +134,20 @@ func TestARepeatingEventAppearsOnItsDays(t *testing.T) {
 	}
 }
 
+func TestARepeatingEntryIsSavedAndABadRuleRefused(t *testing.T) {
+	a, st := agenda("")
+	e, err := a.Add(Entry{Title: "yoga", Day: day(4), Start: 420, End: 480, Recurrence: " FREQ=WEEKLY "})
+	if err != nil || st.events[e.ID].Recurrence != "FREQ=WEEKLY" {
+		t.Fatalf("event = %+v %v", st.events[e.ID], err)
+	}
+	if _, err := a.Add(Entry{Title: "x", Day: day(4), Recurrence: "FREQ=NOPE"}); err == nil {
+		t.Error("a bad rule was accepted")
+	}
+	if err := a.Change(e.ID, Entry{Title: "yoga", Day: day(4), Start: 420, End: 480}); err != nil || st.events[e.ID].Recurring() {
+		t.Errorf("clearing the rule failed: %v", err)
+	}
+}
+
 func TestChangeAndDelete(t *testing.T) {
 	a, st := agenda("")
 	e, _ := a.Add(Entry{Title: "a", Day: day(5), Start: 600, End: 660})

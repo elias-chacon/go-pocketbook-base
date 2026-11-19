@@ -19,6 +19,8 @@ type editor struct {
 	title, location *widget.Input
 	start, end      *widget.Input
 	allDay          *widget.Toggle
+	rule            string
+	repeat          *widget.Dropdown
 	date, note      *widget.Label
 }
 
@@ -38,7 +40,7 @@ func (s *Screen) Edit(id string) {
 		s.fail(err)
 		return
 	}
-	in := application.Entry{Title: e.Title, Location: e.Location, Description: e.Description, AllDay: e.AllDay}
+	in := application.Entry{Title: e.Title, Location: e.Location, Description: e.Description, AllDay: e.AllDay, Recurrence: e.Recurrence}
 	if e.AllDay {
 		in.Day = dateOf(e.Start)
 	} else {
@@ -84,6 +86,8 @@ func (s *Screen) openEditor(e *editor, in application.Entry) {
 	e.end = s.field("edit-end", s.t("cal.field.end"), clock(in.End))
 	e.allDay = widget.NewSwitch(s.t("cal.field.allday"), in.AllDay)
 	e.allDay.ID = "edit-allday"
+	e.rule = in.Recurrence
+	e.repeat = s.repeatMenu(e)
 
 	e.date = widget.NewLabel("")
 	s.showDate()
@@ -98,7 +102,7 @@ func (s *Screen) openEditor(e *editor, in application.Entry) {
 	e.note = widget.NewLabel(s.notice)
 	e.note.Style.FontSize, e.note.Style.Color = widget.FontSmall, widget.Muted
 
-	form := widget.NewColumn(16, e.title, e.location, dateRow, e.allDay, widget.NewRow(12, e.start, e.end), e.note)
+	form := widget.NewColumn(16, e.title, e.location, dateRow, e.allDay, widget.NewRow(12, e.start, e.end), e.repeat, e.note)
 	form.Style.Padding = geom.XY(28, 28)
 	form.Style.FlexGrow = 1
 	root := widget.NewColumn(0, bar, form)
@@ -106,6 +110,37 @@ func (s *Screen) openEditor(e *editor, in application.Entry) {
 	s.Doc.SetRoot(root)
 	s.Doc.ResetFrame()
 	s.Doc.Invalidate()
+}
+
+// The repetitions the form offers, by their rule ("" is none).
+var repeatRules = []struct{ rule, key string }{
+	{"", "cal.repeat.none"}, {"FREQ=DAILY", "cal.repeat.daily"}, {"FREQ=WEEKLY", "cal.repeat.weekly"},
+	{"FREQ=MONTHLY", "cal.repeat.monthly"}, {"FREQ=YEARLY", "cal.repeat.yearly"},
+}
+
+// repeatLabel names the repetition of a rule; a rule the form does not offer (it
+// came from a server or a file) is shown as custom and kept until another is chosen.
+func (s *Screen) repeatLabel(rule string) string {
+	for _, r := range repeatRules {
+		if r.rule == rule {
+			return s.t("cal.repeat") + ": " + s.t(r.key)
+		}
+	}
+	return s.t("cal.repeat") + ": " + s.t("cal.repeat.custom")
+}
+
+func (s *Screen) repeatMenu(e *editor) *widget.Dropdown {
+	var items []widget.MenuItem
+	for _, r := range repeatRules {
+		r := r
+		items = append(items, widget.MenuItem{Label: s.t(r.key), Value: r.rule, OnSelect: func() {
+			e.rule = r.rule
+			e.repeat.Text = s.repeatLabel(r.rule)
+		}})
+	}
+	d := widget.NewDropdown(s.repeatLabel(e.rule), items...)
+	d.ID = "edit-repeat"
+	return d
 }
 
 func spacer() *widget.Label {
@@ -147,7 +182,7 @@ func splitClock(text string) (int, int, bool) {
 // entry reads the form.
 func (s *Screen) entry() (application.Entry, bool) {
 	e := s.editor
-	in := application.Entry{Title: e.title.Value, Location: e.location.Value, Day: e.day, AllDay: e.allDay.Checked}
+	in := application.Entry{Title: e.title.Value, Location: e.location.Value, Day: e.day, AllDay: e.allDay.Checked, Recurrence: e.rule}
 	if in.AllDay {
 		return in, true
 	}
