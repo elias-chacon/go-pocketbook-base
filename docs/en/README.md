@@ -35,6 +35,7 @@
 | 15 | [The Launcher](15-launcher.md) | the home screen of the apps: installed grid, running an app and coming back |
 | 16 | [The installer and the releases](16-installer.md) | the program for people (Windows/Linux/macOS), how a release is made |
 | 17 | [Productivity apps: decisions](17-productivity-apps-decisions.md) | ADR for the mail, task list and calendar apps, with the libraries tested on Go 1.17/ARM |
+| 18 | [Accounts and secrets](18-accounts-and-secrets.md) | the shared accounts context and the encrypted vault, and what it does and does not protect |
 
 ## Quick look
 

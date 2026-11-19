@@ -37,6 +37,13 @@
 //	                presentation    the console conversation
 //	              It does not depend on the platform: the composition root hands it
 //	              the registration (platform.RegisterOnDrive).
+//	accounts      the accounts of the person (an address, what it gives access to, the
+//	              secrets) for the mail, tasks and calendar apps to share. Layers:
+//	                domain          Account, Endpoint, Secret, presets of providers, ports
+//	                application     Accounts: add, remove, hand out the credentials
+//	                infrastructure  jsonaccounts (accounts.json) and securefile (the
+//	                                encrypted vault of secrets)
+//	              It depends on nothing but the kernel.
 //	showcase      the content of the hello app: every widget on four pages.
 //
 // Outside internal/: apps/ (one composition root per app, free to wire any
@@ -96,6 +103,10 @@ const (
 	launcherApp       = launcherDir + applicationLayer
 	launcherInfra     = launcherDir + infrastructureLayer
 	launcherUI        = launcherDir + presentationLayer
+	accountsDir       = "internal/accounts"
+	accountsDomain    = accountsDir + domainLayer
+	accountsApp       = accountsDir + applicationLayer
+	accountsInfra     = accountsDir + infrastructureLayer
 	installerDir      = "internal/installer"
 	installerDomain   = installerDir + domainLayer
 	installerApp      = installerDir + applicationLayer
@@ -129,13 +140,17 @@ var Rules = []Rule{
 	{installerApp, []string{kernelDir, installerDomain, installerApp}},
 	{installerInfra, []string{kernelDir, installerDomain, installerInfra}},
 	{installerUI, []string{kernelDir, localizationDir, installerDomain, installerApp, installerUI}},
+	// The Accounts: its own vocabulary only.
+	{accountsDomain, []string{kernelDir, accountsDomain}},
+	{accountsApp, []string{kernelDir, accountsDomain, accountsApp}},
+	{accountsInfra, []string{kernelDir, accountsDomain, accountsInfra}},
 	{architectureDir, nil},
 	{examplesDir, []string{kernelDir, localizationDir, toolkitDir, showcaseDir, examplesDir}},
 }
 
 // Contexts are the folders allowed directly under internal/. A new one must be
 // added here (and to the documentation above) on purpose.
-var Contexts = []string{"architecture", "device", "installer", "kernel", "launcher", "localization", "platform", "showcase", "toolkit"}
+var Contexts = []string{"architecture", "accounts", "device", "installer", "kernel", "launcher", "localization", "platform", "showcase", "toolkit"}
 
 // within reports whether dir is base or a folder below it.
 func within(dir, base string) bool { return dir == base || strings.HasPrefix(dir, base+"/") }
