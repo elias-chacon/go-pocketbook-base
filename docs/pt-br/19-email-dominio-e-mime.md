@@ -47,12 +47,31 @@ compartilhado (capítulo 22), com as suas próprias migrações (módulo `mail`)
   que sumiu leva as suas mensagens junto.
 - **Marcas** (`SetFlags`: lida, sinalizada...) e `Delete`. Uma linha danificada é **reportada**, não escondida.
 
+## Sincronização e o servidor (Microsoft Graph)
+
+A porta `Backend` é o servidor de e-mail de **uma conta**: listar as pastas e as mensagens recentes, buscar uma mensagem inteira, enviar, marcar
+como lida e apagar. `ErrUnauthorized` diz que o servidor recusou as credenciais (o token venceu): quem chamou o renova e tenta de novo.
+
+O caso de uso **`Sync`** liga o servidor ao cache: `Run` traz as pastas e as **50 mensagens mais novas** de cada (o resto fica no servidor), e uma pasta
+que falha **não para as outras** (o erro vai no resultado). `Open` abre uma mensagem **do cache** e só vai ao servidor se o corpo ainda não veio (e
+guarda, para abrir offline da próxima vez); uma nova sincronização **não apaga o corpo** de uma mensagem já lida. `MarkRead` muda o cache primeiro (a tela
+responde na hora) e depois o servidor, e `Delete` apaga do servidor **antes** do cache: se o servidor recusar, a mensagem continua na tela.
+
+O **`graph`** implementa a porta para o Outlook.com e o Microsoft 365 por **HTTP e JSON** (sem o SDK da Microsoft). As pastas ganham o papel pelas
+pastas conhecidas (`inbox`, `sentitems`...); as mensagens recentes vêm com a prévia, e a mensagem inteira vem como **MIME**, lida pelo mesmo
+`mime.Parse`; o envio manda o MIME em base64. O token vem de uma função (o contexto de contas o renova), um **401 vira `ErrUnauthorized`**, um link
+`nextLink` para outro endereço **não é seguido** (o token nunca vai para outro lugar), uma mensagem com mais de 10 MB não é aberta no leitor, e os erros
+mostram o código e a mensagem do Graph, **nunca o token**. Testado contra um servidor HTTP de mentira; **ainda não contra o serviço de verdade**, e o
+envio com **Cco** parte de uma suposição (o Graph lê os destinatários do cabeçalho do MIME) que precisa ser conferida.
+
 ## O código
 
 | Camada | Pacote | Guarda |
 |---|---|---|
-| domain | `internal/mail/domain` | `Message`, `Folder`, `Draft`, `Address`, `Reply`, `Forward`, `Quote`, a porta `MessageStore` e `Query` |
+| domain | `internal/mail/domain` | `Message`, `Folder`, `Draft`, `Address`, `Reply`, `Forward`, `Quote`, as portas `MessageStore` e `Backend`, `Query` |
+| application | `internal/mail/application` | `Sync`: `Run`, `Open`, `MarkRead`, `Delete` |
 | infrastructure | `internal/mail/infrastructure/mime` | `Parse`, `Compose`, a conversão de HTML em texto |
 | | `internal/mail/infrastructure/sqlstore` | o `MessageStore` no SQLite: páginas, busca, pastas, marcas |
+| | `internal/mail/infrastructure/graph` | o `Backend` do Outlook.com e do Microsoft 365 (Microsoft Graph) |
 
 Como os outros contextos, o `mail` não conhece a plataforma nem o toolkit: o teste de arquitetura (capítulo 14) confere.

@@ -47,12 +47,32 @@ database (chapter 22), with its own migrations (module `mail`) and its tables re
   folder that went away takes its messages with it.
 - **Flags** (`SetFlags`: read, flagged...) and `Delete`. A damaged row is **reported**, not hidden.
 
+## Synchronization and the server (Microsoft Graph)
+
+The `Backend` port is the mail server of **one account**: list the folders and the recent messages, fetch a whole message, send, mark as read and
+delete. `ErrUnauthorized` says the server refused the credentials (the token expired): the caller renews it and tries again.
+
+The **`Sync`** use case connects the server to the cache: `Run` brings the folders and the **50 newest messages** of each (the rest stays on the
+server), and a folder that fails **does not stop the others** (the error goes in the result). `Open` opens a message **from the cache** and only goes to
+the server if the body has not come yet (and keeps it, to open offline next time); a new synchronization **does not erase the body** of a message already
+read. `MarkRead` changes the cache first (the screen answers at once) and then the server, and `Delete` deletes from the server **before** the cache: if the
+server refuses, the message stays on the screen.
+
+**`graph`** implements the port for Outlook.com and Microsoft 365 over **HTTP and JSON** (without Microsoft's SDK). Folders get their role from the
+well-known folders (`inbox`, `sentitems`...); recent messages come with the preview, and the whole message comes as **MIME**, read by the same
+`mime.Parse`; sending posts the MIME in base64. The token comes from a function (the Accounts context renews it), a **401 becomes `ErrUnauthorized`**,
+a `nextLink` to another address is **not followed** (the token never goes elsewhere), a message over 10 MB is not opened on the reader, and errors show
+Graph's code and message, **never the token**. Tested against a fake HTTP server; **not yet against the real service**, and sending with **Bcc** rests on
+an assumption (Graph reads the recipients from the MIME header) that still has to be checked.
+
 ## The code
 
 | Layer | Package | Holds |
 |---|---|---|
-| domain | `internal/mail/domain` | `Message`, `Folder`, `Draft`, `Address`, `Reply`, `Forward`, `Quote`, the `MessageStore` port and `Query` |
+| domain | `internal/mail/domain` | `Message`, `Folder`, `Draft`, `Address`, `Reply`, `Forward`, `Quote`, the `MessageStore` and `Backend` ports, `Query` |
+| application | `internal/mail/application` | `Sync`: `Run`, `Open`, `MarkRead`, `Delete` |
 | infrastructure | `internal/mail/infrastructure/mime` | `Parse`, `Compose`, the HTML to text conversion |
 | | `internal/mail/infrastructure/sqlstore` | the `MessageStore` on SQLite: pages, search, folders, flags |
+| | `internal/mail/infrastructure/graph` | the `Backend` for Outlook.com and Microsoft 365 (Microsoft Graph) |
 
 Like the other contexts, `mail` knows neither the platform nor the toolkit: the architecture test (chapter 14) checks it.

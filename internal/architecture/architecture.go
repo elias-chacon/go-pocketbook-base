@@ -46,9 +46,12 @@
 //	              It depends on nothing but the kernel.
 //	mail          the e-mail of the future mail app: messages, folders, drafts, the rules
 //	              of replying and forwarding, and the MIME reader and writer. Layers:
-//	                domain          Message, Folder, Draft, Address, Reply, Forward
-//	                infrastructure  mime (RFC 5322 and MIME on the wire) and sqlstore (the
-//	                                messages in the shared database)
+//	                domain          Message, Folder, Draft, Address, Reply, Forward, the
+//	                                MessageStore and Backend ports
+//	                application     Sync: bring the cache up to date, open, mark, delete
+//	                infrastructure  mime (RFC 5322 and MIME on the wire), sqlstore (the
+//	                                messages in the shared database) and graph (Outlook.com
+//	                                and Microsoft 365 over Microsoft Graph)
 //	              It depends on the kernel and, for the store, on storage.
 //	calendar      the events of the future calendar app: events, recurrence, reminders,
 //	              the occurrences of a range, and the iCalendar (.ics) reader and writer.
@@ -134,6 +137,7 @@ const (
 	tasksInfra        = tasksDir + infrastructureLayer
 	mailDir           = "internal/mail"
 	mailDomain        = mailDir + domainLayer
+	mailApp           = mailDir + applicationLayer
 	mailInfra         = mailDir + infrastructureLayer
 	accountsDomain    = accountsDir + domainLayer
 	accountsApp       = accountsDir + applicationLayer
@@ -177,6 +181,7 @@ var Rules = []Rule{
 	{accountsInfra, []string{kernelDir, accountsDomain, accountsInfra}},
 	// The Mail: its own vocabulary only.
 	{mailDomain, []string{kernelDir, mailDomain}},
+	{mailApp, []string{kernelDir, mailDomain, mailApp}},
 	{mailInfra, []string{kernelDir, mailDomain, mailInfra, storageDir}}, // sqlstore keeps the messages in the shared database
 	// The Calendar: its own vocabulary only.
 	{calendarDomain, []string{kernelDir, calendarDomain}},
