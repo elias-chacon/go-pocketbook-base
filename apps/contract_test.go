@@ -132,3 +132,22 @@ func TestEveryAppFollowsTheHelloBlueprint(t *testing.T) {
 		})
 	}
 }
+
+// The home screen only accepts an app in a group its view.json already has: an unknown
+// group makes the icon registration fail and the Launcher never lists the app (this
+// happened with "@Productivity"). @General is the one every firmware has.
+func TestEveryAppIsInAGroupTheHomeScreenHas(t *testing.T) {
+	for _, dir := range appDirs(t) {
+		data, err := os.ReadFile(filepath.Join(dir, "app.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		m, err := domain.ParseManifest(data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if m.Group != "@General" {
+			t.Errorf("apps/%s is in the group %q: use @General, the home screen has no other group we can count on", dir, m.Group)
+		}
+	}
+}
