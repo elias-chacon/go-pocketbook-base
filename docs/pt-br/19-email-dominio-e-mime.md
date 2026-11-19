@@ -85,7 +85,7 @@ contagens, uma página de uma pasta, busca). A tela (`presentation`, só widgets
 **Sincronizar**, a busca, **7 mensagens por página** (remetente, data, assunto e prévia; não lidas em negrito) e as teclas de página. Tocar numa mensagem a abre
 **página a página** (`TextPager`) e a marca como lida; há **Marcar não lida** e **Apagar** (servidor primeiro: se ele recusar, a mensagem continua aberta).
 Tudo é lido do cache, então funciona offline; **Sincronizar** traz as 50 mais novas de cada pasta. A conta precisa ser de **senha de app** por enquanto (o
-OAuth2 vem com o login por código). **Nova**, **Responder**, **Responder a todos** e **Encaminhar** abrem um formulário (Para, Cc, Assunto e o texto, já com a citação) e **Enviar** passa pelo servidor da conta: um endereço ruim ou um envio recusado mantém o formulário aberto com o motivo. O Cco ainda não está no formulário. Uma mensagem pode ser **sinalizada** para acompanhamento (**Sinalizar** na leitura: primeiro o cache, depois o servidor; as sinalizadas mostram um `!`). Falta (T62): abrir anexos e rascunhos. **Ainda não testado no aparelho.**
+OAuth2 vem com o login por código). **Nova**, **Responder**, **Responder a todos** e **Encaminhar** abrem um formulário (Para, Cc, Assunto e o texto, já com a citação) e **Enviar** passa pelo servidor da conta: um endereço ruim ou um envio recusado mantém o formulário aberto com o motivo. O formulário tem **Cco** também. Uma mensagem pode ser **sinalizada** para acompanhamento (**Sinalizar** na leitura: primeiro o cache, depois o servidor; as sinalizadas mostram um `!`). Falta (T62): abrir anexos e rascunhos. **Ainda não testado no aparelho.**
 
 ## O código
 

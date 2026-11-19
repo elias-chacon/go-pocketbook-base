@@ -50,5 +50,6 @@
   "mail.wrote": "On %s, %s wrote:",
   "mail.forwarded": "---------- Forwarded message ----------\nFrom: %s\nDate: %s\nSubject: %s",
   "mail.flag": "Flag",
-  "mail.unflag": "Unflag"
+  "mail.unflag": "Unflag",
+  "mail.bcc": "Bcc"
 }

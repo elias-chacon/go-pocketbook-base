@@ -506,3 +506,22 @@ func TestTheFlagButtonTogglesAndShowsTheMark(t *testing.T) {
 	var none Screen
 	none.ToggleFlag()
 }
+
+func TestBccIsSentAndABadOneStopsTheSend(t *testing.T) {
+	b := newBox(3)
+	s := newScreen(b)
+	s.NewMessage()
+	byID(t, s, "mail-to").(*widget.Input).Value = "bia@example.org"
+	byID(t, s, "mail-bcc").(*widget.Input).Value = "cris@example.org, dani@example.org"
+	s.SendDraft()
+	if len(b.sent) != 1 || len(b.sent[0].Bcc) != 2 {
+		t.Fatalf("sent = %+v", b.sent)
+	}
+	s.NewMessage()
+	byID(t, s, "mail-to").(*widget.Input).Value = "bia@example.org"
+	byID(t, s, "mail-bcc").(*widget.Input).Value = "lixo"
+	s.SendDraft()
+	if len(b.sent) != 1 || !s.Composing() {
+		t.Error("a bad Bcc was sent")
+	}
+}

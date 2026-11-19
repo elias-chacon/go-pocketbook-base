@@ -16,10 +16,11 @@ const composeRows = 14
 
 // composer is the "new message" form.
 type composer struct {
-	draft           domain.Draft
-	to, cc, subject *widget.Input
-	body            *widget.TextArea
-	note            *widget.Label
+	draft       domain.Draft
+	to, cc, bcc *widget.Input
+	subject     *widget.Input
+	body        *widget.TextArea
+	note        *widget.Label
 }
 
 // Composing reports whether the new message form is showing.
@@ -77,6 +78,7 @@ func (s *Screen) Compose(d domain.Draft) {
 	s.form = f
 	f.to = s.field("mail-to", s.t("mail.to"), joinAddresses(d.To))
 	f.cc = s.field("mail-cc", s.t("mail.cc"), joinAddresses(d.Cc))
+	f.bcc = s.field("mail-bcc", s.t("mail.bcc"), joinAddresses(d.Bcc))
 	f.subject = s.field("mail-subject", s.t("mail.subject"), d.Subject)
 	f.body = widget.NewTextArea(s.t("mail.body"), composeRows)
 	f.body.ID, f.body.Value = "mail-body-text", d.Body
@@ -97,7 +99,7 @@ func (s *Screen) Compose(d domain.Draft) {
 	bar.Style.AlignItems = widget.AlignCenter
 	paper(bar)
 
-	form := widget.NewColumn(16, f.to, f.cc, f.subject, f.body, f.note)
+	form := widget.NewColumn(16, f.to, f.cc, f.bcc, f.subject, f.body, f.note)
 	form.Style.Padding = geom.XY(28, 28)
 	form.Style.FlexGrow = 1
 	s.root = widget.NewColumn(0, bar, form)
@@ -121,8 +123,14 @@ func (s *Screen) SendDraft() {
 	}
 	d := f.draft
 	var err error
-	if d.To, err = domain.ParseAddressList(f.to.Value); err == nil {
-		d.Cc, err = domain.ParseAddressList(f.cc.Value)
+	lists := []struct {
+		field *widget.Input
+		into  *[]domain.Address
+	}{{f.to, &d.To}, {f.cc, &d.Cc}, {f.bcc, &d.Bcc}}
+	for _, l := range lists {
+		if *l.into, err = domain.ParseAddressList(l.field.Value); err != nil {
+			break
+		}
 	}
 	if err != nil {
 		f.note.Text = s.t("mail.badaddress", err.Error())

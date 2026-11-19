@@ -86,7 +86,7 @@ cache (folders with counts, a page of a folder, search). The screen (`presentati
 **Folders** menu, **Sync**, a search field, **7 messages a page** (sender, date, subject and preview; unread in bold) and the page keys. Tapping a message opens
 it **page by page** (`TextPager`) and marks it read; there are **Mark unread** and **Delete** (server first: if it refuses, the message stays open).
 Everything is read from the cache, so it works offline; **Sync** brings the 50 newest of each folder. The account must use an **app password** for now
-(OAuth2 comes with the sign-in by code). **New**, **Reply**, **Reply all** and **Forward** open a form (To, Cc, Subject and the text, with the quote already in) and **Send** goes through the account's server: a bad address or a refused send keeps the form open with the reason. Bcc is not in the form yet. A message can be **flagged** for follow-up (**Flag** in the reader: the store first, then the server; flagged ones show a `!`). Still to do (T62): opening attachments and drafts. **Not yet tried on the device.**
+(OAuth2 comes with the sign-in by code). **New**, **Reply**, **Reply all** and **Forward** open a form (To, Cc, Subject and the text, with the quote already in) and **Send** goes through the account's server: a bad address or a refused send keeps the form open with the reason. The form has **Bcc** too. A message can be **flagged** for follow-up (**Flag** in the reader: the store first, then the server; flagged ones show a `!`). Still to do (T62): opening attachments and drafts. **Not yet tried on the device.**
 
 ## The code
 

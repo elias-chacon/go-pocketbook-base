@@ -10,7 +10,7 @@ está o código. Os detalhes técnicos ficam nos capítulos [17](17-decisoes-app
 
 | App | Pasta | Precisa de conta? | O que já faz | O que falta |
 |---|---|---|---|---|
-| **E-mail** | `apps/mail` | Sim (IMAP com **senha de app**) | pastas, lista, leitura, responder, encaminhar, nova mensagem, apagar, busca, sincronizar, ler offline | abrir anexos, rascunhos, Cco no formulário, Outlook.com (OAuth) |
+| **E-mail** | `apps/mail` | Sim (IMAP com **senha de app**) | pastas, lista, leitura, responder, encaminhar, nova mensagem, apagar, busca, sincronizar, ler offline | abrir anexos, rascunhos, Outlook.com (OAuth) |
 | **Tarefas** | `apps/tasks` | Não (ficam no leitor) | visões Meu dia, Importante, Planejado, Atrasadas e Todas; adicionar, concluir, editar, apagar; tarefas que se repetem | lembretes na tela, sincronização |
 | **Calendário** | `apps/calendar` | Não (ficam no leitor) | mês com pontos nos dias com eventos, agenda do dia, criar, editar e apagar eventos (dia inteiro ou com horário) | visões de dia e semana, tocar os lembretes, sincronização, importar `.ics` |
 
@@ -29,7 +29,7 @@ Depois de instalar pelo Launcher, o ícone aparece na tela inicial quando o cabo
 2. Toque em **Sincronizar** para trazer as **50 mensagens mais novas** de cada pasta. O resto fica no servidor.
 3. A lista mostra **7 mensagens por página** (remetente, data, assunto e prévia; não lidas em negrito). As teclas de página do leitor e as setas viram a página.
 4. Tocar numa mensagem a abre **página a página** e a marca como lida. Ali há **Responder**, **Responder a todos**, **Encaminhar**, **Sinalizar**, **Marcar não lida** e **Apagar**.
-5. **Nova** abre o formulário (Para, Cc, Assunto, texto). Um endereço inválido ou um envio recusado mantém o formulário aberto com o motivo.
+5. **Nova** abre o formulário (Para, Cc, Cco, Assunto, texto). Um endereço inválido ou um envio recusado mantém o formulário aberto com o motivo.
 
 Tudo é lido do **cache offline**: sem rede você continua lendo o que já veio. Apagar vai ao servidor primeiro (se ele recusar, a mensagem fica).
 
