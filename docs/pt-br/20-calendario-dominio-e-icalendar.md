@@ -2,9 +2,8 @@
 
 [← E-mail: domínio e MIME](19-email-dominio-e-mime.md) · [Índice](README.md)
 
-O contexto `internal/calendar` é a base do futuro app de calendário (`apps/calendar`, tarefas T66 a T70). Por enquanto tem o **domínio**
-(eventos, recorrência, lembretes) e a **leitura e escrita de arquivos `.ics`**, com importação e exportação. A sincronização (CalDAV, Google,
-Graph, EWS), o armazenamento (T54) e a tela vêm depois.
+O contexto `internal/calendar` é o app de calendário (`apps/calendar`, tarefas T66 a T70): o **domínio**, a leitura e escrita de `.ics`, o **cache de eventos** e as
+**telas**; a sincronização vem depois. Um guia rápido de uso está no [capítulo 23](23-apps-de-produtividade.md).
 
 ## O domínio
 

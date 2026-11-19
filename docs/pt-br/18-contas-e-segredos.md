@@ -4,7 +4,7 @@
 
 O contexto `internal/accounts` guarda as **contas** da pessoa (um endereço de e-mail e aquilo a que ele dá acesso) e os seus
 **segredos**, para os apps de e-mail, tarefas e calendário compartilharem: uma conta serve os três, e é cadastrada uma só vez.
-Ainda não há telas de cadastro: só o domínio, os casos de uso e o armazenamento (tarefas T52 e T57).
+O contexto tem o domínio, os casos de uso, o armazenamento e a **tela de login compartilhada** (abaixo). O login OAuth2 do Outlook.com ainda falta (T53).
 
 ## O domínio
 

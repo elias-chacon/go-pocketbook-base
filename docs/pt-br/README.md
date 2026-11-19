@@ -42,6 +42,7 @@ Ele traz:
 | 20 | [Calendário: domínio e iCalendar](20-calendario-dominio-e-icalendar.md) | eventos, recorrência, lembretes, e a leitura e escrita de arquivos `.ics` |
 | 21 | [Tarefas: domínio](21-tarefas-dominio.md) | tarefas, passos, prazos, repetição e as visões inteligentes |
 | 22 | [Armazenamento local](22-armazenamento-local.md) | o banco SQLite compartilhado: migrações por módulo e apagar uma conta |
+| 23 | [Os apps de produtividade](23-apps-de-produtividade.md) | **comece por aqui para E-mail, Tarefas e Calendário**: o que cada um faz, como usar, o que falta |
 
 ## Uma olhada rápida
 
@@ -76,11 +77,22 @@ func Hello(onClose func()) widget.Widget {
 
 ```
 apps/hello             o app blueprint (raiz de composição): uma vitrine de componentes
+apps/launcher          o Launcher: a tela inicial dos apps
+apps/mail              o app de E-mail (IMAP; ler, responder, escrever)
+apps/tasks             o app de Tarefas (Meu dia, Importante, Planejado…)
+apps/calendar          o app de Calendário (mês, agenda do dia, eventos)
 internal/kernel        núcleo compartilhado: geom, version
 internal/toolkit       toolkit de UI: widget (componentes, layout, toque), gfx (desenho vetorial)
 internal/device        o leitor: inkview (binding cgo), desktop (registro na tela inicial)
 internal/localization  i18n: pt-BR primeiro, fallback em inglês
 internal/platform      o que é um app: domain · application · infrastructure (+ a fachada platform)
+internal/launcher      o Launcher: catálogo, instalação e execução de apps
+internal/installer     o instalador para pessoas (Windows, Linux, macOS)
+internal/accounts      contas, cofre criptografado e a tela de login compartilhada
+internal/storage       o banco SQLite compartilhado dos apps de produtividade
+internal/mail          e-mail: domínio, MIME, cache, IMAP/SMTP/Graph, telas
+internal/calendar      calendário: domínio, iCalendar, cache, telas
+internal/tasks         tarefas: domínio, cache, telas
 internal/showcase      o conteúdo do app hello
 internal/architecture  a regra de dependência, como código e como teste
 cmd/preview            gera as páginas da demo em PNG

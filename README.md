@@ -44,6 +44,18 @@ curl -fsSL https://github.com/elias-chacon/go-pocketbook-base/releases/latest/do
 
 Ou baixe o arquivo do seu sistema na página de [Releases](https://github.com/elias-chacon/go-pocketbook-base/releases/latest) e dê dois cliques.
 
+## Os apps
+
+| App | O que faz | Estado |
+|---|---|---|
+| **Launcher** (`apps/launcher`) | a tela inicial dos apps: grade, busca, instalar do catálogo online, configurações | testado no aparelho |
+| **Hello Go** (`apps/hello`) | vitrine de todos os componentes; é o blueprint de todo app | testado no aparelho |
+| **E-mail** (`apps/mail`) | pastas, leitura página a página, responder, encaminhar, escrever, apagar, busca, leitura offline (IMAP com senha de app) | compila e passa nos testes; **não testado no aparelho** |
+| **Tarefas** (`apps/tasks`) | Meu dia, Importante, Planejado, Atrasadas; adicionar, concluir, editar; sem conta | compila e passa nos testes; **não testado no aparelho** |
+| **Calendário** (`apps/calendar`) | mês com pontos nos dias com eventos, agenda do dia, criar e editar eventos; sem conta | compila e passa nos testes; **não testado no aparelho** |
+
+Guia de uso, o que falta e o que foi verificado: [capítulo 23](docs/pt-br/23-apps-de-produtividade.md). Todos estão na Release e aparecem no catálogo do Launcher.
+
 ## Documentação completa
 
 |                  |                                                                                                                                                                                                                                                                               |
@@ -257,6 +269,10 @@ internal/
     infrastructure             adaptadores: jsonfiles (arquivos JSON), reader (InkView, teclado, desktop)
     platform.go                fachada/raiz de composição: o único import de um app
   launcher/                  o App Launcher: domain (Tile, Grid), application (Home), infrastructure (processlauncher), presentation (telas)
+  installer/                 o instalador para pessoas (Windows, Linux, macOS)
+  accounts/                  contas, cofre AES-GCM e a tela de login compartilhada
+  storage/                   o banco SQLite compartilhado (migrações por módulo)
+  mail/ calendar/ tasks/     os contextos dos apps de produtividade: domain · application · infrastructure · presentation
   showcase/                  o conteúdo do app hello (vitrine de componentes)
   architecture/              o mapa e a regra de dependência, como código e teste
 examples/                    amostras testadas da documentação, por contexto:

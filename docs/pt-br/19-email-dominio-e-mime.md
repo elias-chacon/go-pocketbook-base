@@ -2,8 +2,8 @@
 
 [← Contas e segredos](18-contas-e-segredos.md) · [Índice](README.md)
 
-O contexto `internal/mail` é a base do futuro app de e-mail (`apps/mail`, tarefa T58). Por enquanto tem o **domínio** e o **leitor e
-escritor de MIME**; os protocolos (IMAP, SMTP, Graph, EWS), o cache offline (precisa do `store`, T54) e a tela vêm depois.
+O contexto `internal/mail` é o app de e-mail (`apps/mail`, tarefas T58 a T62): o **domínio**, o **leitor e escritor de MIME**, o **cache offline**, os
+servidores (**IMAP, SMTP, Graph**; o EWS vem depois) e as **telas**. Um guia rápido de uso está no [capítulo 23](23-apps-de-produtividade.md).
 
 ## O domínio
 

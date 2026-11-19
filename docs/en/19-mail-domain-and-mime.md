@@ -2,8 +2,8 @@
 
 [← Accounts and secrets](18-accounts-and-secrets.md) · [Index](README.md)
 
-The `internal/mail` context is the base of the future mail app (`apps/mail`, task T58). For now it has the **domain** and the **MIME
-reader and writer**; the protocols (IMAP, SMTP, Graph, EWS), the offline cache (it needs the `store`, T54) and the screen come later.
+The `internal/mail` context is the mail app (`apps/mail`, tasks T58 to T62): the **domain**, the **MIME reader and writer**, the **offline cache**, the
+servers (**IMAP, SMTP, Graph**; EWS comes later) and the **screens**. A quick user guide is in [chapter 23](23-productivity-apps.md).
 
 ## The domain
 

@@ -2,8 +2,8 @@
 
 [← Calendar: domain and iCalendar](20-calendar-domain-and-icalendar.md) · [Index](README.md)
 
-The `internal/tasks` context is the base of the future tasks app (`apps/tasks`, task T63). For now it has only the **domain**; the screen,
-storage (T54), synchronization (T64) and the e-mail integration (T65) come later.
+The `internal/tasks` context is the tasks app (`apps/tasks`, task T63): the **domain**, the **task cache** and the **screens**. Synchronization (T64)
+and the e-mail integration (T65) come later. A quick user guide is in [chapter 23](23-productivity-apps.md).
 
 ## The domain
 

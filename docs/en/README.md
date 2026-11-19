@@ -40,6 +40,7 @@
 | 20 | [Calendar: domain and iCalendar](20-calendar-domain-and-icalendar.md) | events, recurrence, reminders, and reading and writing `.ics` files |
 | 21 | [Tasks: domain](21-tasks-domain.md) | tasks, steps, due dates, repetition and the smart views |
 | 22 | [Local storage](22-local-storage.md) | the shared SQLite database: migrations per module and erasing an account |
+| 23 | [The productivity apps](23-productivity-apps.md) | **start here for Mail, Tasks and Calendar**: what each does, how to use it, what is missing |
 
 ## Quick look
 
@@ -74,11 +75,22 @@ func Hello(onClose func()) widget.Widget {
 
 ```
 apps/hello             the blueprint app (composition root): a component showcase
+apps/launcher          the Launcher: the home screen of the apps
+apps/mail              the Mail app (IMAP; read, reply, write)
+apps/tasks             the Tasks app (My Day, Important, Planned…)
+apps/calendar          the Calendar app (month, the day's agenda, events)
 internal/kernel        shared kernel: geom, version
 internal/toolkit       UI toolkit: widget (components, layout, touch), gfx (vector drawing)
 internal/device        the reader: inkview (cgo binding), desktop (home screen registration)
 internal/localization  i18n: pt-BR first, English fallback
 internal/platform      what an app is: domain · application · infrastructure (+ the platform facade)
+internal/launcher      the Launcher: catalog, installing and running apps
+internal/installer     the installer for people (Windows, Linux, macOS)
+internal/accounts      accounts, the encrypted vault and the shared sign-in screen
+internal/storage       the shared SQLite database of the productivity apps
+internal/mail          mail: domain, MIME, cache, IMAP/SMTP/Graph, screens
+internal/calendar      calendar: domain, iCalendar, cache, screens
+internal/tasks         tasks: domain, cache, screens
 internal/showcase      the content of the hello app
 internal/architecture  the dependency rule, as code and as a test
 cmd/preview            renders the demo pages to PNG

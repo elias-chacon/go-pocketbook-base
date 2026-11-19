@@ -2,9 +2,9 @@
 
 [← Mail: domain and MIME](19-mail-domain-and-mime.md) · [Index](README.md)
 
-The `internal/calendar` context is the base of the future calendar app (`apps/calendar`, tasks T66 to T70). For now it has the **domain**
-(events, recurrence, reminders) and **reading and writing `.ics` files**, with import and export. Synchronization (CalDAV, Google, Graph, EWS),
-storage (T54) and the screen come later.
+The `internal/calendar` context is the calendar app (`apps/calendar`, tasks T66 to T70): the **domain** (events, recurrence, reminders),
+**reading and writing `.ics` files**, the **event cache** and the **screens**. Synchronization (CalDAV, Google, Graph, EWS) comes later.
+A quick user guide is in [chapter 23](23-productivity-apps.md).
 
 ## The domain
 

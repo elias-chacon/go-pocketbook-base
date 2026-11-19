@@ -2,8 +2,8 @@
 
 [← Calendário: domínio e iCalendar](20-calendario-dominio-e-icalendar.md) · [Índice](README.md)
 
-O contexto `internal/tasks` é a base do futuro app de tarefas (`apps/tasks`, tarefa T63). Por enquanto só tem o **domínio**; a tela, o
-armazenamento (T54), a sincronização (T64) e a integração com o e-mail (T65) vêm depois.
+O contexto `internal/tasks` é o app de tarefas (`apps/tasks`, tarefa T63): o **domínio**, o **cache de tarefas** e as **telas**. A sincronização (T64) e a
+integração com o e-mail (T65) vêm depois. Um guia rápido de uso está no [capítulo 23](23-apps-de-produtividade.md).
 
 ## O domínio
 
