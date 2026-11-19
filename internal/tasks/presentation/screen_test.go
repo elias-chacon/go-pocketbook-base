@@ -382,3 +382,15 @@ func TestRepetitionNeedsADueDateAndClearingTheDateClearsIt(t *testing.T) {
 		t.Errorf("tasks = %d", len(st.tasks))
 	}
 }
+
+func TestTheAddButtonAddsWhatWasTyped(t *testing.T) {
+	s, st := newScreen()
+	byID(t, s, "task-add").(*widget.Input).Value = "Comprar leite"
+	tap(t, s, "task-add-btn")
+	if len(st.tasks) != 1 || st.tasks["t1"].Title != "Comprar leite" {
+		t.Fatalf("tasks = %+v", st.tasks)
+	}
+	if byID(t, s, "task-add").(*widget.Input).Value != "" {
+		t.Error("the field kept the text")
+	}
+}

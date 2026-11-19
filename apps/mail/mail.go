@@ -102,7 +102,7 @@ func (m *mail) start() {
 func (m *mail) signIn() {
 	m.screen = nil
 	accountsui.NewSignIn(accountsui.SignInConfig{
-		Width: m.env.Width, Height: m.env.Height, Doc: m.doc, Tr: accountsui.NewTranslator(m.env.Lang),
+		Width: m.env.Width, Height: m.env.Height, Doc: m.doc, Chrome: platform.Chrome(m.env), Tr: accountsui.NewTranslator(m.env.Lang),
 		Accounts: m.accounts, OnDone: m.open,
 	})
 	m.doc.ResetFrame()
@@ -125,7 +125,7 @@ func (m *mail) open(acc accounts.Account) {
 		Drafts: m.store,
 	}
 	m.screen = presentation.NewScreen(presentation.Config{
-		Width: m.env.Width, Height: m.env.Height, Doc: m.doc, Tr: presentation.NewTranslator(m.env.Lang),
+		Width: m.env.Width, Height: m.env.Height, Doc: m.doc, Chrome: platform.Chrome(m.env), Tr: presentation.NewTranslator(m.env.Lang),
 		Mailbox: box, Flush: m.env.Flush,
 	})
 }

@@ -60,7 +60,6 @@ func (s *Screen) Forward() {
 func (s *Screen) field(id, placeholder, value string) *widget.Input {
 	in := widget.NewInput(placeholder)
 	in.ID, in.Value = id, value
-	in.Style.FlexGrow = 1
 	return in
 }
 
@@ -107,7 +106,7 @@ func (s *Screen) Compose(d domain.Draft) {
 	form.Style.FlexGrow = 1
 	s.root = widget.NewColumn(0, bar, form)
 	s.root.Style.Background = widget.Paper
-	s.Doc.SetRoot(s.root)
+	s.Doc.SetRoot(s.cfg.Chrome.Wrap(s.Doc, s.root))
 	s.Doc.ResetFrame()
 	s.Doc.Invalidate()
 }
@@ -204,7 +203,7 @@ func (s *Screen) ShowDrafts() {
 	}
 	s.root = widget.NewColumn(0, bar, body)
 	s.root.Style.Background = widget.Paper
-	s.Doc.SetRoot(s.root)
+	s.Doc.SetRoot(s.cfg.Chrome.Wrap(s.Doc, s.root))
 	s.Doc.ResetFrame()
 	s.Doc.Invalidate()
 }

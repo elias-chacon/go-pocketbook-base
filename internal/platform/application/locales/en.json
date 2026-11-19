@@ -1,4 +1,7 @@
 {
   "install.registered": "Icon registered: it shows on the home screen after the reader reloads (e.g. when you unplug the USB cable).",
-  "install.failed": "Could not register the icon: %s"
+  "install.failed": "Could not register the icon: %s",
+  "chrome.about": "About",
+  "chrome.exit": "Exit",
+  "chrome.version": "Version %s"
 }

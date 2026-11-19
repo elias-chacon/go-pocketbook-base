@@ -56,7 +56,9 @@ type Config struct {
 	Width, Height int
 	// Doc is the document to draw on (a new one when nil): an app has one document for
 	// its whole life, so the screens it switches between share it.
-	Doc      *widget.Document
+	Doc *widget.Document
+	// Chrome is the standard top bar (the app name with About and Exit), above every screen.
+	Chrome   widget.AppChrome
 	Keyboard widget.Keyboard
 	Tr       *i18n.Bundle
 	Mailbox  Mailbox
@@ -242,7 +244,7 @@ func (s *Screen) showList() {
 
 	s.root = widget.NewColumn(0, head, bar, s.body, foot)
 	s.root.Style.Background = widget.Paper
-	s.Doc.SetRoot(s.root)
+	s.Doc.SetRoot(s.cfg.Chrome.Wrap(s.Doc, s.root))
 	s.reload()
 	s.Doc.ResetFrame()
 	s.Doc.Invalidate()
@@ -475,7 +477,7 @@ func (s *Screen) showMessage(m domain.Message) {
 	s.note.Style.Padding = geom.XY(8, 28)
 	s.root = widget.NewColumn(0, bar, answers, head, text, s.note)
 	s.root.Style.Background = widget.Paper
-	s.Doc.SetRoot(s.root)
+	s.Doc.SetRoot(s.cfg.Chrome.Wrap(s.Doc, s.root))
 	s.Doc.ResetFrame()
 	s.Doc.Invalidate()
 }

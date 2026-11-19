@@ -53,7 +53,9 @@ var _ Checklist = application.Checklist{}
 type Config struct {
 	Width, Height int
 	// Doc is the document to draw on (a new one when nil).
-	Doc       *widget.Document
+	Doc *widget.Document
+	// Chrome is the standard top bar (the app name with About and Exit), above every screen.
+	Chrome    widget.AppChrome
 	Keyboard  widget.Keyboard
 	Tr        *i18n.Bundle
 	Checklist Checklist
@@ -180,7 +182,10 @@ func (s *Screen) showList() {
 		s.add.Placeholder = s.t("tasks.list.name")
 	}
 	listsMenu := s.listsMenu()
-	addRow := widget.NewRow(12, s.add, listsMenu)
+	addBtn := widget.NewButton(s.t("tasks.addbtn"))
+	addBtn.ID = "task-add-btn"
+	addBtn.OnClick = func(*widget.Event) { s.Add(s.add.Value) }
+	addRow := widget.NewRow(12, s.add, addBtn, listsMenu)
 	addRow.Style.Padding = geom.XY(16, 28)
 
 	s.body = widget.NewColumn(8)
@@ -202,7 +207,7 @@ func (s *Screen) showList() {
 
 	root := widget.NewColumn(0, title, row, addRow, s.body, foot)
 	root.Style.Background = widget.Paper
-	s.Doc.SetRoot(root)
+	s.Doc.SetRoot(s.cfg.Chrome.Wrap(s.Doc, root))
 	s.reload()
 	s.Doc.ResetFrame()
 	s.Doc.Invalidate()

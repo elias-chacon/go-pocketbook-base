@@ -30,6 +30,7 @@ import (
 	"go-pocketbook-base/internal/platform/infrastructure/jsonfiles"
 	"go-pocketbook-base/internal/platform/infrastructure/process"
 	"go-pocketbook-base/internal/platform/infrastructure/reader"
+	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // What an app uses, under one name each.
@@ -209,3 +210,7 @@ func RegisterOnDrive(drive string, manifest []byte, icon domain.IconRenderer, ve
 type registrarFunc func(domain.Registration) (bool, error)
 
 func (f registrarFunc) Register(r domain.Registration) (bool, error) { return f(r) }
+
+// Chrome is the standard top bar every app puts above its screens: the app name with
+// About and Exit, in the language of the reader (see widget.AppChrome).
+func Chrome(env Env) widget.AppChrome { return application.Chrome(env) }

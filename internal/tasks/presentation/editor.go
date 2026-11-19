@@ -56,7 +56,6 @@ func (s *Screen) showEditor(t domain.Task) {
 
 	e.title = widget.NewInput(s.t("tasks.title.field"))
 	e.title.ID, e.title.Value = "edit-title", t.Title
-	e.title.Style.FlexGrow = 1
 	e.notes = widget.NewTextArea(s.t("tasks.notes"), notesRows)
 	e.notes.ID, e.notes.Value = "edit-notes", t.Notes
 	e.notes.Style.Width = widget.Pct(100)
@@ -93,7 +92,7 @@ func (s *Screen) showEditor(t domain.Task) {
 	form.Style.FlexGrow = 1
 	root := widget.NewColumn(0, bar, form)
 	root.Style.Background = widget.Paper
-	s.Doc.SetRoot(root)
+	s.Doc.SetRoot(s.cfg.Chrome.Wrap(s.Doc, root))
 	s.Doc.ResetFrame()
 	s.Doc.Invalidate()
 }
@@ -119,7 +118,6 @@ func (s *Screen) stepsPanel(e *editor) widget.Widget {
 	}
 	add := widget.NewInput(s.t("tasks.step.add"))
 	add.ID = "step-add"
-	add.Style.FlexGrow = 1
 	add.OnSubmit = func(*widget.Event) {
 		title := strings.TrimSpace(add.Value)
 		if title == "" {

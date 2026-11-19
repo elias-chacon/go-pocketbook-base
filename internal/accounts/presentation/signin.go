@@ -37,7 +37,9 @@ type SignInConfig struct {
 	Width, Height int
 	// Doc is the document to draw on (a new one when nil): an app has one document for
 	// its whole life, so the screens it switches between share it.
-	Doc      *widget.Document
+	Doc *widget.Document
+	// Chrome is the standard top bar (the app name with About and Exit), above every screen.
+	Chrome   widget.AppChrome
 	Keyboard widget.Keyboard
 	Tr       *i18n.Bundle
 	Accounts Registrar
@@ -76,7 +78,6 @@ func (s *SignIn) t(key string, args ...interface{}) string { return s.cfg.Tr.T(k
 func (s *SignIn) input(id, placeholder string, kind widget.InputType) *widget.Input {
 	in := widget.NewInput(placeholder)
 	in.ID, in.Type = id, kind
-	in.Style.FlexGrow = 1
 	in.OnChange = func(*widget.Event) { s.update() }
 	return in
 }
@@ -113,7 +114,7 @@ func (s *SignIn) build() {
 	form.Style.FlexGrow = 1
 	root := widget.NewColumn(0, title, form)
 	root.Style.Background = widget.Paper
-	s.Doc.SetRoot(root)
+	s.Doc.SetRoot(s.cfg.Chrome.Wrap(s.Doc, root))
 	s.update()
 }
 

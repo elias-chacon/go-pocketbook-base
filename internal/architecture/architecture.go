@@ -172,7 +172,7 @@ var Rules = []Rule{
 	{applicationDir, []string{kernelDir, localizationDir, toolkitDir, domainDir, applicationDir}},
 	{infrastructureDir, []string{kernelDir, localizationDir, toolkitDir, deviceDir, domainDir, applicationDir, infrastructureDir}},
 	// The package platform itself: the composition root of the context.
-	{platformDir, []string{kernelDir, localizationDir, platformDir}},
+	{platformDir, []string{kernelDir, localizationDir, toolkitDir, platformDir}},
 	{showcaseDir, []string{kernelDir, localizationDir, toolkitDir, showcaseDir}},
 	// The Launcher: its own vocabulary, and the platform's only through the domain.
 	{launcherDomain, []string{kernelDir, localizationDir, domainDir, launcherDomain}},

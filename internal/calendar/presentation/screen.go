@@ -47,7 +47,9 @@ var _ Agenda = application.Agenda{}
 type Config struct {
 	Width, Height int
 	// Doc is the document to draw on (a new one when nil).
-	Doc      *widget.Document
+	Doc *widget.Document
+	// Chrome is the standard top bar (the app name with About and Exit), above every screen.
+	Chrome   widget.AppChrome
 	Keyboard widget.Keyboard
 	Tr       *i18n.Bundle
 	Agenda   Agenda
@@ -187,7 +189,7 @@ func (s *Screen) showMonth() {
 
 	root := widget.NewColumn(0, head, calRow, s.heading, s.body, foot)
 	root.Style.Background = widget.Paper
-	s.Doc.SetRoot(root)
+	s.Doc.SetRoot(s.cfg.Chrome.Wrap(s.Doc, root))
 	s.loadMarks()
 	s.reload()
 	s.Doc.ResetFrame()

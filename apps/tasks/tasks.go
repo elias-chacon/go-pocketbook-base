@@ -56,7 +56,7 @@ func newTasksAt(env platform.Env, dir string) *tasks {
 		return a
 	}
 	a.screen = presentation.NewScreen(presentation.Config{
-		Width: env.Width, Height: env.Height, Doc: a.doc, Tr: tr, Checklist: list,
+		Width: env.Width, Height: env.Height, Doc: a.doc, Chrome: platform.Chrome(env), Tr: tr, Checklist: list,
 	})
 	return a
 }

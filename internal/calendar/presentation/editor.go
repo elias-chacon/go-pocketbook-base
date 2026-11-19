@@ -60,7 +60,6 @@ func (s *Screen) Edit(id string) {
 func (s *Screen) field(id, placeholder, value string) *widget.Input {
 	in := widget.NewInput(placeholder)
 	in.ID, in.Value = id, value
-	in.Style.FlexGrow = 1
 	return in
 }
 
@@ -114,7 +113,7 @@ func (s *Screen) openEditor(e *editor, in application.Entry) {
 	form.Style.FlexGrow = 1
 	root := widget.NewColumn(0, bar, form)
 	root.Style.Background = widget.Paper
-	s.Doc.SetRoot(root)
+	s.Doc.SetRoot(s.cfg.Chrome.Wrap(s.Doc, root))
 	s.Doc.ResetFrame()
 	s.Doc.Invalidate()
 }

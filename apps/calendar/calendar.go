@@ -72,7 +72,7 @@ func newCalendarAt(env platform.Env, dir, zone string) *calendar {
 		return a
 	}
 	a.screen = presentation.NewScreen(presentation.Config{
-		Width: env.Width, Height: env.Height, Doc: a.doc, Tr: tr, Agenda: agenda,
+		Width: env.Width, Height: env.Height, Doc: a.doc, Chrome: platform.Chrome(env), Tr: tr, Agenda: agenda,
 	})
 	return a
 }

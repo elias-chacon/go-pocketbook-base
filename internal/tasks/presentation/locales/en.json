@@ -38,5 +38,6 @@
   "tasks.repeat.weekly": "Every week",
   "tasks.repeat.monthly": "Every month",
   "tasks.repeat.yearly": "Every year",
-  "tasks.repeat.custom": "Custom"
+  "tasks.repeat.custom": "Custom",
+  "tasks.addbtn": "Add"
 }

@@ -135,3 +135,40 @@ func TestBackendForRefusesWhatItCannotDo(t *testing.T) {
 }
 
 func writeFile(path string) error { return os.WriteFile(path, []byte("x"), 0o644) }
+
+func TestEveryScreenHasTheStandardAboutAndExitMenu(t *testing.T) {
+	exited := false
+	env := testEnv(t)
+	env.Exit = func() { exited = true }
+	app := newMailAt(env, t.TempDir())
+	t.Cleanup(app.close)
+	app.Document().Layout()
+	var bar *widget.MenuBar
+	app.Document().Walk(func(w widget.Widget) bool {
+		if b, ok := w.(*widget.MenuBar); ok {
+			bar = b
+		}
+		return true
+	})
+	if bar == nil || bar.Menus[0].Label != "E-mail" {
+		t.Fatalf("no standard bar: %v", bar)
+	}
+	items := bar.Menus[0].Items
+	if len(items) != 3 || items[0].Label != "Sobre" || items[2].Label != "Sair" {
+		t.Fatalf("items = %+v", items)
+	}
+	items[0].OnSelect()
+	app.Document().Layout()
+	found := false
+	app.Document().Walk(func(w widget.Widget) bool {
+		found = found || w.Elem().ID == "modal-about"
+		return true
+	})
+	if !found {
+		t.Error("About did not open")
+	}
+	items[2].OnSelect()
+	if !exited {
+		t.Error("Exit did not leave the app")
+	}
+}
