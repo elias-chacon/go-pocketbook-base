@@ -257,3 +257,20 @@ func TestFlagsOf(t *testing.T) {
 		t.Errorf("flags = %b", f)
 	}
 }
+
+func TestSetFlaggedChangesTheFlag(t *testing.T) {
+	c := startServer(t)
+	if err := c.SetFlagged("INBOX", "6", true); err != nil {
+		t.Fatal(err)
+	}
+	m, _ := c.Fetch("INBOX", "6")
+	if !m.Has(domain.Flagged) {
+		t.Error("not flagged")
+	}
+	if err := c.SetFlagged("INBOX", "6", false); err != nil {
+		t.Fatal(err)
+	}
+	if m, _ = c.Fetch("INBOX", "6"); m.Has(domain.Flagged) {
+		t.Error("still flagged")
+	}
+}

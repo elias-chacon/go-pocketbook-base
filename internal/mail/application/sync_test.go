@@ -2,6 +2,7 @@ package application
 
 import (
 	"errors"
+	"strconv"
 	"testing"
 
 	"go-pocketbook-base/internal/mail/domain"
@@ -69,6 +70,7 @@ type fakeBackend struct {
 	sent      []domain.Draft
 	limits    []int
 	reads     []string
+	flags     []string
 	deleted   []string
 }
 
@@ -89,6 +91,10 @@ func (f *fakeBackend) Send(d domain.Draft) error {
 }
 func (f *fakeBackend) SetRead(folder, remote string, read bool) error {
 	f.reads = append(f.reads, folder+"/"+remote)
+	return f.readEr
+}
+func (f *fakeBackend) SetFlagged(folder, remote string, on bool) error {
+	f.flags = append(f.flags, folder+"/"+remote+"/"+strconv.FormatBool(on))
 	return f.readEr
 }
 func (f *fakeBackend) Delete(folder, remote string) error {
@@ -246,6 +252,28 @@ func TestDeleteRemovesFromTheServerBeforeTheStore(t *testing.T) {
 		t.Errorf("%v %v", err, be.deleted)
 	}
 	if err := s.Delete("ghost"); err != domain.ErrNotFound {
+		t.Errorf("%v", err)
+	}
+}
+
+func TestFlaggingChangesTheStoreFirstAndThenTheServer(t *testing.T) {
+	be, st := backend(), newMem()
+	s := Sync{AccountID: "ana", Backend: be, Store: st}
+	s.Run()
+	if err := s.SetFlagged("ana:inbox:1", true); err != nil {
+		t.Fatal(err)
+	}
+	if m, _ := st.Get("ana:inbox:1"); !m.Has(domain.Flagged) || len(be.flags) != 1 || be.flags[0] != "inbox/1/true" {
+		t.Errorf("%+v %v", m, be.flags)
+	}
+	be.readEr = errors.New("offline")
+	if err := s.SetFlagged("ana:inbox:1", false); err == nil {
+		t.Error("an unreachable server is reported")
+	}
+	if m, _ := st.Get("ana:inbox:1"); m.Has(domain.Flagged) {
+		t.Error("the screen must already show it unflagged")
+	}
+	if err := s.SetFlagged("ghost", true); err != domain.ErrNotFound {
 		t.Errorf("%v", err)
 	}
 }

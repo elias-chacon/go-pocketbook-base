@@ -22,6 +22,8 @@ type Backend interface {
 	Send(d Draft) error
 	// SetRead marks a message as read or unread on the server.
 	SetRead(folderID, remoteID string, read bool) error
+	// SetFlagged flags a message for follow-up (the star) or removes the flag.
+	SetFlagged(folderID, remoteID string, flagged bool) error
 	// Delete moves a message to the trash (or deletes it from the trash).
 	Delete(folderID, remoteID string) error
 }

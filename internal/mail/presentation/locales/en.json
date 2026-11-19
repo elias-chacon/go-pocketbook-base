@@ -48,5 +48,7 @@
   "mail.send.failed": "Could not send: %s",
   "mail.badaddress": "%s",
   "mail.wrote": "On %s, %s wrote:",
-  "mail.forwarded": "---------- Forwarded message ----------\nFrom: %s\nDate: %s\nSubject: %s"
+  "mail.forwarded": "---------- Forwarded message ----------\nFrom: %s\nDate: %s\nSubject: %s",
+  "mail.flag": "Flag",
+  "mail.unflag": "Unflag"
 }

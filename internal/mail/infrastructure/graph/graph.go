@@ -291,6 +291,17 @@ func (c Client) SetRead(_, remoteID string, read bool) error {
 	return err
 }
 
+// SetFlagged implements domain.Backend.
+func (c Client) SetFlagged(_, remoteID string, flagged bool) error {
+	status := "notFlagged"
+	if flagged {
+		status = "flagged"
+	}
+	body, _ := json.Marshal(map[string]map[string]string{"flag": {"flagStatus": status}})
+	_, err := c.do(http.MethodPatch, messagePath(remoteID), "application/json", body, maxJSON)
+	return err
+}
+
 // Delete implements domain.Backend: Graph moves the message to Deleted Items.
 func (c Client) Delete(_, remoteID string) error {
 	_, err := c.do(http.MethodDelete, messagePath(remoteID), "", nil, maxJSON)

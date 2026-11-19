@@ -119,6 +119,23 @@ func (s Sync) MarkRead(id string, read bool) error {
 	return s.Backend.SetRead(m.FolderID, m.RemoteID, read)
 }
 
+// SetFlagged flags a message for follow-up, or removes the flag, in the store and on
+// the server (the store first, as in MarkRead).
+func (s Sync) SetFlagged(id string, flagged bool) error {
+	m, err := s.Store.Get(id)
+	if err != nil {
+		return err
+	}
+	add, remove := domain.Flagged, domain.Flag(0)
+	if !flagged {
+		add, remove = 0, domain.Flagged
+	}
+	if err := s.Store.SetFlags(id, add, remove); err != nil {
+		return err
+	}
+	return s.Backend.SetFlagged(m.FolderID, m.RemoteID, flagged)
+}
+
 // Delete removes a message from the server and then from the store: if the
 // server refuses, the message is still on the screen.
 func (s Sync) Delete(id string) error {

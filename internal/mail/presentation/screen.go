@@ -44,6 +44,7 @@ type Mailbox interface {
 	Forward(id, header string) (domain.Draft, error)
 	Send(d domain.Draft) error
 	MarkRead(id string, read bool) error
+	SetFlagged(id string, flagged bool) error
 	Delete(id string) error
 }
 
@@ -65,7 +66,10 @@ type Config struct {
 }
 
 // keyOpenFailed is the text for a message that could not be read.
-const keyOpenFailed = "mail.open.failed"
+const (
+	keyOpenFailed = "mail.open.failed"
+	keyMarkFailed = "mail.mark.failed"
+)
 
 const (
 	rowsPerPage = 7
@@ -338,8 +342,12 @@ func (s *Screen) row(m domain.Message) widget.Widget {
 	from.Style.Bold, from.Style.FlexGrow = m.Unread(), 1
 	date := widget.NewLabel(shortDate(m.Date, s.cfg.Now(), s.t("yesterday")))
 	date.Style.FontSize, date.Style.Color = widget.FontSmall, widget.Muted
-	subject := widget.NewLabel(orElse(m.Subject, s.t("mail.nosubject")))
-	subject.Style.Bold = m.Unread()
+	name := orElse(m.Subject, s.t("mail.nosubject"))
+	if m.Has(domain.Flagged) {
+		name = "! " + name
+	}
+	subject := widget.NewLabel(name)
+	subject.Style.Bold = m.Unread() || m.Has(domain.Flagged)
 	preview := widget.NewLabel(m.Preview)
 	preview.Style.FontSize, preview.Style.Color = widget.FontSmall, widget.Muted
 	row := widget.NewColumn(2, widget.NewRow(8, from, date), subject, preview)
@@ -407,7 +415,7 @@ func (s *Screen) Open(id string) {
 	}
 	if m.Unread() {
 		if markErr := s.cfg.Mailbox.MarkRead(m.ID, true); markErr != nil {
-			s.say(s.t("mail.mark.failed", markErr.Error()))
+			s.say(s.t(keyMarkFailed, markErr.Error()))
 		}
 		m.Flags |= domain.Seen
 	}
@@ -427,7 +435,10 @@ func (s *Screen) showMessage(m domain.Message) {
 	del.OnClick = func(*widget.Event) { s.DeleteOpen() }
 	spacer := widget.NewLabel("")
 	spacer.Style.FlexGrow = 1
-	bar := widget.NewRow(12, back, spacer, unread, del)
+	flag := widget.NewButton(s.t(flagKey(m)))
+	flag.ID = "mail-flag"
+	flag.OnClick = func(*widget.Event) { s.ToggleFlag() }
+	bar := widget.NewRow(12, back, spacer, flag, unread, del)
 	bar.Style.Padding = geom.XY(28, 28)
 	paper(bar)
 	answers := s.answerBar()
@@ -480,6 +491,31 @@ func (s *Screen) answerBar() widget.Widget {
 	return bar
 }
 
+func flagKey(m domain.Message) string {
+	if m.Has(domain.Flagged) {
+		return "mail.unflag"
+	}
+	return "mail.flag"
+}
+
+// ToggleFlag flags the open message for follow-up, or removes the flag.
+func (s *Screen) ToggleFlag() {
+	if s.reading == nil {
+		return
+	}
+	m := *s.reading
+	on := !m.Has(domain.Flagged)
+	if err := s.cfg.Mailbox.SetFlagged(m.ID, on); err != nil {
+		s.say(s.t(keyMarkFailed, err.Error()))
+	}
+	if on {
+		m.Flags |= domain.Flagged
+	} else {
+		m.Flags &^= domain.Flagged
+	}
+	s.showMessage(m)
+}
+
 func (s *Screen) meta(key, value string) widget.Widget {
 	l := widget.NewLabel(s.t(key) + ": " + value)
 	l.Style.FontSize = widget.FontSmall
@@ -509,7 +545,7 @@ func (s *Screen) MarkUnread() {
 		return
 	}
 	if err := s.cfg.Mailbox.MarkRead(s.reading.ID, false); err != nil {
-		s.say(s.t("mail.mark.failed", err.Error()))
+		s.say(s.t(keyMarkFailed, err.Error()))
 	}
 	s.Close()
 }

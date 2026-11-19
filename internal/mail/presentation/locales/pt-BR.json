@@ -48,5 +48,7 @@
   "mail.send.failed": "Não foi possível enviar: %s",
   "mail.badaddress": "%s",
   "mail.wrote": "Em %s, %s escreveu:",
-  "mail.forwarded": "---------- Mensagem encaminhada ----------\nDe: %s\nData: %s\nAssunto: %s"
+  "mail.forwarded": "---------- Mensagem encaminhada ----------\nDe: %s\nData: %s\nAssunto: %s",
+  "mail.flag": "Sinalizar",
+  "mail.unflag": "Tirar sinal"
 }

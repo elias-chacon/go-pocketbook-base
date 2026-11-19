@@ -382,6 +382,15 @@ func (c *Client) SetRead(folderID, remoteID string, read bool) error {
 	return c.store(folderID, remoteID, op, imap.SeenFlag)
 }
 
+// SetFlagged flags a message for follow-up or removes the flag.
+func (c *Client) SetFlagged(folderID, remoteID string, flagged bool) error {
+	var op imap.FlagsOp = imap.RemoveFlags
+	if flagged {
+		op = imap.AddFlags
+	}
+	return c.store(folderID, remoteID, op, imap.FlaggedFlag)
+}
+
 func (c *Client) store(folderID, remoteID string, op imap.FlagsOp, flag string) error {
 	set, err := uidSet(remoteID)
 	if err != nil {

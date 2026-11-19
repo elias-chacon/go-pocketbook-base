@@ -315,3 +315,18 @@ func TestTheDefaultBaseIsGraph(t *testing.T) {
 		t.Error((Client{}).base())
 	}
 }
+
+func TestFlaggingSendsTheFlagStatus(t *testing.T) {
+	f, c := newFake(t)
+	f.handler["PATCH /me/messages/m1"] = func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, `{}`) }
+	if err := c.SetFlagged("AAA", "m1", true); err != nil {
+		t.Fatal(err)
+	}
+	if f.bodies[len(f.bodies)-1] != `{"flag":{"flagStatus":"flagged"}}` {
+		t.Errorf("%s", f.bodies[len(f.bodies)-1])
+	}
+	c.SetFlagged("AAA", "m1", false)
+	if f.bodies[len(f.bodies)-1] != `{"flag":{"flagStatus":"notFlagged"}}` {
+		t.Errorf("%s", f.bodies[len(f.bodies)-1])
+	}
+}

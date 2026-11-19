@@ -27,6 +27,7 @@ type fakeBox struct {
 	markErr, deleteErr     error
 	syncResult             application.Result
 	replyErr, sendErr      error
+	flagged                []bool
 	sent                   []domain.Draft
 }
 
@@ -364,6 +365,10 @@ func TestShortDate(t *testing.T) {
 	}
 }
 
+func (b *fakeBox) SetFlagged(id string, on bool) error {
+	b.flagged = append(b.flagged, on)
+	return b.markErr
+}
 func (b *fakeBox) New() domain.Draft {
 	return domain.Draft{From: domain.Address{Email: "eu@example.org"}}
 }
@@ -476,4 +481,28 @@ func TestTheComposeFormFitsAndEverythingIsReachable(t *testing.T) {
 		checkElement(t, s, "compose", w, h)
 		return true
 	})
+}
+
+func TestTheFlagButtonTogglesAndShowsTheMark(t *testing.T) {
+	b := newBox(3)
+	s := newScreen(b)
+	tap(t, s, "msg-m02")
+	tap(t, s, "mail-flag")
+	if len(b.flagged) != 1 || !b.flagged[0] || !s.Reading().Has(domain.Flagged) {
+		t.Fatalf("flagged = %v", b.flagged)
+	}
+	if got := byID(t, s, "mail-flag").(*widget.Button).Text; got != "Tirar sinal" {
+		t.Errorf("button = %q", got)
+	}
+	tap(t, s, "mail-flag")
+	if len(b.flagged) != 2 || b.flagged[1] || s.Reading().Has(domain.Flagged) {
+		t.Errorf("flagged = %v", b.flagged)
+	}
+	b.markErr = errors.New("offline")
+	tap(t, s, "mail-flag")
+	if !strings.Contains(s.cfg.Notice, "offline") {
+		t.Errorf("notice = %q", s.cfg.Notice)
+	}
+	var none Screen
+	none.ToggleFlag()
 }
