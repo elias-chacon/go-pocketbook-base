@@ -45,6 +45,12 @@ type Env struct {
 	// (a download) calls it first so the screen says why; normally the platform
 	// repaints by itself once the handler returns.
 	Flush func()
+	// Intent is the request this app was opened with by another app (nil when it
+	// was opened from the home screen or the Launcher). Read it when starting.
+	Intent *domain.Intent
+	// Send opens another app with an action and some data (see Intents); on the
+	// reader it does not return when it works, because the other app takes over.
+	Send func(appID, action string, data map[string]string) error
 	// HTTP is the client to use for the network: it works on the reader's Linux
 	// (no resolv.conf, no IPv6), which the standard one does not. Nil in tests.
 	HTTP *http.Client

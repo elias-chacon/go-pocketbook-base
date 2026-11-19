@@ -5,6 +5,18 @@
 Todo app deste projeto (o Launcher e seus plugins) vive em **uma pasta dentro de `./apps/`** e segue o mesmo contrato.
 O `apps/hello` é o blueprint: é um app de verdade, funcionando, e o modelo de todo app novo.
 
+## Abrir outro app: intents
+
+O leitor roda um app por vez, então os apps nunca conversam enquanto rodam. Um app que quer que outro faça algo chama
+`env.Send(appID, "tasks.create", dados)`: a plataforma troca o programa em execução por esse app (como o Launcher faz) e entrega uma
+**intent**. O outro app a encontra em `env.Intent` ao abrir (`Action`, `From` e um mapa `Data` pequeno: passe ids e deixe-o ler o resto
+do armazenamento compartilhado; a intent é limitada a 48 KB porque viaja no ambiente). Quando o app aberto pede para sair, o leitor
+**volta para o app que pediu** (e não para o Launcher), e a intent é removida do ambiente para que o app de volta não a tome por um pedido
+seu. O Home sempre sai.
+
+Um app declara as ações que trata no `app.json`, `"intents": ["tasks.create", "tasks.show"]`, cada uma no formato `app.acao`; o `Send`
+falha com `platform.ErrNoSuchApp` ou `platform.ErrNotHandled`, sem sair do app, quando o destino não está instalado ou não trata a ação.
+
 ## Uma pasta, um arquivo
 
 ```

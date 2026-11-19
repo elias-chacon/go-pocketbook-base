@@ -5,6 +5,18 @@
 Every app of this project (the Launcher and its plugins) lives in **one folder under `./apps/`** and follows the same
 contract. `apps/hello` is the blueprint: it is a real, working app and the template for every new one.
 
+## Opening another app: intents
+
+The reader runs one app at a time, so apps never talk to each other while running. An app that wants another to do something calls
+`env.Send(appID, "tasks.create", data)`: the platform replaces the running program with that app (as the Launcher does) and hands it an
+**intent**. The other app finds it in `env.Intent` when it starts (`Action`, `From` and a small `Data` map: pass ids and let it read
+the rest from the shared store; an intent is bounded to 48 KB because it travels in the environment). When the app that was opened asks
+to exit, the reader **goes back to the app that asked** (not to the Launcher), and the intent is removed from the environment so the app
+it returns to does not take it for a request of its own. Home always leaves.
+
+An app declares the actions it handles in `app.json`, `"intents": ["tasks.create", "tasks.show"]`, each named `app.verb`; `Send` fails
+with `platform.ErrNoSuchApp` or `platform.ErrNotHandled`, without leaving the app, when the target is not installed or does not handle it.
+
 ## One folder, one file
 
 ```

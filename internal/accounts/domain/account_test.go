@@ -9,28 +9,37 @@ import (
 func TestEveryPresetBuildsAValidAccountExceptTheCustomOne(t *testing.T) {
 	for _, p := range Presets() {
 		a := p.Account("Pessoal", "ana@example.org")
-		err := a.Validate()
 		if p.ID == Custom {
-			if err == nil || len(a.Services) != 0 {
-				t.Errorf("custom has no services yet: %v", err)
+			if a.Validate() == nil || len(a.Services) != 0 {
+				t.Errorf("custom has no services yet: %v", a.Validate())
 			}
 			continue
 		}
-		if err != nil {
+		if err := a.Validate(); err != nil {
 			t.Errorf("%s: %v", p.ID, err)
 		}
-		if a.Provider != p.ID || !a.Has(Mail) {
-			t.Errorf("%s serves mail: %+v", p.ID, a.Services)
-		}
-		if p.ID != "gmail" && (!a.Has(Calendar) || !a.Has(Tasks)) {
-			t.Errorf("%s serves calendar and tasks too: %+v", p.ID, a.Services)
-		}
-		if p.ID == "gmail" && (a.Has(Calendar) || a.Auth != Password) {
-			t.Errorf("gmail is mail by app password; its calendar is a secret iCal address: %+v", a)
-		}
+		checkServices(t, p, a)
 	}
 	if ps := Presets(); ps[len(ps)-1].ID != Custom {
 		t.Error("the custom preset is last")
+	}
+}
+
+// checkServices: every provider serves mail; all but Gmail serve calendar and
+// tasks too (Gmail is mail by app password: its calendar is a secret iCal address).
+func checkServices(t *testing.T, p Preset, a Account) {
+	t.Helper()
+	if a.Provider != p.ID || !a.Has(Mail) {
+		t.Errorf("%s serves mail: %+v", p.ID, a.Services)
+	}
+	if p.ID == "gmail" {
+		if a.Has(Calendar) || a.Auth != Password {
+			t.Errorf("gmail is mail by app password: %+v", a)
+		}
+		return
+	}
+	if !a.Has(Calendar) || !a.Has(Tasks) {
+		t.Errorf("%s serves calendar and tasks too: %+v", p.ID, a.Services)
 	}
 }
 

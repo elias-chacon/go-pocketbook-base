@@ -44,3 +44,16 @@ func TestExecReportsFailureInsteadOfPanicking(t *testing.T) {
 		t.Errorf("off Linux the error is ErrUnsupported: %v", err)
 	}
 }
+
+func TestWithoutEnvRemovesOnlyThatVariable(t *testing.T) {
+	t.Setenv("PBGO_TEST_GONE", "x")
+	t.Setenv("PBGO_TEST_STAYS", "y")
+	gone, stays := false, false
+	for _, kv := range WithoutEnv("PBGO_TEST_GONE") {
+		gone = gone || strings.HasPrefix(kv, "PBGO_TEST_GONE=")
+		stays = stays || kv == "PBGO_TEST_STAYS=y"
+	}
+	if gone || !stays {
+		t.Errorf("gone=%v stays=%v", gone, stays)
+	}
+}

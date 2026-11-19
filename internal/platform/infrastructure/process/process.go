@@ -12,6 +12,18 @@ import (
 // ErrUnsupported is returned where Exec cannot work (anything but Linux).
 var ErrUnsupported = errors.New("process: exec is only available on Linux (the reader)")
 
+// WithoutEnv returns the current environment without key.
+func WithoutEnv(key string) []string {
+	prefix := key + "="
+	var out []string
+	for _, kv := range os.Environ() {
+		if len(kv) < len(prefix) || kv[:len(prefix)] != prefix {
+			out = append(out, kv)
+		}
+	}
+	return out
+}
+
 // WithEnv returns the current environment plus key=value (replacing key).
 func WithEnv(key, value string) []string {
 	prefix := key + "="

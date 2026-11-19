@@ -38,6 +38,9 @@ type Manifest struct {
 	Description map[string]string `json:"description"`
 	// Group is the desktop group of the icon (default "@General").
 	Group string `json:"group,omitempty"`
+	// Intents are the actions this app handles when another app opens it (see
+	// Intent), each "<app>.<verb>".
+	Intents []string `json:"intents,omitempty"`
 }
 
 // ParseManifest decodes and validates an app.json.
@@ -64,6 +67,11 @@ func (m Manifest) Validate() error {
 	}{{"title", m.Title}, {"description", m.Description}} {
 		if strings.TrimSpace(field.m[i18n.Primary]) == "" {
 			problems = append(problems, fmt.Sprintf("%s needs a %s text (the primary language)", field.name, i18n.Primary))
+		}
+	}
+	for _, action := range m.Intents {
+		if !ValidAction(action) {
+			problems = append(problems, fmt.Sprintf("intent %q must look like app.verb", action))
 		}
 	}
 	if len(problems) > 0 {
@@ -111,6 +119,16 @@ func (m Manifest) TitleIn(lang string) string {
 
 // DescriptionIn is the description in lang.
 func (m Manifest) DescriptionIn(lang string) string { return pick(m.Description, lang) }
+
+// Handles reports whether the app declared that it handles an intent action.
+func (m Manifest) Handles(action string) bool {
+	for _, a := range m.Intents {
+		if a == action {
+			return true
+		}
+	}
+	return false
+}
 
 // DesktopGroup is Group, or DefaultGroup when empty.
 func (m Manifest) DesktopGroup() string {

@@ -43,6 +43,7 @@ type (
 	Manifest     = domain.Manifest
 	InstalledApp = domain.InstalledApp
 	Settings     = domain.Settings
+	Intent       = domain.Intent
 )
 
 // The keys an app may handle in its KeyHandler.
@@ -78,6 +79,12 @@ func verboseRequested(root string) bool {
 	_, err := os.Stat(filepath.Join(root, "applications", ".pbgo", "debug"))
 	return err == nil
 }
+
+// The errors of Env.Send.
+var (
+	ErrNoSuchApp  = domain.ErrNoSuchApp
+	ErrNotHandled = domain.ErrNotHandled
+)
 
 // ParseManifest decodes and validates an app.json.
 func ParseManifest(data []byte) (Manifest, error) { return domain.ParseManifest(data) }
@@ -122,32 +129,49 @@ func Run(cfg Config, factory Factory) error {
 		IconPath: reader.IconPath(root, m.ID), Icon: cfg.Icon,
 	})
 
+	intent, err := domain.DecodeIntent(os.Getenv(domain.IntentEnv))
+	if err != nil {
+		reader.Errorf("%v", err) // a broken intent is ignored: the app starts as if opened from the home screen
+		intent = nil
+	}
 	env := Env{
 		Manifest: m, Lang: lang, Version: version.Value, Notice: notice,
-		Settings: settings, Apps: apps, HTTP: reader.HTTPClient(httpTimeout),
+		Settings: settings, Apps: apps, HTTP: reader.HTTPClient(httpTimeout), Intent: intent,
+		Send: application.Intents{
+			Apps: apps, SelfID: m.ID, SelfExe: exe,
+			Exec: func(path, encoded string) error {
+				return process.Exec(path, process.WithEnv(domain.IntentEnv, encoded))
+			},
+		}.Send,
+	}
+	reply := ""
+	if intent != nil {
+		reply = intent.ReplyTo
 	}
 	screen := &reader.Screen{}
 	// InkView ends the process when the app closes, so going back to the Launcher
 	// has to happen as the app asks to exit, not after the event loop.
 	screen.BeforeClose = func() {
-		returnToLauncher(exe, true, os.Getenv(domain.LauncherEnv), process.Exec)
+		returnToLauncher(exe, true, os.Getenv(domain.LauncherEnv), reply, process.Exec)
 	}
 	err = reader.Run(application.NewRuntime(env, factory, screen))
 	reader.Logf("Run returned err=%v", err)
 	return err
 }
 
-// returnToLauncher starts the Launcher in place of this app when the Launcher
-// started it and the app asked to exit (see domain.ReturnTarget). A failure is
-// only logged: the app simply ends, as it would from the home screen.
-func returnToLauncher(self string, askedToExit bool, launcher string, exec func(path string, env []string) error) {
-	target := domain.ReturnTarget(launcher, self, askedToExit)
+// returnToLauncher goes back when the app asks to exit: to the app that opened it
+// with an intent (reply), or else to the Launcher when the Launcher started it (see
+// domain.ReplyTarget). The intent is taken out of the environment, so the app it
+// returns to does not take it for a request of its own. A failure is only logged:
+// the app simply ends, as it would from the home screen.
+func returnToLauncher(self string, askedToExit bool, launcher, reply string, exec func(path string, env []string) error) {
+	target := domain.ReplyTarget(reply, launcher, self, askedToExit)
 	if target == "" {
 		return
 	}
-	reader.Logf("returning to the launcher: %s", target)
-	if err := exec(target, os.Environ()); err != nil {
-		reader.Errorf("could not return to the launcher: %v", err)
+	reader.Logf("returning to: %s", target)
+	if err := exec(target, process.WithoutEnv(domain.IntentEnv)); err != nil {
+		reader.Errorf("could not go back: %v", err)
 	}
 }
 
