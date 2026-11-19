@@ -190,13 +190,13 @@ Critério de pronto de **cada app** (herdado das regras do projeto): segue o con
 
 *App de tarefas (`apps/tasks`, contexto `internal/tasks`)*
 
-- [ ] T63 Tasks: domínio (listas, tarefas, passos, prazo, prioridade, repetição, lembretes) e interface no estilo do Microsoft To Do / tarefas do Outlook (Meu Dia, Importante, Planejado, listas). **Feito o domínio** ([capítulo 21](docs/pt-br/21-tarefas-dominio.md)): visões, concluir com repetição (a próxima conta a partir de hoje se foi com atraso), passos e contagens, testado. **Falta:** a interface
+- [ ] T63 Tasks: domínio (listas, tarefas, passos, prazo, prioridade, repetição, lembretes) e interface no estilo do Microsoft To Do / tarefas do Outlook (Meu Dia, Importante, Planejado, listas). **Feito o domínio** ([capítulo 21](docs/pt-br/21-tarefas-dominio.md)): visões, concluir com repetição (a próxima conta a partir de hoje se foi com atraso), passos e contagens, testado. O cache de tarefas também está feito (`sqlstore`, testado com a conclusão de uma tarefa que se repete). **Falta:** a interface
 - [ ] T64 Tasks: sincronização com o **Microsoft To Do** (Graph), **CalDAV** (VTODO) e Google Tasks
 - [ ] T65 Tasks ↔ e-mail: criar tarefa a partir de um e-mail, e-mail sinalizado vira tarefa, abrir o e-mail de origem da tarefa (intents da T55)
 
 *App de calendário (`apps/calendar`, contexto `internal/calendar`)*
 
-- [x] T66 Calendar ([capítulo 20](docs/pt-br/20-calendario-dominio-e-icalendar.md)): domínio (eventos, recorrência RRULE que mantém a hora local no horário de verão, fusos IANA e nomes do Windows do Outlook, lembretes, participantes, alterações de uma só aparição) e **iCalendar** (leitura e escrita de `.ics`, com avisos em vez de perder eventos), com **importação e exportação**. Testado com arquivos no estilo do Outlook e do Google, e compilado no SDK Go 1.17/ARM. A tela fica para a T67
+- [x] T66 Calendar ([capítulo 20](docs/pt-br/20-calendario-dominio-e-icalendar.md)): domínio (eventos, recorrência RRULE que mantém a hora local no horário de verão, fusos IANA e nomes do Windows do Outlook, lembretes, participantes, alterações de uma só aparição) e **iCalendar** (leitura e escrita de `.ics`, com avisos em vez de perder eventos), com **importação e exportação**. Testado com arquivos no estilo do Outlook e do Google, e compilado no SDK Go 1.17/ARM. O cache de eventos também está feito (`sqlstore`: `Between` pronto para o `Expand`, com as alterações de uma só aparição). A tela fica para a T67
 - [ ] T67 Calendar: interface no estilo do **calendário do Outlook** (dia, semana de trabalho, semana, mês, agenda, vários calendários, criar/editar/excluir, recorrência, lembretes, fuso horário)
 - [ ] T68 Calendar: sincronização por **CalDAV/WebDAV** (iCloud, Nextcloud, Fastmail…), **Google Calendar** e **Microsoft Graph** (OAuth2), e **Exchange local** (EWS)
 - [ ] T69 Calendar ↔ e-mail: convites e respostas (iTIP/iMIP: aceitar, recusar, talvez), criar evento a partir de um e-mail, e abrir o e-mail de um convite

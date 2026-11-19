@@ -44,11 +44,20 @@ escapes) is `go-ical`'s; the meaning is here.
   `VTIMEZONE`**: the IANA name is enough for the calendars that matter, and one that does not know it shows the event in UTC. With no events there is
   no file (`ErrNothingToWrite`), because an empty iCalendar is not valid.
 
+## The event cache (SQLite)
+
+The `EventStore` port is where the screen reads from; `sqlstore` implements it in the shared database (chapter 22). **`Between(from, to)`** returns the
+events that **can** have an occurrence in the range, ready for `Expand`: the single ones that overlap it, the repeating ones that started before its
+end, and the **changes to a single occurrence** (including ones that moved out of the range to another day, and ones that came in from outside,
+because the original has to be replaced). Saving again replaces (same calendar, `UID` and `RecurrenceID`); deleting a repeating event takes its changes
+with it; a calendar that went away on the server takes its events; and removing the account clears everything.
+
 ## The code
 
 | Layer | Package | Holds |
 |---|---|---|
 | domain | `internal/calendar/domain` | `Event`, `Occurrence`, `Calendar`, `Occurrences`, `Expand`, the validation rules |
 | infrastructure | `internal/calendar/infrastructure/icalendar` | `Parse`, `Write`, the zone table |
+| | `internal/calendar/infrastructure/sqlstore` | the `EventStore` on SQLite: `Between`, calendars |
 
 The domain uses `rrule-go` (a small library with no dependencies, like the standard library) and knows neither the platform nor the toolkit; the architecture test (chapter 14) checks the rest.

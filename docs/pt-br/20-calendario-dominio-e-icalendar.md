@@ -45,11 +45,20 @@ dobradas, escapes) é do `go-ical`; o significado é daqui.
   nome IANA basta para os calendários que importam, e quem não o conhece mostra o evento em UTC. Sem eventos não há arquivo (`ErrNothingToWrite`),
   porque um iCalendar vazio não é válido.
 
+## O cache de eventos (SQLite)
+
+A porta `EventStore` é de onde a tela lê; o `sqlstore` a implementa no banco compartilhado (capítulo 22). **`Between(de, até)`** devolve os eventos
+que **podem** ter uma aparição no intervalo, já prontos para o `Expand`: os simples que se sobrepõem, os que se repetem e começaram antes do fim
+do intervalo, e as **alterações de uma só aparição** (inclusive as que saíram do intervalo para outro dia, e as que vieram de fora, porque a
+original precisa ser substituída). Salvar de novo substitui (mesmo calendário, `UID` e `RecurrenceID`); apagar um evento que se repete leva as
+alterações dele; um calendário que sumiu do servidor leva os seus eventos; e remover a conta apaga tudo.
+
 ## O código
 
 | Camada | Pacote | Guarda |
 |---|---|---|
 | domain | `internal/calendar/domain` | `Event`, `Occurrence`, `Calendar`, `Occurrences`, `Expand`, as regras de validação |
 | infrastructure | `internal/calendar/infrastructure/icalendar` | `Parse`, `Write`, a tabela de fusos |
+| | `internal/calendar/infrastructure/sqlstore` | o `EventStore` no SQLite: `Between`, calendários |
 
 O domínio usa o `rrule-go` (uma biblioteca pequena, sem dependências, como a biblioteca padrão) e não conhece a plataforma nem o toolkit; o teste de arquitetura (capítulo 14) confere o resto.

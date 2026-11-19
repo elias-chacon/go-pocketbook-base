@@ -24,10 +24,18 @@ ended (`COUNT`), there is no next one. A repeating task needs a due date to repe
 The **views** leave out completed tasks (except "All") and come in the order one expects: by due date in Planned and Overdue; in the others, the
 important ones first and then the newest. `Count` gives the numbers next to each view.
 
+## The task cache (SQLite)
+
+The `TaskStore` port is where the screen reads from; `sqlstore` implements it in the shared database (chapter 22). `Tasks` lists newest first, open ones
+by default (`IncludeDone` brings the completed ones), and **the views are applied by `Filter` over what it returns**: a person has hundreds of open
+tasks, not millions. Completing a repeating task saves the completed one and the next together (`Save(done, *next)`). A list that went away on the
+server takes its tasks, and removing the account clears everything.
+
 ## The code
 
 | Layer | Package | Holds |
 |---|---|---|
-| domain | `internal/tasks/domain` | `Task`, `List`, `Step`, `View`, `Complete`, `Filter`, `Count` |
+| domain | `internal/tasks/domain` | `Task`, `List`, `Step`, `View`, `Complete`, `Filter`, `Count`, the `TaskStore` port |
+| infrastructure | `internal/tasks/infrastructure/sqlstore` | the `TaskStore` on SQLite |
 
 The domain uses `rrule-go` for repetition and depends only on the shared kernel; the architecture test (chapter 14) checks it.

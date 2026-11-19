@@ -54,12 +54,14 @@
 //	              the occurrences of a range, and the iCalendar (.ics) reader and writer.
 //	              Layers:
 //	                domain          Event, Occurrence, Calendar, Occurrences, Expand
-//	                infrastructure  icalendar (RFC 5545 on the wire)
-//	              It depends on nothing but the kernel.
+//	                infrastructure  icalendar (RFC 5545 on the wire) and sqlstore (the
+//	                                events in the shared database)
+//	              It depends on the kernel and, for the store, on storage.
 //	tasks         the to-do list of the future tasks app: tasks, lists, steps, due dates,
 //	              repetition and the smart views (My Day, Important, Planned). Layer:
 //	                domain          Task, List, Step, View, Complete, Filter, Count
-//	              It depends on nothing but the kernel.
+//	                infrastructure  sqlstore (the tasks in the shared database)
+//	              It depends on the kernel and, for the store, on storage.
 //	storage       the shared local database (SQLite, pure Go) of the productivity apps:
 //	              open, migrate per module, erase an account. A single package, depending
 //	              on nothing but the kernel; each context keeps its own tables in it.
@@ -129,6 +131,7 @@ const (
 	tasksDir          = "internal/tasks"
 	storageDir        = "internal/storage"
 	tasksDomain       = tasksDir + domainLayer
+	tasksInfra        = tasksDir + infrastructureLayer
 	mailDir           = "internal/mail"
 	mailDomain        = mailDir + domainLayer
 	mailInfra         = mailDir + infrastructureLayer
@@ -177,9 +180,10 @@ var Rules = []Rule{
 	{mailInfra, []string{kernelDir, mailDomain, mailInfra, storageDir}}, // sqlstore keeps the messages in the shared database
 	// The Calendar: its own vocabulary only.
 	{calendarDomain, []string{kernelDir, calendarDomain}},
-	{calendarInfra, []string{kernelDir, calendarDomain, calendarInfra}},
+	{calendarInfra, []string{kernelDir, calendarDomain, calendarInfra, storageDir}}, // sqlstore keeps the events in the shared database
 	// The Tasks: its own vocabulary only.
 	{tasksDomain, []string{kernelDir, tasksDomain}},
+	{tasksInfra, []string{kernelDir, tasksDomain, tasksInfra, storageDir}}, // sqlstore keeps the tasks in the shared database
 	{storageDir, []string{kernelDir}},
 	{architectureDir, nil},
 	{examplesDir, []string{kernelDir, localizationDir, toolkitDir, showcaseDir, examplesDir}},

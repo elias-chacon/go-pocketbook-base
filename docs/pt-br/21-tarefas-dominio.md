@@ -24,10 +24,18 @@ atraso**, a próxima conta a partir de hoje (concluir uma tarefa semanal um mês
 As **visões** deixam de fora as tarefas concluídas (menos "Todas") e vêm na ordem que se espera: por prazo em Planejadas e Atrasadas; nas
 demais, as importantes primeiro e depois as mais novas. `Count` dá os números ao lado de cada visão.
 
+## O cache de tarefas (SQLite)
+
+A porta `TaskStore` é de onde a tela lê; o `sqlstore` a implementa no banco compartilhado (capítulo 22). `Tasks` lista da mais nova para a mais antiga,
+com as abertas por padrão (`IncludeDone` traz as concluídas), e **as visões são aplicadas por `Filter` sobre o que ele devolve**: uma pessoa tem
+centenas de tarefas abertas, não milhões. Concluir uma tarefa que se repete grava a concluída e a próxima juntas (`Save(done, *next)`). Uma lista que
+sumiu do servidor leva as suas tarefas, e remover a conta apaga tudo.
+
 ## O código
 
 | Camada | Pacote | Guarda |
 |---|---|---|
-| domain | `internal/tasks/domain` | `Task`, `List`, `Step`, `View`, `Complete`, `Filter`, `Count` |
+| domain | `internal/tasks/domain` | `Task`, `List`, `Step`, `View`, `Complete`, `Filter`, `Count`, a porta `TaskStore` |
+| infrastructure | `internal/tasks/infrastructure/sqlstore` | o `TaskStore` no SQLite |
 
 O domínio usa o `rrule-go` para a repetição e só depende do núcleo compartilhado; o teste de arquitetura (capítulo 14) confere.
