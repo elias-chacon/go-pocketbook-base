@@ -173,6 +173,8 @@ func TestTheRuleItself(t *testing.T) {
 		{"internal/tasks/domain", "internal/storage", false},
 		{"internal/mail/infrastructure/sqlstore", "internal/storage", true},
 		{"internal/mail/application", "internal/mail/domain", true},
+		{"internal/mail/infrastructure/imapmail", "internal/mail/infrastructure/mime", true},
+		{"internal/mail/application", "internal/mail/infrastructure/imapmail", false},
 		{"internal/mail/application", "internal/mail/infrastructure/graph", false},
 		{"internal/mail/application", "internal/storage", false},
 		{"internal/mail/infrastructure/graph", "internal/mail/infrastructure/mime", true},

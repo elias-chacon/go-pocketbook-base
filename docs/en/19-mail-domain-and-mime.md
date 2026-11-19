@@ -65,6 +65,19 @@ a `nextLink` to another address is **not followed** (the token never goes elsewh
 Graph's code and message, **never the token**. Tested against a fake HTTP server; **not yet against the real service**, and sending with **Bcc** rests on
 an assumption (Graph reads the recipients from the MIME header) that still has to be checked.
 
+## Any IMAP server (and SMTP)
+
+**`imapmail`** is the same `Backend` for Gmail, iCloud, Yahoo, Fastmail or a company server. It keeps **one connection** while the app talks to the
+server and drops it on the first network error (a server answer such as "no such folder" keeps it), so the next call starts clean. Signing in is a
+function: `Password` (LOGIN, an app password) or `SASL` with **XOAUTH2** (package `xoauth2`, the token comes from a function so it can be renewed). A
+refused sign-in becomes `ErrUnauthorized` and **never carries the password**. Folder roles come from the **special-use attributes** (`Sent`, `Trash`...)
+and, without them, from the usual names in Portuguese and English. `Recent` reads only the **headers** of the newest messages; `Fetch` reads the whole
+message (up to 10 MB); `Delete` copies to the Trash and expunges, or deletes for good when the message is already in the Trash.
+
+**`smtpsend`** sends over SMTP with `net/smtp` (STARTTLS on 587, TLS on 465), from the envelope (To, Cc and **Bcc**) and the bytes that `mime.Compose`
+made, so Bcc never goes in the header. `imapmail` composes the draft, hands it to the `Sender` and, with `SaveSent`, appends a copy to the Sent folder
+(Gmail and Outlook do that themselves). Tested against the in-memory IMAP server of go-imap and a tiny SMTP server; **not yet against a real provider**.
+
 ## The code
 
 | Layer | Package | Holds |
@@ -74,5 +87,8 @@ an assumption (Graph reads the recipients from the MIME header) that still has t
 | infrastructure | `internal/mail/infrastructure/mime` | `Parse`, `Compose`, the HTML to text conversion |
 | | `internal/mail/infrastructure/sqlstore` | the `MessageStore` on SQLite: pages, search, folders, flags |
 | | `internal/mail/infrastructure/graph` | the `Backend` for Outlook.com and Microsoft 365 (Microsoft Graph) |
+| | `internal/mail/infrastructure/imapmail` | the `Backend` for any IMAP server (password or XOAUTH2) |
+| | `internal/mail/infrastructure/smtpsend` | sending over SMTP (STARTTLS, TLS) |
+| | `internal/mail/infrastructure/xoauth2` | the XOAUTH2 sign-in for IMAP and SMTP |
 
 Like the other contexts, `mail` knows neither the platform nor the toolkit: the architecture test (chapter 14) checks it.

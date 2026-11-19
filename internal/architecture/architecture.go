@@ -50,8 +50,9 @@
 //	                                MessageStore and Backend ports
 //	                application     Sync: bring the cache up to date, open, mark, delete
 //	                infrastructure  mime (RFC 5322 and MIME on the wire), sqlstore (the
-//	                                messages in the shared database) and graph (Outlook.com
-//	                                and Microsoft 365 over Microsoft Graph)
+//	                                messages in the shared database), graph (Outlook.com
+//	                                and Microsoft 365 over Microsoft Graph), imapmail
+//	                                (any IMAP server), smtpsend (SMTP) and xoauth2
 //	              It depends on the kernel and, for the store, on storage.
 //	calendar      the events of the future calendar app: events, recurrence, reminders,
 //	              the occurrences of a range, and the iCalendar (.ics) reader and writer.
