@@ -8,6 +8,7 @@ require (
 	github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6
 	github.com/fogleman/gg v1.3.0
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/teambition/rrule-go v1.8.2
 	golang.org/x/image v0.5.0
 	modernc.org/sqlite v1.14.8

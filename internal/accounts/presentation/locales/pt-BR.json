@@ -56,5 +56,15 @@
   "acct.failed": "Não foi possível salvar: %s",
   "acct.testing": "Conectando…",
   "acct.test.ok": "Conectado: o servidor aceitou o login.",
-  "acct.test.failed": "Não foi possível conectar: %s"
+  "acct.test.failed": "Não foi possível conectar: %s",
+  "connect.title": "Conectar um serviço de tarefas",
+  "connect.choose": "Escolha o serviço para manter suas tarefas sincronizadas.",
+  "connect.microsoft": "Microsoft To Do (Outlook.com)",
+  "connect.google": "Google Tasks",
+  "connect.setup": "Este login precisa de um app registrado no provedor. Coloque o client id em %s (veja a documentação) e abra o app de novo.",
+  "connect.outlook.hint": "Você receberá um código para digitar em outro aparelho: nenhuma senha é digitada aqui.",
+  "connect.google.hint": "Você receberá um QR code para ler com o celular e entrará no Google por lá.",
+  "connect.google.steps": "1. Leia este código com a câmera do celular e entre no Google.\n2. A página vai falhar ao abrir (é esperado). Copie o código da barra de endereço, ou o endereço inteiro, e digite abaixo.",
+  "connect.google.code": "Código (ou o endereço inteiro)",
+  "connect.google.finish": "Concluir"
 }

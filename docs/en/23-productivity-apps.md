@@ -113,3 +113,27 @@ The calendar has an **Import** button (bottom right). Two sources:
 - **An .ics file** of the reader: the screen lists the ones found in the storage root and in `Download` (two levels deep).
 
 Importing again does not duplicate events (same UID replaces). This is a **one-way copy**, not a live sync: there is no two-way Google or Microsoft sync for the calendar or for Tasks yet (it needs the account's OAuth client id; see chapter 18).
+
+## Tasks synchronization (Microsoft To Do and Google Tasks)
+
+The Tasks app has a **Sync** menu in the title row: **Sync now**, **Connect an account** (or **Switch account**) and **Disconnect**.
+
+- **Microsoft To Do**: through Microsoft Graph, with the same sign-in by code as the mail. An Outlook account already added in the Mail app is used as it is, with no new sign-in.
+- **Google Tasks**: through the Google Tasks API. Google does not allow its Tasks scope on the device code flow, so the app uses the **authorization code with PKCE**: the screen shows a **QR code**, you read it with your phone and sign in to Google; the page that opens fails (nothing listens at `http://127.0.0.1`, that is expected) and its address has the code: copy the code, or the whole address, and type it on the reader.
+- **Needs a client id**, because the apps must be registered with each provider (see below).
+
+How it works: the reader stays what the screens read (it works offline). Lists and tasks of the service appear as lists with the service's own names; a list you create on the reader stays only on the reader. What you change offline is kept (an outbox in the database) and **sent first** on the next sync, so your change wins over the service's version of the same task; then the service's lists and tasks are brought, and what was deleted at the service is removed from the reader. A failed item stays to be sent again and does not stop the others; a list that could not be read is never emptied.
+
+What each service keeps: Microsoft To Do syncs title, notes, done, importance, due date and reminder; Google Tasks syncs title, notes, done and due date. **Steps, repetition, My Day and the e-mail a task came from stay only on the reader.** Reopening/completing and deleting are synchronized.
+
+### The client ids (`applications/.pbgo/oauth.json`)
+
+```json
+{"microsoft": "<client id>", "google": "<client id>", "google_secret": "<client secret>"}
+```
+
+- **Microsoft**: register an app in Entra ID (portal.azure.com → App registrations), *public client / allow public client flows*; permissions `Tasks.ReadWrite`, `Mail.ReadWrite`, `Mail.Send`, `Calendars.ReadWrite`, `offline_access`, `User.Read`.
+- **Google**: in a Google Cloud project, enable the **Google Tasks API**, create an **OAuth client of type Desktop app** and copy its id and secret (for a desktop app the secret is not confidential). While the app is in *Testing*, add your account as a test user; Google expires the refresh token of a testing app after 7 days, so publish it (even unverified, for yourself) to keep it signed in.
+- Without the file, the Connect screen says where to put it.
+
+Not done yet: two-way sync of the **calendar** with Google/Microsoft (today: import of .ics links, above).

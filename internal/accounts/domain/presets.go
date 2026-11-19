@@ -76,6 +76,16 @@ var presets = []Preset{
 			}
 		},
 	},
+	{
+		// Google Tasks and Calendar over OAuth2 (not the mail: that is the gmail preset, with an
+		// app password). It has no address domains: the person chooses it.
+		ID: "google", Label: "Google",
+		auth: OAuth2,
+		build: func() map[Service][]Endpoint {
+			g := []Endpoint{{Kind: Google}}
+			return map[Service][]Endpoint{Calendar: g, Tasks: g}
+		},
+	},
 	{ID: Custom, Label: "IMAP / SMTP / CalDAV / Exchange", auth: Password, build: func() map[Service][]Endpoint { return nil }},
 }
 

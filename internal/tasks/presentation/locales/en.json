@@ -39,5 +39,15 @@
   "tasks.repeat.monthly": "Every month",
   "tasks.repeat.yearly": "Every year",
   "tasks.repeat.custom": "Custom",
-  "tasks.addbtn": "Add"
+  "tasks.addbtn": "Add",
+  "tasks.sync": "Sync",
+  "tasks.sync.connect": "Connect an account",
+  "tasks.syncing": "Syncing…",
+  "tasks.synced": "Synced: %d sent, %d received, %d removed.",
+  "tasks.synced.partial": "Synced with %d problems (first: %s).",
+  "tasks.sync.failed": "Could not sync: %s",
+  "tasks.sync.account": "Account: %s",
+  "tasks.sync.disconnect": "Disconnect",
+  "tasks.sync.now": "Sync now",
+  "tasks.sync.switch": "Switch account"
 }

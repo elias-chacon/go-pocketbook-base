@@ -39,5 +39,15 @@
   "tasks.repeat.monthly": "Todo mês",
   "tasks.repeat.yearly": "Todo ano",
   "tasks.repeat.custom": "Personalizada",
-  "tasks.addbtn": "Adicionar"
+  "tasks.addbtn": "Adicionar",
+  "tasks.sync": "Sincronizar",
+  "tasks.sync.connect": "Conectar uma conta",
+  "tasks.syncing": "Sincronizando…",
+  "tasks.synced": "Sincronizado: %d enviadas, %d recebidas, %d removidas.",
+  "tasks.synced.partial": "Sincronizado com %d problemas (o primeiro: %s).",
+  "tasks.sync.failed": "Não foi possível sincronizar: %s",
+  "tasks.sync.account": "Conta: %s",
+  "tasks.sync.disconnect": "Desconectar",
+  "tasks.sync.now": "Sincronizar agora",
+  "tasks.sync.switch": "Trocar de conta"
 }

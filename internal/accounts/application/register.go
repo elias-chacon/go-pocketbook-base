@@ -28,6 +28,9 @@ type Registration struct {
 	Name     string // shown in the lists; the address when empty
 	Email    string
 	Password string // a password or an app password
+	// Provider is the preset to use instead of the one the address's domain tells (the
+	// work address of a Microsoft 365 account has no known domain; Google has none).
+	Provider string
 	// IMAPHost and SMTPHost are needed only for a provider that is not known.
 	IMAPHost, SMTPHost string
 }
@@ -121,6 +124,10 @@ func (u Accounts) RegisterOAuth(r Registration, secret domain.Secret) (domain.Ac
 		return domain.Account{}, ErrInvalidEmail
 	}
 	prov := ProviderOf(addr.Address)
+	if r.Provider != "" {
+		p, ok := domain.PresetByID(r.Provider)
+		prov = Provider{Preset: p, Known: ok}
+	}
 	if !prov.OAuth() {
 		return domain.Account{}, ErrNotOAuth
 	}
@@ -133,6 +140,12 @@ func (u Accounts) RegisterOAuth(r Registration, secret domain.Secret) (domain.Ac
 	}
 	acc := prov.Preset.Account(name, addr.Address)
 	acc.ID = domain.Slug(addr.Address, "mail")
+	if r.Provider != "" { // one account per provider and address: the mail account of the same address is another
+		if len(acc.ID) > maxSlugFromEmail-len(r.Provider)-1 {
+			acc.ID = acc.ID[:maxSlugFromEmail-len(r.Provider)-1]
+		}
+		acc.ID += "-" + r.Provider
+	}
 	if len(acc.ID) > maxSlugFromEmail {
 		acc.ID = acc.ID[:maxSlugFromEmail]
 	}

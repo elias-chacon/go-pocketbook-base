@@ -38,6 +38,7 @@ type EditorConfig struct {
 const (
 	signatureRows = 4
 	idEditNote    = "acct-note"
+	keyEditFailed = "acct.failed"
 )
 
 // endpointForm is the fields of one server.
@@ -248,12 +249,12 @@ func (e *Editor) Save() {
 		return
 	}
 	if err := e.cfg.Manager.Update(acc); err != nil {
-		e.say(e.t("acct.failed", err.Error()))
+		e.say(e.t(keyEditFailed, err.Error()))
 		return
 	}
 	if !e.oauth && e.password.Value != "" {
 		if err := e.cfg.Manager.Refresh(acc.ID, domain.Secret{Password: e.password.Value}); err != nil {
-			e.say(e.t("acct.failed", err.Error()))
+			e.say(e.t(keyEditFailed, err.Error()))
 			return
 		}
 		e.password.Value = "" // the password does not stay in the widget
@@ -288,7 +289,7 @@ func (e *Editor) Remove() {
 		return
 	}
 	if err := e.cfg.Manager.Remove(e.cfg.Account.ID); err != nil {
-		e.say(e.t("acct.failed", err.Error()))
+		e.say(e.t(keyEditFailed, err.Error()))
 		return
 	}
 	if e.cfg.OnRemoved != nil {

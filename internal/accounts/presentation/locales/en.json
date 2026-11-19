@@ -56,5 +56,15 @@
   "acct.failed": "Could not save: %s",
   "acct.testing": "Connecting…",
   "acct.test.ok": "Connected: the server accepted the login.",
-  "acct.test.failed": "Could not connect: %s"
+  "acct.test.failed": "Could not connect: %s",
+  "connect.title": "Connect a to-do service",
+  "connect.choose": "Choose the service to keep your tasks in sync with.",
+  "connect.microsoft": "Microsoft To Do (Outlook.com)",
+  "connect.google": "Google Tasks",
+  "connect.setup": "This sign-in needs an app registered at the provider. Put its client id in %s (see the documentation) and open the app again.",
+  "connect.outlook.hint": "You will get a code to type on another device: no password is typed here.",
+  "connect.google.hint": "You will get a QR code to read with your phone, and sign in to Google there.",
+  "connect.google.steps": "1. Read this code with your phone's camera and sign in to Google.\n2. The page will fail to open (that is expected). Copy the code from its address bar, or the whole address, and type it below.",
+  "connect.google.code": "Code (or the whole address)",
+  "connect.google.finish": "Finish"
 }

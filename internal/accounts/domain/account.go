@@ -295,6 +295,14 @@ var (
 	ErrCancelled = errors.New("accounts: the sign-in was cancelled")
 )
 
+// CodeAuthorizer is an Authorizer that signs in by authorization code instead of by device
+// code: Start gives the address to open (VerificationURI, shown as a QR code) and Exchange
+// trades the code the person typed for the tokens.
+type CodeAuthorizer interface {
+	Authorizer
+	Exchange(c Challenge, code string) (Secret, error)
+}
+
 // Authorizer is the port that signs in with OAuth2 by device code (RFC 8628) and
 // renews tokens.
 type Authorizer interface {

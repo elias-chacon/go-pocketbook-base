@@ -2,6 +2,10 @@ package main
 
 import (
 	"fmt"
+	accountsapp "go-pocketbook-base/internal/accounts/application"
+	"go-pocketbook-base/internal/accounts/infrastructure/jsonaccounts"
+	"go-pocketbook-base/internal/accounts/infrastructure/securefile"
+	"go-pocketbook-base/internal/localization/i18n"
 	"os"
 	"path/filepath"
 
@@ -22,9 +26,16 @@ func dataDir(root string) string { return filepath.Join(root, "applications", ".
 
 // tasks is the app: one document with the to-do screens.
 type tasks struct {
-	doc    *widget.Document
-	db     *storage.Store
-	screen *presentation.Screen
+	env      platform.Env
+	dir      string
+	doc      *widget.Document
+	db       *storage.Store
+	store    *sqlstore.Store
+	accounts accountsapp.Accounts
+	auth     authorizers
+	list     application.Checklist
+	tr       *i18n.Bundle
+	screen   *presentation.Screen
 }
 
 // newTasks is the platform.Factory.
@@ -32,7 +43,7 @@ func newTasks(env platform.Env) platform.App { return newTasksAt(env, dataDir(pl
 
 // newTasksAt builds the app over a data folder (the tests use a temporary one).
 func newTasksAt(env platform.Env, dir string) *tasks {
-	a := &tasks{doc: widget.NewDocument(env.Width, env.Height)}
+	a := &tasks{env: env, dir: dir, doc: widget.NewDocument(env.Width, env.Height)}
 	a.doc.Keyboard = env.Keyboard
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		a.fail(err)
@@ -49,16 +60,28 @@ func newTasksAt(env platform.Env, dir string) *tasks {
 		a.fail(err)
 		return a
 	}
-	tr := presentation.NewTranslator(env.Lang)
-	list := application.Checklist{AccountID: localAccount, Store: store}
-	if _, err := list.EnsureList(tr.T("tasks.default.list")); err != nil {
+	a.store = store
+	a.accounts = accountsapp.Accounts{Store: jsonaccounts.New(dir), Vault: securefile.New(dir), Eraser: db}
+	a.auth = newAuthorizers(dir, httpClient(env.HTTP))
+	a.tr = presentation.NewTranslator(env.Lang)
+	a.list = application.Checklist{AccountID: localAccount, Store: store}
+	if _, err := a.list.EnsureList(a.tr.T("tasks.default.list")); err != nil {
 		a.fail(err)
 		return a
 	}
-	a.screen = presentation.NewScreen(presentation.Config{
-		Width: env.Width, Height: env.Height, Doc: a.doc, Chrome: platform.Chrome(env), Tr: tr, Checklist: list,
-	})
+	a.showScreen(false)
 	return a
+}
+
+// showScreen shows the to-do list; syncNow also synchronizes right away (after connecting).
+func (a *tasks) showScreen(syncNow bool) {
+	a.screen = presentation.NewScreen(presentation.Config{
+		Width: a.env.Width, Height: a.env.Height, Doc: a.doc, Chrome: platform.Chrome(a.env), Tr: a.tr, Checklist: a.list,
+		Syncer: service{app: a}, Flush: a.env.Flush,
+	})
+	if syncNow {
+		a.screen.SyncNow()
+	}
 }
 
 // Document implements platform.App.

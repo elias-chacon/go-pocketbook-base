@@ -33,17 +33,27 @@ CREATE TABLE tasks_tasks (
 );
 CREATE INDEX tasks_tasks_list ON tasks_tasks (account_id, list_id, done);
 `},
+	// What the person changed and the service (Microsoft To Do, Google Tasks) does not know yet.
+	{Version: 2, SQL: `
+CREATE TABLE tasks_outbox (
+	task_id TEXT PRIMARY KEY, account_id TEXT NOT NULL, list_id TEXT NOT NULL,
+	remote_id TEXT NOT NULL DEFAULT '', deleted INTEGER NOT NULL DEFAULT 0
+);
+`},
 }
 
 // Store implements domain.TaskStore.
-type Store struct{ db *sql.DB }
+type Store struct {
+	db        *sql.DB
+	untracked bool // the synchronization's view: its writes are not changes to send
+}
 
 // New prepares the tasks tables in the database and returns the store.
 func New(s *storage.Store) (*Store, error) {
 	if err := s.Migrate(Module, migrations); err != nil {
 		return nil, err
 	}
-	for _, table := range []string{"tasks_lists", "tasks_tasks"} {
+	for _, table := range []string{"tasks_lists", "tasks_tasks", "tasks_outbox"} {
 		if err := s.RegisterAccountTable(table); err != nil {
 			return nil, err
 		}
@@ -129,6 +139,12 @@ func (s *Store) Save(tasks ...domain.Task) error {
 		if err := insert(tx, account, t); err != nil {
 			tx.Rollback()
 			return err
+		}
+		if !s.untracked {
+			if err := note(tx, account, t, false); err != nil {
+				tx.Rollback()
+				return err
+			}
 		}
 	}
 	return tx.Commit()
@@ -231,12 +247,27 @@ func (s *Store) Get(id string) (domain.Task, error) {
 
 // Delete implements domain.TaskStore.
 func (s *Store) Delete(id string) error {
-	res, err := s.db.Exec("DELETE FROM tasks_tasks WHERE id = ?", id)
+	t, err := s.Get(id)
 	if err != nil {
 		return err
 	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return domain.ErrNotFound
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
 	}
-	return nil
+	var account string
+	_ = tx.QueryRow(`SELECT account_id FROM tasks_tasks WHERE id = ?`, id).Scan(&account)
+	if _, err := tx.Exec("DELETE FROM tasks_tasks WHERE id = ?", id); err != nil {
+		tx.Rollback()
+		return err
+	}
+	if !s.untracked && t.RemoteID != "" {
+		if err := note(tx, account, t, true); err != nil {
+			tx.Rollback()
+			return err
+		}
+	} else if !s.untracked {
+		_, _ = tx.Exec("DELETE FROM tasks_outbox WHERE task_id = ?", id) // never sent: nothing to tell the service
+	}
+	return tx.Commit()
 }

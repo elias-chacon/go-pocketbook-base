@@ -59,6 +59,10 @@ type Config struct {
 	Keyboard  widget.Keyboard
 	Tr        *i18n.Bundle
 	Checklist Checklist
+	// Syncer keeps the tasks in step with Microsoft To Do or Google Tasks (nil: no Sync menu).
+	Syncer Syncer
+	// Flush paints pending changes now, before a slow call (nil: no flush).
+	Flush func()
 	// Notice is shown at the first paint.
 	Notice string
 }
@@ -157,8 +161,14 @@ func (s *Screen) showList() {
 	s.editor = nil
 	title := widget.NewLabel(s.t("tasks.title"))
 	title.Style.FontSize, title.Style.Bold = widget.FontTitle, true
-	title.Style.Padding = geom.XY(28, 28)
-	paper(title)
+	title.Style.FlexGrow = 1
+	header := widget.NewRow(12, title)
+	if s.cfg.Syncer != nil {
+		header.AppendChild(s.syncMenu())
+	}
+	header.Style.Padding = geom.XY(28, 28)
+	header.Style.AlignItems = widget.AlignCenter
+	paper(header)
 
 	s.chips = s.chips[:0]
 	row := widget.NewRow(10)
@@ -205,7 +215,7 @@ func (s *Screen) showList() {
 	foot.Style.Padding = geom.XY(14, 28)
 	paper(foot)
 
-	root := widget.NewColumn(0, title, row, addRow, s.body, foot)
+	root := widget.NewColumn(0, header, row, addRow, s.body, foot)
 	root.Style.Background = widget.Paper
 	s.Doc.SetRoot(s.cfg.Chrome.Wrap(s.Doc, root))
 	s.reload()

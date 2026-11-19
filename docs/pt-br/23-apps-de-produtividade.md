@@ -113,3 +113,27 @@ O calendário tem um botão **Importar** (canto inferior direito). Duas fontes:
 - **Um arquivo .ics** do leitor: a tela lista os encontrados na raiz do armazenamento e em `Download` (até dois níveis).
 
 Importar de novo não duplica eventos (mesmo UID substitui). É uma **cópia em um sentido**, não uma sincronização: ainda não existe sincronização nos dois sentidos com Google ou Microsoft, nem para o calendário nem para Tarefas (precisa do client id OAuth da conta; ver capítulo 18).
+
+## Sincronização de tarefas (Microsoft To Do e Google Tasks)
+
+O app de Tarefas tem um menu **Sincronizar** na linha do título: **Sincronizar agora**, **Conectar uma conta** (ou **Trocar de conta**) e **Desconectar**.
+
+- **Microsoft To Do**: pelo Microsoft Graph, com o mesmo login por código do e-mail. Uma conta Outlook já adicionada no app de E-mail é usada como está, sem novo login.
+- **Google Tasks**: pela API do Google Tasks. O Google não permite o escopo de Tarefas no fluxo por código de dispositivo, então o app usa o **código de autorização com PKCE**: a tela mostra um **QR code**, você lê com o celular e entra no Google; a página que abre falha (nada escuta em `http://127.0.0.1`, é esperado) e o endereço dela tem o código: copie o código, ou o endereço inteiro, e digite no leitor.
+- **Precisa de um client id**, porque os apps precisam ser registrados em cada provedor (veja abaixo).
+
+Como funciona: o leitor continua sendo o que as telas leem (funciona offline). As listas e tarefas do serviço aparecem como listas com os nomes do serviço; uma lista criada no leitor fica só no leitor. O que você muda offline é guardado (uma caixa de saída no banco) e **enviado primeiro** na próxima sincronização, então sua mudança vence a versão do serviço da mesma tarefa; depois vêm as listas e tarefas do serviço, e o que foi apagado no serviço sai do leitor. Um item que falha fica para ser enviado de novo e não para os outros; uma lista que não pôde ser lida nunca é esvaziada.
+
+O que cada serviço guarda: o Microsoft To Do sincroniza título, notas, concluída, importância, data e lembrete; o Google Tasks sincroniza título, notas, concluída e data. **Passos, repetição, Meu Dia e o e-mail de origem ficam só no leitor.** Concluir/reabrir e apagar são sincronizados.
+
+### Os client ids (`applications/.pbgo/oauth.json`)
+
+```json
+{"microsoft": "<client id>", "google": "<client id>", "google_secret": "<client secret>"}
+```
+
+- **Microsoft**: registre um app no Entra ID (portal.azure.com → Registros de aplicativo), *cliente público / permitir fluxos de cliente público*; permissões `Tasks.ReadWrite`, `Mail.ReadWrite`, `Mail.Send`, `Calendars.ReadWrite`, `offline_access`, `User.Read`.
+- **Google**: em um projeto do Google Cloud, ative a **Google Tasks API**, crie um **cliente OAuth do tipo App para computador (Desktop)** e copie o id e o segredo (num app desktop o segredo não é confidencial). Enquanto o app está em *Teste*, adicione sua conta como usuário de teste; o Google expira o refresh token de um app em teste após 7 dias, então publique-o (mesmo sem verificação, só para você) para continuar conectado.
+- Sem o arquivo, a tela de Conectar diz onde colocá-lo.
+
+Ainda não feito: a sincronização nos dois sentidos do **calendário** com Google/Microsoft (hoje: a importação de links .ics, acima).
