@@ -283,3 +283,29 @@ func TestEveryInteractiveElementReceivesItsOwnTouchAndNothingOverflows(t *testin
 	s.Edit("t1")
 	check("editor")
 }
+
+func TestStepsAreAddedTickedRemovedAndSaved(t *testing.T) {
+	s, st := newScreen("a")
+	s.Edit("t1")
+	byID(t, s, "edit-title").(*widget.Input).Value = "editado"
+	add := byID(t, s, "step-add").(*widget.Input)
+	add.Value = "primeira"
+	add.OnSubmit(nil)
+	add = byID(t, s, "step-add").(*widget.Input)
+	add.Value = "segunda"
+	add.OnSubmit(nil)
+	if got := byID(t, s, "edit-title").(*widget.Input).Value; got != "editado" {
+		t.Errorf("the typed title was lost: %q", got)
+	}
+	tap(t, s, "step-0")
+	tap(t, s, "step-del-1")
+	byID(t, s, "step-add").(*widget.Input).OnSubmit(nil) // empty: nothing
+	tap(t, s, "edit-save")
+	got := st.tasks["t1"]
+	if got.Title != "editado" || len(got.Steps) != 1 || got.Steps[0].Title != "primeira" || !got.Steps[0].Done {
+		t.Errorf("task = %+v", got)
+	}
+	if !strings.Contains(s.info(got), "1/1") {
+		t.Errorf("info = %q", s.info(got))
+	}
+}

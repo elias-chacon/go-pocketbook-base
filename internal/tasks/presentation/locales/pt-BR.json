@@ -25,5 +25,6 @@
   "tasks.due.tomorrow": "Amanhã",
   "tasks.due.week": "Próxima semana",
   "tasks.due.clear": "Limpar",
-  "tasks.default.list": "Tarefas"
+  "tasks.default.list": "Tarefas",
+  "tasks.step.add": "Adicionar etapa…"
 }

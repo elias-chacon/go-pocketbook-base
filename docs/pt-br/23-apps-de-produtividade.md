@@ -11,7 +11,7 @@ está o código. Os detalhes técnicos ficam nos capítulos [17](17-decisoes-app
 | App | Pasta | Precisa de conta? | O que já faz | O que falta |
 |---|---|---|---|---|
 | **E-mail** | `apps/mail` | Sim (IMAP com **senha de app**) | pastas, lista, leitura, responder, encaminhar, nova mensagem, apagar, busca, sincronizar, ler offline | anexos, marcadores, rascunhos, Cco no formulário, Outlook.com (OAuth) |
-| **Tarefas** | `apps/tasks` | Não (ficam no leitor) | visões Meu dia, Importante, Planejado, Atrasadas e Todas; adicionar, concluir, editar, apagar; tarefas que se repetem | listas, passos, lembretes e repetição na tela, sincronização |
+| **Tarefas** | `apps/tasks` | Não (ficam no leitor) | visões Meu dia, Importante, Planejado, Atrasadas e Todas; adicionar, concluir, editar, apagar; tarefas que se repetem | listas, lembretes e repetição na tela, sincronização |
 | **Calendário** | `apps/calendar` | Não (ficam no leitor) | mês com pontos nos dias com eventos, agenda do dia, criar, editar e apagar eventos (dia inteiro ou com horário) | visões de dia e semana, repetição e lembretes no formulário, sincronização, importar `.ics` |
 
 ## Como instalar
@@ -37,7 +37,7 @@ Tudo é lido do **cache offline**: sem rede você continua lendo o que já veio.
 
 - O app abre em **Meu dia**. Os chips no alto trocam a visão e mostram quantas tarefas cada uma tem.
 - Digite um título no campo e confirme para **adicionar**: em Meu dia a tarefa é para hoje, em Importante já vem marcada, em Planejado vence hoje.
-- A caixa à esquerda **conclui** a tarefa (uma tarefa que se repete cria a próxima sozinha). Tocar no texto abre o **editor**: título, notas, importante,
+- A caixa à esquerda **conclui** a tarefa (uma tarefa que se repete cria a próxima sozinha). Tocar no texto abre o **editor**: título, notas, etapas, importante,
   Meu dia e prazo (hoje, amanhã, próxima semana, nenhum). Nada é salvo até **Salvar**.
 - **8 tarefas por página.**
 
@@ -98,6 +98,6 @@ tela novo vai para o **toolkit compartilhado**, nunca para dentro de um app: o `
 
 ## Próximos passos
 
-Anexos, marcadores e rascunhos no e-mail; listas, passos e lembretes nas tarefas; visões de dia e semana no calendário (com um componente de grade de
+Anexos, marcadores e rascunhos no e-mail; listas e lembretes nas tarefas; visões de dia e semana no calendário (com um componente de grade de
 horários no toolkit); sincronização (Graph, CalDAV, Exchange); integrações entre os apps (e-mail → tarefa, convite → evento). A lista completa e o
 estado de cada item estão nas tarefas **T51 a T70** do [README](../../README.md#tasks).

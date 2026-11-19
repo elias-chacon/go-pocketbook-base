@@ -11,7 +11,7 @@ where the code is. The technical details are in chapters [17](17-productivity-ap
 | App | Folder | Needs an account? | What it does today | What is missing |
 |---|---|---|---|---|
 | **Mail** | `apps/mail` | Yes (IMAP with an **app password**) | folders, list, reading, reply, forward, new message, delete, search, sync, offline reading | attachments, flags, drafts, Bcc in the form, Outlook.com (OAuth) |
-| **Tasks** | `apps/tasks` | No (kept on the reader) | My Day, Important, Planned, Overdue and All views; add, tick, edit, delete; repeating tasks | lists, steps, reminders and repetition on screen, sync |
+| **Tasks** | `apps/tasks` | No (kept on the reader) | My Day, Important, Planned, Overdue and All views; add, tick, edit, delete; repeating tasks | lists, reminders and repetition on screen, sync |
 | **Calendar** | `apps/calendar` | No (kept on the reader) | month with dots on the days with events, the day's agenda, create, edit and delete events (all-day or timed) | day and week views, repetition and reminders in the form, sync, `.ics` import |
 
 ## How to install
@@ -37,7 +37,7 @@ Everything is read from the **offline cache**: without a network you keep readin
 
 - The app opens on **My Day**. The chips at the top switch the view and show how many tasks each has.
 - Type a title in the field and confirm to **add**: in My Day the task is for today, in Important it is starred, in Planned it is due today.
-- The box on the left **ticks** the task (a repeating task creates the next one by itself). Tapping the text opens the **editor**: title, notes, important,
+- The box on the left **ticks** the task (a repeating task creates the next one by itself). Tapping the text opens the **editor**: title, notes, steps, important,
   My Day and the due date (today, tomorrow, next week, none). Nothing is saved until **Save**.
 - **8 tasks a page.**
 
@@ -98,6 +98,6 @@ component goes to the **shared toolkit**, never inside an app: the toolkit's `Ca
 
 ## Next steps
 
-Attachments, flags and drafts in mail; lists, steps and reminders in tasks; day and week views in the calendar (with a time grid component in the
+Attachments, flags and drafts in mail; lists and reminders in tasks; day and week views in the calendar (with a time grid component in the
 toolkit); sync (Graph, CalDAV, Exchange); integrations between the apps (mail → task, invitation → event). The full list and the state of each item are in
 tasks **T51 to T70** of the [README](../../README.md#tasks).

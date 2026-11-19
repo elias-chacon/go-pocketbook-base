@@ -25,5 +25,6 @@
   "tasks.due.tomorrow": "Tomorrow",
   "tasks.due.week": "Next week",
   "tasks.due.clear": "Clear",
-  "tasks.default.list": "Tasks"
+  "tasks.default.list": "Tasks",
+  "tasks.step.add": "Add a step…"
 }

@@ -1,10 +1,13 @@
 package presentation
 
 import (
+	"strconv"
+	"strings"
 	"time"
 
 	"go-pocketbook-base/internal/kernel/geom"
 	"go-pocketbook-base/internal/tasks/domain"
+	"go-pocketbook-base/internal/toolkit/gfx"
 	"go-pocketbook-base/internal/toolkit/widget"
 )
 
@@ -27,6 +30,11 @@ func (s *Screen) Edit(id string) {
 		s.fail(err)
 		return
 	}
+	s.showEditor(t)
+}
+
+// showEditor draws the form of a task (again, after the steps changed).
+func (s *Screen) showEditor(t domain.Task) {
 	e := &editor{task: t, today: s.cfg.Checklist.Today()}
 	s.editor = e
 
@@ -64,6 +72,8 @@ func (s *Screen) Edit(id string) {
 		}
 	}
 
+	steps := s.stepsPanel(e)
+
 	e.dueLabel = widget.NewLabel("")
 	s.showDue()
 	days := widget.NewRow(10,
@@ -76,7 +86,7 @@ func (s *Screen) Edit(id string) {
 	e.note = widget.NewLabel(s.notice)
 	e.note.Style.FontSize, e.note.Style.Color = widget.FontSmall, widget.Muted
 
-	form := widget.NewColumn(16, e.title, e.notes, e.important, e.myDay, e.dueLabel, days, e.note)
+	form := widget.NewColumn(16, e.title, e.notes, steps, e.important, e.myDay, e.dueLabel, days, e.note)
 	form.Style.Padding = geom.XY(28, 28)
 	form.Style.FlexGrow = 1
 	root := widget.NewColumn(0, bar, form)
@@ -84,6 +94,47 @@ func (s *Screen) Edit(id string) {
 	s.Doc.SetRoot(root)
 	s.Doc.ResetFrame()
 	s.Doc.Invalidate()
+}
+
+// stepsPanel lists the steps of the task, each with a check box and a remove button,
+// and a field to add one. Changing the steps redraws the form, keeping what was typed.
+func (s *Screen) stepsPanel(e *editor) widget.Widget {
+	col := widget.NewColumn(8)
+	for i := range e.task.Steps {
+		i := i
+		check := widget.NewCheckbox(e.task.Steps[i].Title, e.task.Steps[i].Done)
+		check.ID = "step-" + strconv.Itoa(i)
+		check.Style.FlexGrow = 1
+		check.OnChange = func(*widget.Event) { e.task.Steps[i].Done = check.Checked }
+		remove := widget.NewIconButton(gfx.IconClose)
+		remove.ID = "step-del-" + strconv.Itoa(i)
+		remove.OnClick = func(*widget.Event) {
+			s.keepFields()
+			e.task.Steps = append(e.task.Steps[:i:i], e.task.Steps[i+1:]...)
+			s.showEditor(e.task)
+		}
+		col.AppendChild(widget.NewRow(8, check, remove))
+	}
+	add := widget.NewInput(s.t("tasks.step.add"))
+	add.ID = "step-add"
+	add.Style.FlexGrow = 1
+	add.OnSubmit = func(*widget.Event) {
+		title := strings.TrimSpace(add.Value)
+		if title == "" {
+			return
+		}
+		s.keepFields()
+		e.task.Steps = append(e.task.Steps, domain.Step{Title: title})
+		s.showEditor(e.task)
+	}
+	col.AppendChild(add)
+	return col
+}
+
+// keepFields copies what was typed into the task, before the form is drawn again.
+func (s *Screen) keepFields() {
+	e := s.editor
+	e.task.Title, e.task.Notes = e.title.Value, e.notes.Value
 }
 
 // showDue writes the due date of the task being edited under its label.
