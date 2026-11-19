@@ -2,7 +2,10 @@ package network
 
 import (
 	"context"
+	"errors"
 	"net"
+	"net/http"
+	"strings"
 	"testing"
 	"time"
 )
@@ -71,5 +74,46 @@ func TestNewBuildsAClientWithATimeout(t *testing.T) {
 	c := New(42 * time.Second)
 	if c.Timeout != 42*time.Second || c.Transport == nil {
 		t.Errorf("%+v", c)
+	}
+}
+
+func TestTheConnectionIsBroughtUpBeforeARequestAndTrustedForAWhile(t *testing.T) {
+	now := time.Unix(1000, 0)
+	asked := 0
+	var failWith error
+	base := roundTripFunc(func(*http.Request) (*http.Response, error) { return &http.Response{StatusCode: 200}, nil })
+	l := &linked{base: base, now: func() time.Time { return now }, link: func() error { asked++; return failWith }}
+	req, _ := http.NewRequest("GET", "http://x", nil)
+
+	for i := 0; i < 3; i++ {
+		if _, err := l.RoundTrip(req); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if asked != 1 {
+		t.Errorf("the system is asked once, then trusted: %d", asked)
+	}
+	now = now.Add(connectedFor + time.Second)
+	l.RoundTrip(req)
+	if asked != 2 {
+		t.Errorf("and again after a while: %d", asked)
+	}
+
+	now = now.Add(time.Hour)
+	failWith = errors.New("no wifi")
+	if _, err := l.RoundTrip(req); err == nil || !strings.Contains(err.Error(), "no wifi") {
+		t.Errorf("a connection that fails stops the request: %v", err)
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+func TestNewClientsAskTheLinkThroughTheirTransport(t *testing.T) {
+	asked := false
+	c := NewWithLink(time.Second, func() error { asked = true; return errors.New("stop here") })
+	if _, err := c.Get("http://127.0.0.1:1/"); err == nil || !asked {
+		t.Errorf("asked=%v err=%v", asked, err)
 	}
 }

@@ -48,3 +48,6 @@ func BlitRect(pix []byte, stride, x, y, w, h int) {
 func OpenKeyboard(title, initial string, maxLen, flags int, done func(string, bool)) {
 	// No system keyboard on the desktop.
 }
+
+// NetConnect reports success off-device: the computer's network is already up.
+func NetConnect() error { return nil }

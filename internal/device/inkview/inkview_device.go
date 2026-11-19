@@ -187,3 +187,16 @@ func goKeyboardHandler(text *C.char) {
 		done(s, ok)
 	}
 }
+
+// NetConnect brings the default network (Wi-Fi) up and blocks until it is
+// connected or it fails; it returns nil when the reader already was. The reader
+// does not keep Wi-Fi connected for an app: without this call a request fails
+// with "network is unreachable".
+func NetConnect() error {
+	rc := int(C.NetConnect(nil))
+	Logf("NetConnect -> %d", rc)
+	if rc != int(C.NET_OK) {
+		return fmt.Errorf("inkview: NetConnect failed (code %d): is Wi-Fi on and a network known?", rc)
+	}
+	return nil
+}
