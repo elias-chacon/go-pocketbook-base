@@ -10,7 +10,7 @@ where the code is. The technical details are in chapters [17](17-productivity-ap
 
 | App | Folder | Needs an account? | What it does today | What is missing |
 |---|---|---|---|---|
-| **Mail** | `apps/mail` | Yes (IMAP with an **app password**) | folders, list, reading, reply, forward, new message, delete, search, sync, offline reading | opening attachments, drafts on the server, Outlook.com (OAuth) |
+| **Mail** | `apps/mail` | Yes (IMAP with an **app password**) | folders, list, reading, reply, forward, new message, delete, search, sync, offline reading | opening attachments, drafts on the server, testing Outlook.com (needs the client id) |
 | **Tasks** | `apps/tasks` | No (kept on the reader) | My Day, Important, Planned, Overdue and All views; add, tick, edit, delete; repeating tasks | reminders on screen, sync |
 | **Calendar** | `apps/calendar` | No (kept on the reader) | Outlook-style Month, Week, Work week and Day views, create, edit and delete events (all-day, timed, repeating, with reminder and description) | ringing the reminders, sync, `.ics` import |
 
@@ -23,9 +23,10 @@ After installing from the Launcher, the icon shows up on the home screen when th
 
 ## Mail
 
-1. The first time, the app asks for an account: type the **address** and the **app password** (the normal password does not work on Gmail, iCloud and the like).
-   - Known provider (Gmail, iCloud…): the servers are filled in for you.
-   - Unknown provider: the IMAP and SMTP server fields appear.
+1. The first time, the app asks for the **provider** and then for an account:
+   - **Gmail, iCloud:** the **address** and an **app password** (the normal password does not work on them); the servers are filled in for you.
+   - **Another server (IMAP):** the address, the password and the IMAP and SMTP servers.
+   - **Outlook.com / Microsoft 365:** a code is shown to type on another device (OAuth2, no password here). It needs the app registered at Microsoft and its client id in `applications/.pbgo/oauth.json` (see [chapter 18](18-accounts-and-secrets.md)); without it the button says so.
 2. Tap **Sync** to bring the **50 newest messages** of each folder. The rest stays on the server.
 3. The list shows **7 messages a page** (sender, date, subject and preview; unread in bold). The reader's page keys and the arrows turn the page.
 4. Tapping a message opens it **page by page** and marks it read. There you have **Reply**, **Reply all**, **Forward**, **Flag**, **Mark unread** and **Delete**.

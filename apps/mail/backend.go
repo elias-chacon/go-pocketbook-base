@@ -7,17 +7,24 @@ import (
 
 	accounts "go-pocketbook-base/internal/accounts/domain"
 	"go-pocketbook-base/internal/mail/domain"
+	"go-pocketbook-base/internal/mail/infrastructure/graph"
 	"go-pocketbook-base/internal/mail/infrastructure/imapmail"
 	"go-pocketbook-base/internal/mail/infrastructure/smtpsend"
 )
 
 var errNoMailServer = errors.New("this account has no IMAP server")
 
-// backendFor connects an account to its mail server. Only password accounts (an app
-// password) are supported for now: OAuth2 comes with the sign-in by device code.
-func backendFor(acc accounts.Account, secret accounts.Secret) (domain.Backend, error) {
-	if acc.Auth != accounts.Password {
-		return nil, errors.New("this account signs in with OAuth2, which is not available yet")
+// tokenSource gives the current access token of an OAuth2 account, renewed when needed.
+type tokenSource func() (string, error)
+
+// backendFor connects an account to its mail server: IMAP and SMTP with an app password,
+// or Microsoft Graph (Outlook.com, Microsoft 365) with an access token that tokens renews.
+func backendFor(acc accounts.Account, secret accounts.Secret, tokens tokenSource, web graph.Doer) (domain.Backend, error) {
+	if acc.Auth == accounts.OAuth2 {
+		if _, ok := acc.Endpoint(accounts.Mail, accounts.Graph); !ok || tokens == nil {
+			return nil, errNoMailServer
+		}
+		return graph.Client{HTTP: web, Token: tokens}, nil
 	}
 	in, ok := acc.Endpoint(accounts.Mail, accounts.IMAP)
 	if !ok {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	accountsapp "go-pocketbook-base/internal/accounts/application"
 	accounts "go-pocketbook-base/internal/accounts/domain"
@@ -32,6 +33,8 @@ type mail struct {
 	accounts accountsapp.Accounts
 	db       *storage.Store
 	store    *sqlstore.Store
+	dir      string
+	auth     accounts.Authorizer
 	screen   *presentation.Screen
 }
 
@@ -40,7 +43,7 @@ func newMail(env platform.Env) platform.App { return newMailAt(env, dataDir(plat
 
 // newMailAt builds the app over a data folder (the tests use a temporary one).
 func newMailAt(env platform.Env, dir string) *mail {
-	m := &mail{env: env, doc: widget.NewDocument(env.Width, env.Height)}
+	m := &mail{env: env, dir: dir, doc: widget.NewDocument(env.Width, env.Height)}
 	m.doc.Keyboard = env.Keyboard
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		m.fail(err)
@@ -56,6 +59,7 @@ func newMailAt(env platform.Env, dir string) *mail {
 		m.fail(err)
 		return m
 	}
+	m.auth = authorizer(dir, httpClient(env.HTTP))
 	m.accounts = accountsapp.Accounts{Store: jsonaccounts.New(dir), Vault: securefile.New(dir), Eraser: db}
 	m.start()
 	return m
@@ -103,7 +107,7 @@ func (m *mail) signIn() {
 	m.screen = nil
 	accountsui.NewSignIn(accountsui.SignInConfig{
 		Width: m.env.Width, Height: m.env.Height, Doc: m.doc, Chrome: platform.Chrome(m.env), Tr: accountsui.NewTranslator(m.env.Lang),
-		Accounts: m.accounts, OnDone: m.open,
+		Accounts: m.accounts, Authorizer: m.auth, OAuthSetup: filepath.Join(m.dir, oauthFile), OnDone: m.open,
 	})
 	m.doc.ResetFrame()
 }
@@ -114,7 +118,8 @@ func (m *mail) open(acc accounts.Account) {
 		m.fail(err)
 		return
 	}
-	backend, err := backendFor(acc, secret)
+	tokens := func() (string, error) { return m.accounts.AccessToken(acc.ID, m.auth, time.Now()) }
+	backend, err := backendFor(acc, secret, tokens, httpClient(m.env.HTTP))
 	if err != nil {
 		m.fail(err)
 		return

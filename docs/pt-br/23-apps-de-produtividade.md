@@ -10,7 +10,7 @@ está o código. Os detalhes técnicos ficam nos capítulos [17](17-decisoes-app
 
 | App | Pasta | Precisa de conta? | O que já faz | O que falta |
 |---|---|---|---|---|
-| **E-mail** | `apps/mail` | Sim (IMAP com **senha de app**) | pastas, lista, leitura, responder, encaminhar, nova mensagem, apagar, busca, sincronizar, ler offline | abrir anexos, rascunhos no servidor, Outlook.com (OAuth) |
+| **E-mail** | `apps/mail` | Sim (IMAP com **senha de app**) | pastas, lista, leitura, responder, encaminhar, nova mensagem, apagar, busca, sincronizar, ler offline | abrir anexos, rascunhos no servidor, testar o Outlook.com (precisa do client id) |
 | **Tarefas** | `apps/tasks` | Não (ficam no leitor) | visões Meu dia, Importante, Planejado, Atrasadas e Todas; adicionar, concluir, editar, apagar; tarefas que se repetem | lembretes na tela, sincronização |
 | **Calendário** | `apps/calendar` | Não (ficam no leitor) | visões Mês, Semana, Semana útil e Dia no estilo Outlook, criar, editar e apagar eventos (dia inteiro, com horário, que se repetem, com lembrete e descrição) | tocar os lembretes, sincronização, importar `.ics` |
 
@@ -23,9 +23,10 @@ Depois de instalar pelo Launcher, o ícone aparece na tela inicial quando o cabo
 
 ## E-mail
 
-1. Na primeira vez o app pede uma conta: digite o **endereço** e a **senha de app** (a senha normal não funciona em Gmail, iCloud e similares).
-   - Provedor conhecido (Gmail, iCloud…): os servidores são preenchidos sozinhos.
-   - Provedor desconhecido: aparecem os campos dos servidores IMAP e SMTP.
+1. Na primeira vez o app pergunta o **provedor** e depois pede uma conta:
+   - **Gmail, iCloud:** o **endereço** e uma **senha de app** (a senha normal não funciona neles); os servidores são preenchidos sozinhos.
+   - **Outro servidor (IMAP):** o endereço, a senha e os servidores IMAP e SMTP.
+   - **Outlook.com / Microsoft 365:** um código aparece para digitar em outro aparelho (OAuth2, sem senha aqui). Precisa do app registrado na Microsoft e do client id em `applications/.pbgo/oauth.json` (ver [capítulo 18](18-contas-e-segredos.md)); sem ele o botão avisa.
 2. Toque em **Sincronizar** para trazer as **50 mensagens mais novas** de cada pasta. O resto fica no servidor.
 3. A lista mostra **7 mensagens por página** (remetente, data, assunto e prévia; não lidas em negrito). As teclas de página do leitor e as setas viram a página.
 4. Tocar numa mensagem a abre **página a página** e a marca como lida. Ali há **Responder**, **Responder a todos**, **Encaminhar**, **Sinalizar**, **Marcar não lida** e **Apagar**.

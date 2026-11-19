@@ -16,5 +16,20 @@
   "signin.noservers": "Digite os servidores IMAP e SMTP.",
   "signin.failed": "Não foi possível adicionar a conta: %s",
   "signin.exists": "Esta conta já foi adicionada.",
-  "signin.provider": "Provedor: %s"
+  "signin.choose": "Escolha o seu provedor de e-mail.",
+  "signin.outlook": "Outlook.com / Microsoft 365",
+  "signin.gmail": "Gmail",
+  "signin.icloud": "iCloud",
+  "signin.other": "Outro servidor (IMAP)",
+  "signin.back": "Voltar",
+  "signin.oauth.setup": "Entrar no Outlook.com precisa de um app registrado na Microsoft (Entra ID, cliente público). Coloque o client id em %s como {\"microsoft\": \"<client id>\"} e abra o app de novo.",
+  "signin.oauth.hint": "Você receberá um código para digitar em outro aparelho (celular ou computador): nenhuma senha é digitada aqui.",
+  "signin.oauth.start": "Entrar com a Microsoft",
+  "signin.oauth.steps": "Em outro aparelho abra\n%s\ne digite este código:",
+  "signin.oauth.check": "Já aprovei",
+  "signin.oauth.checking": "Verificando…",
+  "signin.oauth.pending": "Ainda não aprovado. Termine no outro aparelho e toque de novo.",
+  "signin.oauth.denied": "O login foi negado no outro aparelho.",
+  "signin.oauth.expired": "O código expirou. Cancele e comece de novo.",
+  "signin.oauth.notoauth": "Este endereço não entra com a Microsoft."
 }

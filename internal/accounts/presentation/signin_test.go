@@ -11,9 +11,9 @@ import (
 )
 
 type fakeRegistrar struct {
-	got  application.Registration
-	err  error
-	done int
+	got      application.Registration
+	gotToken domain.Secret
+	err      error
 }
 
 func (f *fakeRegistrar) Register(r application.Registration) (domain.Account, error) {
@@ -24,11 +24,46 @@ func (f *fakeRegistrar) Register(r application.Registration) (domain.Account, er
 	return domain.Account{ID: "ana", Email: r.Email}, nil
 }
 
-func newScreen(f *fakeRegistrar, cancel func()) (*SignIn, *domain.Account) {
+func (f *fakeRegistrar) RegisterOAuth(r application.Registration, s domain.Secret) (domain.Account, error) {
+	f.got, f.gotToken = r, s
+	if f.err != nil {
+		return domain.Account{}, f.err
+	}
+	return domain.Account{ID: "ana", Email: r.Email, Auth: domain.OAuth2}, nil
+}
+
+// fakeAuth answers the polls the test sets.
+type fakeAuth struct {
+	startErr  error
+	waitErr   error
+	secret    domain.Secret
+	startedN  int
+	challenge domain.Challenge
+}
+
+func (f *fakeAuth) Start() (domain.Challenge, error) {
+	f.startedN++
+	return f.challenge, f.startErr
+}
+
+func (f *fakeAuth) Wait(_ domain.Challenge, cancelled func() bool) (domain.Secret, error) {
+	if errors.Is(f.waitErr, domain.ErrCancelled) {
+		cancelled()
+		if cancelled() {
+			return domain.Secret{}, domain.ErrCancelled
+		}
+	}
+	return f.secret, f.waitErr
+}
+
+func (f *fakeAuth) Refresh(domain.Secret) (domain.Secret, error) { return f.secret, nil }
+
+func newScreen(f *fakeRegistrar, auth domain.Authorizer, cancel func()) (*SignIn, *domain.Account) {
 	var done domain.Account
 	s := NewSignIn(SignInConfig{
-		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), Accounts: f,
-		OnDone: func(a domain.Account) { done = a }, OnCancel: cancel,
+		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), Accounts: f, Authorizer: auth,
+		OAuthSetup: "applications/.pbgo/oauth.json",
+		OnDone:     func(a domain.Account) { done = a }, OnCancel: cancel,
 	})
 	s.Doc.Layout()
 	return s, &done
@@ -49,6 +84,26 @@ func find(t *testing.T, s *SignIn, id string) widget.Widget {
 	return out
 }
 
+func tap(t *testing.T, s *SignIn, id string) {
+	t.Helper()
+	s.Doc.Layout()
+	c := find(t, s, id).Elem().Bounds.Center()
+	s.Doc.HandlePointer(widget.PointerDown, c.X*s.Doc.Scale, c.Y*s.Doc.Scale)
+	s.Doc.HandlePointer(widget.PointerUp, c.X*s.Doc.Scale, c.Y*s.Doc.Scale)
+	s.Doc.Layout()
+}
+
+func labels(s *SignIn) string {
+	var b strings.Builder
+	s.Doc.Walk(func(w widget.Widget) bool {
+		if l, ok := w.(*widget.Label); ok {
+			b.WriteString(l.Text + "\n")
+		}
+		return true
+	})
+	return b.String()
+}
+
 func TestEveryTextIsTranslatedInBothLanguages(t *testing.T) {
 	tr := NewTranslator("pt-BR")
 	for _, lang := range []string{"pt-BR", "en"} {
@@ -58,43 +113,71 @@ func TestEveryTextIsTranslatedInBothLanguages(t *testing.T) {
 	}
 }
 
-func TestTheServersAppearOnlyForAnUnknownProvider(t *testing.T) {
-	s, _ := newScreen(&fakeRegistrar{}, nil)
-	if !s.imap.Hidden || !s.smtp.Hidden {
-		t.Error("servers shown before an address")
+func TestTheFirstScreenOffersTheProviders(t *testing.T) {
+	cancelled := false
+	s, _ := newScreen(&fakeRegistrar{}, nil, func() { cancelled = true })
+	for _, id := range []string{"signin-outlook", "signin-gmail", "signin-icloud", "signin-other", "signin-cancel"} {
+		find(t, s, id)
 	}
-	s.email.Value = "ana@gmail.com"
-	s.update()
-	if !s.imap.Hidden || !strings.Contains(s.hint.Text, "senha de app") {
-		t.Errorf("gmail: hidden=%v hint=%q", s.imap.Hidden, s.hint.Text)
+	tap(t, s, "signin-cancel")
+	if !cancelled {
+		t.Error("cancel did nothing")
 	}
-	s.email.Value = "ana@empresa.com.br"
-	s.update()
-	if s.imap.Hidden || s.smtp.Hidden {
-		t.Error("servers hidden for a custom provider")
+	tap(t, s, "signin-gmail")
+	if s.Provider() != providerGmail {
+		t.Fatalf("provider = %q", s.Provider())
 	}
-	s.email.Value = "ana@outlook.com"
-	s.update()
-	if !s.add.Disabled || !strings.Contains(s.hint.Text, "ainda não está disponível") {
-		t.Errorf("outlook: disabled=%v hint=%q", s.add.Disabled, s.hint.Text)
+	tap(t, s, "signin-back")
+	if s.Provider() != "" {
+		t.Error("back did not return to the choice")
 	}
 }
 
-func TestSubmitHandsWhatWasTypedToTheUseCase(t *testing.T) {
+func TestAPasswordProviderAsksForAnAppPasswordAndOnlyOtherAsksForServers(t *testing.T) {
 	f := &fakeRegistrar{}
-	s, done := newScreen(f, nil)
-	s.email.Value, s.password.Value, s.name.Value = "ana@gmail.com", "pw", "Ana"
-	s.imap.Value, s.smtp.Value = "i", "s"
-	s.Submit()
-	if f.got.Email != "ana@gmail.com" || f.got.Password != "pw" || f.got.Name != "Ana" || f.got.IMAPHost != "i" {
-		t.Errorf("registration = %+v", f.got)
+	s, done := newScreen(f, nil, nil)
+	tap(t, s, "signin-gmail")
+	if !strings.Contains(labels(s), "senha de app") {
+		t.Errorf("no app password hint:\n%s", labels(s))
 	}
-	if done.ID != "ana" {
-		t.Errorf("done = %+v", done)
+	if !s.imap.Hidden || !s.smtp.Hidden {
+		t.Error("Gmail needs no servers")
+	}
+	s.email.Value, s.password.Value, s.name.Value = "ana@gmail.com", "pw", "Ana"
+	tap(t, s, "signin-add")
+	if f.got.Email != "ana@gmail.com" || f.got.Password != "pw" || f.got.Name != "Ana" || done.ID != "ana" {
+		t.Errorf("registration = %+v done=%+v", f.got, done)
 	}
 	if s.password.Value != "" {
 		t.Error("the password stayed in the field")
 	}
+
+	s, _ = newScreen(f, nil, nil)
+	tap(t, s, "signin-other")
+	if s.imap.Hidden || s.smtp.Hidden || !strings.Contains(labels(s), "não reconhecido") {
+		t.Error("another server must ask for the servers")
+	}
+	s.email.Value = "ana@gmail.com"
+	s.update()
+	if s.imap.Hidden {
+		t.Error("the choice of another server keeps the fields")
+	}
+
+	s, _ = newScreen(f, nil, nil)
+	tap(t, s, "signin-icloud")
+	s.email.Value = "eu@empresa.com.br"
+	s.update()
+	if s.imap.Hidden {
+		t.Error("an unknown domain needs the servers")
+	}
+	s.email.Value = "eu@outlook.com"
+	s.update()
+	if !strings.Contains(s.hint.Text, "Outlook") {
+		t.Errorf("hint = %q", s.hint.Text)
+	}
+	s.Submit()
+	var none SignIn
+	none.Submit()
 }
 
 func TestEachFailureIsExplainedWithoutLeakingThePassword(t *testing.T) {
@@ -102,13 +185,15 @@ func TestEachFailureIsExplainedWithoutLeakingThePassword(t *testing.T) {
 		application.ErrInvalidEmail: "Confira o endereço",
 		application.ErrNeedPassword: "Digite a senha",
 		application.ErrNeedServers:  "servidores IMAP e SMTP",
-		application.ErrNeedOAuth:    "ainda não está disponível",
+		application.ErrNeedOAuth:    "Outlook",
+		application.ErrNotOAuth:     "não entra com a Microsoft",
 		domain.ErrExists:            "já foi adicionada",
 		errors.New("disco cheio"):   "disco cheio",
 	}
 	for err, want := range cases {
 		f := &fakeRegistrar{err: err}
-		s, done := newScreen(f, nil)
+		s, done := newScreen(f, nil, nil)
+		tap(t, s, "signin-gmail")
 		s.password.Value = "SEGREDO"
 		s.Submit()
 		if !strings.Contains(s.note.Text, want) {
@@ -120,29 +205,135 @@ func TestEachFailureIsExplainedWithoutLeakingThePassword(t *testing.T) {
 	}
 }
 
-func TestTheButtonsReceiveTheirTouch(t *testing.T) {
-	cancelled := false
+func TestOutlookWithoutAClientIDSaysHowToEnableIt(t *testing.T) {
+	s, _ := newScreen(&fakeRegistrar{}, nil, nil)
+	tap(t, s, "signin-outlook")
+	if !strings.Contains(labels(s), "oauth.json") || !strings.Contains(labels(s), "client id") {
+		t.Errorf("no setup help:\n%s", labels(s))
+	}
+	tap(t, s, "signin-back")
+	s.StartOAuth() // not configured: nothing happens
+	s.CheckOAuth()
+}
+
+func TestOutlookSignsInByCodeOnAnotherDevice(t *testing.T) {
 	f := &fakeRegistrar{}
-	s, done := newScreen(f, func() { cancelled = true })
-	s.email.Value = "ana@gmail.com"
-	s.update()
+	auth := &fakeAuth{challenge: domain.Challenge{UserCode: "ABCD1234", VerificationURI: "https://microsoft.com/devicelogin"}, waitErr: domain.ErrCancelled}
+	s, done := newScreen(f, auth, nil)
+	tap(t, s, "signin-outlook")
+	s.email.Value, s.name.Value = "ana@outlook.com", "Ana"
+	tap(t, s, "signin-oauth")
+	if auth.startedN != 1 || !strings.Contains(labels(s), "ABCD1234") || !strings.Contains(labels(s), "devicelogin") {
+		t.Fatalf("the code was not shown:\n%s", labels(s))
+	}
+	tap(t, s, "signin-check")
+	if !strings.Contains(s.note.Text, "Ainda não aprovado") || done.ID != "" {
+		t.Errorf("pending: note %q done %v", s.note.Text, done)
+	}
+	auth.waitErr, auth.secret = nil, domain.Secret{AccessToken: "tok", RefreshToken: "r"}
+	tap(t, s, "signin-check")
+	if done.ID != "ana" || f.gotToken.RefreshToken != "r" || f.got.Email != "ana@outlook.com" || f.got.Name != "Ana" {
+		t.Errorf("done %+v got %+v token %v", done, f.got, f.gotToken)
+	}
+}
+
+func TestOutlookFailuresAreExplainedAndTheCodeCanBeCancelled(t *testing.T) {
+	auth := &fakeAuth{challenge: domain.Challenge{UserCode: "X"}, waitErr: domain.ErrDenied}
+	s, done := newScreen(&fakeRegistrar{}, auth, nil)
+	tap(t, s, "signin-outlook")
+	s.email.Value = "ana@outlook.com"
+	tap(t, s, "signin-oauth")
+	tap(t, s, "signin-check")
+	if !strings.Contains(s.note.Text, "negado") || s.challenge != nil || done.ID != "" {
+		t.Errorf("denied: %q", s.note.Text)
+	}
+
+	auth.waitErr = domain.ErrExpired
+	s.showOutlook()
+	s.email.Value = "ana@outlook.com"
+	tap(t, s, "signin-oauth")
+	tap(t, s, "signin-check")
+	if !strings.Contains(s.note.Text, "expirou") {
+		t.Errorf("expired: %q", s.note.Text)
+	}
+
+	auth.waitErr = errors.New("sem rede")
+	s.showOutlook()
+	s.email.Value = "ana@outlook.com"
+	tap(t, s, "signin-oauth")
+	tap(t, s, "signin-check")
+	if !strings.Contains(s.note.Text, "sem rede") || s.challenge == nil {
+		t.Errorf("network: %q", s.note.Text)
+	}
+	tap(t, s, "signin-back") // cancel: back to the Outlook form
+	if s.challenge != nil {
+		t.Error("the code was kept after cancelling")
+	}
+
+	auth.startErr = errors.New("recusado")
+	s.email.Value = "ana@outlook.com"
+	tap(t, s, "signin-oauth")
+	if !strings.Contains(s.note.Text, "recusado") {
+		t.Errorf("start failure: %q", s.note.Text)
+	}
+
+	auth.startErr, auth.waitErr, auth.secret = nil, nil, domain.Secret{AccessToken: "t"}
+	f := &fakeRegistrar{err: application.ErrNotOAuth}
+	s2, _ := newScreen(f, auth, nil)
+	tap(t, s2, "signin-outlook")
+	s2.email.Value = "ana@gmail.com"
+	tap(t, s2, "signin-oauth")
+	tap(t, s2, "signin-check")
+	if !strings.Contains(s2.note.Text, "não entra com a Microsoft") {
+		t.Errorf("not oauth: %q", s2.note.Text)
+	}
+}
+
+// checkScreen verifies that nothing overflows the screen and that every button gets its
+// own touch, with a target of at least 56 px.
+func checkScreen(t *testing.T, s *SignIn, where string) {
+	t.Helper()
 	s.Doc.Layout()
-	for _, id := range []string{"signin-add", "signin-cancel", "signin-email", "signin-password", "signin-name"} {
-		w := find(t, s, id)
-		if got := s.Doc.TargetAt(w.Elem().Bounds.Center()); got != w {
-			t.Errorf("%s does not get its own touch", id)
-		}
+	h := s.Doc.Root.Elem().Bounds.H
+	s.Doc.Walk(func(w widget.Widget) bool {
+		checkWidget(t, s, where, w, h)
+		return true
+	})
+}
+
+func checkWidget(t *testing.T, s *SignIn, where string, w widget.Widget, screenH float64) {
+	t.Helper()
+	e := w.Elem()
+	if !e.Visible() || e.ID == "" {
+		return
 	}
-	add := find(t, s, "signin-add").Elem().Bounds.Center()
-	s.Doc.HandlePointer(widget.PointerDown, add.X*s.Doc.Scale, add.Y*s.Doc.Scale)
-	s.Doc.HandlePointer(widget.PointerUp, add.X*s.Doc.Scale, add.Y*s.Doc.Scale)
-	if f.got.Email != "ana@gmail.com" || done.ID != "ana" {
-		t.Errorf("add did not submit: %+v", f.got)
+	if e.Bounds.Y+e.Bounds.H > screenH+0.5 {
+		t.Errorf("%s: %s overflows (%v)", where, e.ID, e.Bounds)
 	}
-	cancel := find(t, s, "signin-cancel").Elem().Bounds.Center()
-	s.Doc.HandlePointer(widget.PointerDown, cancel.X*s.Doc.Scale, cancel.Y*s.Doc.Scale)
-	s.Doc.HandlePointer(widget.PointerUp, cancel.X*s.Doc.Scale, cancel.Y*s.Doc.Scale)
-	if !cancelled {
-		t.Error("cancel did nothing")
+	if _, ok := w.(widget.PointerHandler); !ok || e.Disabled || e.Bounds.W <= 0 {
+		return
 	}
+	if got := s.Doc.TargetAt(e.Bounds.Center()); got != w {
+		t.Errorf("%s: %s does not get its own touch", where, e.ID)
+	}
+	if e.Bounds.H < 56 {
+		t.Errorf("%s: %s is only %.0f px high", where, e.ID, e.Bounds.H)
+	}
+}
+
+func TestEveryScreenFitsAndEveryButtonGetsItsTouch(t *testing.T) {
+	auth := &fakeAuth{challenge: domain.Challenge{UserCode: "ABCD1234", VerificationURI: "https://microsoft.com/devicelogin"}}
+	s, _ := newScreen(&fakeRegistrar{}, auth, func() {})
+	checkScreen(t, s, "chooser")
+	tap(t, s, "signin-gmail")
+	checkScreen(t, s, "password")
+	tap(t, s, "signin-back")
+	tap(t, s, "signin-other")
+	checkScreen(t, s, "other")
+	tap(t, s, "signin-back")
+	tap(t, s, "signin-outlook")
+	checkScreen(t, s, "outlook")
+	s.email.Value = "ana@outlook.com"
+	tap(t, s, "signin-oauth")
+	checkScreen(t, s, "code")
 }

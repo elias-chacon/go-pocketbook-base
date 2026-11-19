@@ -4,7 +4,7 @@
 
 The `internal/accounts` context keeps the person's **accounts** (an e-mail address and what it gives access to) and their
 **secrets**, for the mail, tasks and calendar apps to share: one account serves the three, and is registered once. There are no
-sign-in screens yet: only the domain, the use cases and the storage (tasks T52 and T57).
+sign-in screens yet: only the domain, the use cases and the storage (tasks T52 and T57). The shared sign-in screen came later (see below).
 
 ## The domain
 
@@ -64,9 +64,17 @@ apps (mail, calendar and tasks). It needs a **client ID**: register an applicati
 
 `Accounts.Register` turns what the person types (address, password, and the servers when the provider is unknown) into an account: the provider comes
 from the address (**Gmail, iCloud...**), an unknown one needs its IMAP and SMTP servers (993 with TLS, 587 with STARTTLS), a provider that signs in with
-OAuth2 (Outlook.com) is refused until the sign-in by code is wired, and the password goes to the vault. `internal/accounts/presentation` has the
-**sign-in screen** every app of the suite shares: the servers only appear for an unknown provider, a hint says an app password is needed, every failure is
-explained and the password never appears in a message.
+OAuth2 (Outlook.com) is refused (it goes through `RegisterOAuth`, below), and the password goes to the vault. `internal/accounts/presentation` has the
+**sign-in screen** every app of the suite shares. It starts by asking for the **provider**: Outlook.com / Microsoft 365, Gmail, iCloud or another IMAP
+server. Gmail, iCloud and the others ask for the address and an **app password** (the servers only appear for another server or an unknown domain); every
+failure is explained and the password never appears in a message.
+
+**Outlook.com / Microsoft 365 signs in by code (OAuth2)**, with no password typed on the reader: the screen shows a code and an address, you open the address on
+a phone or a computer and type the code, then tap **I approved it** (`CheckOAuth` asks the provider once; "not yet" is an answer, not an error).
+`RegisterOAuth` then keeps the account and its tokens in the vault, and `AccessToken` hands out a valid access token, renewing it with the refresh token (and
+keeping the new tokens) when it is about to expire. This needs an **app registered at Microsoft** (Entra ID, a *public client* with "allow public client
+flows"): its client id goes in `applications/.pbgo/oauth.json` as `{"microsoft": "<client id>"}`. **Without that file the Outlook button explains this
+instead of signing in.** Google does not allow the code flow for Gmail, so Gmail uses an app password.
 
 ## The code
 

@@ -50,7 +50,7 @@ Ou baixe o arquivo do seu sistema na página de [Releases](https://github.com/el
 |---|---|---|
 | **Launcher** (`apps/launcher`) | a tela inicial dos apps: grade, busca, instalar do catálogo online, configurações | testado no aparelho |
 | **Hello Go** (`apps/hello`) | vitrine de todos os componentes; é o blueprint de todo app | testado no aparelho |
-| **E-mail** (`apps/mail`) | pastas, leitura página a página, responder, encaminhar, escrever, apagar, busca, leitura offline (IMAP com senha de app) | compila e passa nos testes; **não testado no aparelho** |
+| **E-mail** (`apps/mail`) | pastas, leitura página a página, responder, encaminhar, escrever, apagar, busca, leitura offline (IMAP com senha de app, ou Outlook.com por código OAuth2 quando o client id está configurado) | compila e passa nos testes; **não testado no aparelho** |
 | **Tarefas** (`apps/tasks`) | Meu dia, Importante, Planejado, Atrasadas; adicionar, concluir, editar; sem conta | compila e passa nos testes; **não testado no aparelho** |
 | **Calendário** (`apps/calendar`) | visões Mês, Semana, Semana útil e Dia no estilo Outlook, criar e editar eventos; sem conta | compila e passa nos testes; **não testado no aparelho** |
 

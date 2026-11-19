@@ -1,6 +1,8 @@
 package main
 
 import (
+	"go-pocketbook-base/internal/mail/infrastructure/graph"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
@@ -105,7 +107,7 @@ func TestAnUnusableDataFolderShowsTheErrorInsteadOfCrashing(t *testing.T) {
 func TestBackendForGmailUsesImapAndSmtpWithoutSavingSent(t *testing.T) {
 	acc, _ := accounts.PresetByID("gmail")
 	a := acc.Account("Ana", "ana@gmail.com")
-	b, err := backendFor(a, accounts.Secret{Password: "pw"})
+	b, err := backendFor(a, accounts.Secret{Password: "pw"}, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,14 +123,14 @@ func TestBackendForGmailUsesImapAndSmtpWithoutSavingSent(t *testing.T) {
 
 func TestBackendForRefusesWhatItCannotDo(t *testing.T) {
 	p, _ := accounts.PresetByID("outlook")
-	if _, err := backendFor(p.Account("Ana", "ana@outlook.com"), accounts.Secret{}); err == nil {
+	if _, err := backendFor(p.Account("Ana", "ana@outlook.com"), accounts.Secret{}, nil, nil); err == nil {
 		t.Error("an OAuth2 account was accepted")
 	}
-	if _, err := backendFor(accounts.Account{Auth: accounts.Password}, accounts.Secret{}); err == nil {
+	if _, err := backendFor(accounts.Account{Auth: accounts.Password}, accounts.Secret{}, nil, nil); err == nil {
 		t.Error("an account without an IMAP server was accepted")
 	}
 	c, _ := accounts.PresetByID("icloud")
-	b, _ := backendFor(c.Account("Ana", "ana@icloud.com"), accounts.Secret{Password: "x"})
+	b, _ := backendFor(c.Account("Ana", "ana@icloud.com"), accounts.Secret{Password: "x"}, nil, nil)
 	if !b.(*imapmail.Client).SaveSent {
 		t.Error("iCloud does not keep a copy of what is sent: the app must")
 	}
@@ -170,5 +172,56 @@ func TestEveryScreenHasTheStandardAboutAndExitMenu(t *testing.T) {
 	items[2].OnSelect()
 	if !exited {
 		t.Error("Exit did not leave the app")
+	}
+}
+
+func TestAnOutlookAccountUsesGraphWithTheRenewedToken(t *testing.T) {
+	p, _ := accounts.PresetByID("outlook")
+	acc := p.Account("Ana", "ana@outlook.com")
+	calls := 0
+	b, err := backendFor(acc, accounts.Secret{}, func() (string, error) { calls++; return "tok", nil }, http.DefaultClient)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, ok := b.(graph.Client)
+	if !ok {
+		t.Fatalf("backend = %T", b)
+	}
+	if tok, _ := c.Token(); tok != "tok" || calls != 1 {
+		t.Errorf("token = %q calls = %d", tok, calls)
+	}
+	if _, err := backendFor(acc, accounts.Secret{}, nil, nil); err == nil {
+		t.Error("an OAuth2 account without a token source was accepted")
+	}
+}
+
+func TestTheClientIDComesFromTheDataFolder(t *testing.T) {
+	dir := t.TempDir()
+	if microsoftClientID(dir) != "" || authorizer(dir, nil) != nil {
+		t.Error("no file must mean no OAuth")
+	}
+	os.WriteFile(dir+"/oauth.json", []byte(`{"microsoft": " abc-123 "}`), 0o644)
+	if got := microsoftClientID(dir); got != "abc-123" {
+		t.Errorf("client id = %q", got)
+	}
+	if authorizer(dir, nil) == nil {
+		t.Error("a client id must enable the sign-in")
+	}
+	os.WriteFile(dir+"/oauth.json", []byte(`not json`), 0o644)
+	if microsoftClientID(dir) != "" {
+		t.Error("a broken file must be ignored")
+	}
+	if httpClient(nil) == nil {
+		t.Error("no default client")
+	}
+}
+
+func TestWithAClientIDTheSignInOffersOutlook(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(dir+"/oauth.json", []byte(`{"microsoft":"id"}`), 0o644)
+	app := newMailAt(testEnv(t), dir)
+	t.Cleanup(app.close)
+	if app.auth == nil {
+		t.Fatal("the authorizer was not built")
 	}
 }

@@ -245,6 +245,8 @@ var (
 	ErrNotFound = errors.New("accounts: not found")
 	// ErrLocked is returned by a vault that needs its PIN (or whose PIN is wrong).
 	ErrLocked = errors.New("accounts: the vault is locked or the PIN is wrong")
+	// ErrNoRefresh is returned when an access token expired and there is nothing to renew it with.
+	ErrNoRefresh = errors.New("accounts: the sign-in expired: sign in again")
 	// ErrExists is returned when adding an account whose ID is taken.
 	ErrExists = errors.New("accounts: an account with this id already exists")
 )

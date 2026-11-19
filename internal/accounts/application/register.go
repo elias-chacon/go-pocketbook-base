@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/mail"
 	"strings"
+	"time"
 
 	"go-pocketbook-base/internal/accounts/domain"
 )
@@ -91,4 +92,78 @@ func (u Accounts) Register(r Registration) (domain.Account, error) {
 		return domain.Account{}, err
 	}
 	return acc, nil
+}
+
+// ErrNotOAuth is returned when signing in by code with an address whose provider
+// uses a password.
+var ErrNotOAuth = errors.New("accounts: this provider does not sign in with OAuth2")
+
+// ErrNoTokens is returned when the sign-in ended without an access token.
+var ErrNoTokens = errors.New("accounts: the sign-in gave no access token")
+
+// CheckOAuth asks the provider once whether the person approved the code on the other
+// device. pending is true while they have not: ask again later. It waits one polling
+// interval, as the provider asks.
+func CheckOAuth(auth domain.Authorizer, ch domain.Challenge) (secret domain.Secret, pending bool, err error) {
+	asked := 0
+	secret, err = auth.Wait(ch, func() bool { asked++; return asked > 1 })
+	if errors.Is(err, domain.ErrCancelled) {
+		return domain.Secret{}, true, nil
+	}
+	return secret, false, err
+}
+
+// RegisterOAuth adds the account of an address that signs in with OAuth2 (Outlook.com,
+// Microsoft 365) with the tokens the sign-in by code gave.
+func (u Accounts) RegisterOAuth(r Registration, secret domain.Secret) (domain.Account, error) {
+	addr, err := mail.ParseAddress(strings.TrimSpace(r.Email))
+	if err != nil || !strings.Contains(addr.Address[strings.Index(addr.Address, "@")+1:], ".") {
+		return domain.Account{}, ErrInvalidEmail
+	}
+	prov := ProviderOf(addr.Address)
+	if !prov.OAuth() {
+		return domain.Account{}, ErrNotOAuth
+	}
+	if secret.AccessToken == "" && secret.RefreshToken == "" {
+		return domain.Account{}, ErrNoTokens
+	}
+	name := strings.TrimSpace(r.Name)
+	if name == "" {
+		name = addr.Address
+	}
+	acc := prov.Preset.Account(name, addr.Address)
+	acc.ID = domain.Slug(addr.Address, "mail")
+	if len(acc.ID) > maxSlugFromEmail {
+		acc.ID = acc.ID[:maxSlugFromEmail]
+	}
+	if err := u.Add(acc, secret); err != nil {
+		return domain.Account{}, err
+	}
+	return acc, nil
+}
+
+// refreshMargin renews the access token a little before it expires.
+const refreshMargin = 60
+
+// AccessToken returns a valid access token of an OAuth2 account, renewing it (and
+// keeping the new tokens in the vault) when it expired or is about to.
+func (u Accounts) AccessToken(id string, auth domain.Authorizer, now time.Time) (string, error) {
+	_, secret, err := u.Credentials(id)
+	if err != nil {
+		return "", err
+	}
+	if secret.AccessToken != "" && secret.ExpiresAt-refreshMargin > now.Unix() {
+		return secret.AccessToken, nil
+	}
+	if auth == nil || secret.RefreshToken == "" {
+		return "", domain.ErrNoRefresh
+	}
+	fresh, err := auth.Refresh(secret)
+	if err != nil {
+		return "", err
+	}
+	if err := u.Refresh(id, fresh); err != nil {
+		return "", err
+	}
+	return fresh.AccessToken, nil
 }

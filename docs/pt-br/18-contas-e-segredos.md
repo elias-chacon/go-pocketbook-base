@@ -64,9 +64,17 @@ apps (e-mail, calendário e tarefas). Ela precisa de um **client ID**: registre 
 
 `Accounts.Register` transforma o que a pessoa digita (endereço, senha e os servidores quando o provedor é desconhecido) em uma conta: o provedor vem do
 endereço (**Gmail, iCloud...**), um desconhecido precisa dos servidores IMAP e SMTP (993 com TLS, 587 com STARTTLS), um provedor que entra com OAuth2
-(Outlook.com) é recusado até o login por código ser ligado, e a senha vai para o cofre. O `internal/accounts/presentation` tem a **tela de login** que todos
-os apps da suíte compartilham: os servidores só aparecem para um provedor desconhecido, uma dica diz que é preciso uma senha de app, toda falha é explicada e
-a senha nunca aparece numa mensagem.
+(Outlook.com) é recusado (ele passa pelo `RegisterOAuth`, abaixo), e a senha vai para o cofre. O `internal/accounts/presentation` tem a **tela de login** que todos
+os apps da suíte compartilham. Ela começa perguntando o **provedor**: Outlook.com / Microsoft 365, Gmail, iCloud ou outro servidor IMAP. Gmail, iCloud e os
+outros pedem o endereço e uma **senha de app** (os servidores só aparecem para outro servidor ou um domínio desconhecido); toda falha é explicada e a senha
+nunca aparece numa mensagem.
+
+**O Outlook.com / Microsoft 365 entra por código (OAuth2)**, sem digitar senha no leitor: a tela mostra um código e um endereço, você abre o endereço no
+celular ou no computador e digita o código, e toca em **Já aprovei** (o `CheckOAuth` pergunta ao provedor uma vez; "ainda não" é uma resposta, não um erro).
+O `RegisterOAuth` então guarda a conta e os tokens no cofre, e o `AccessToken` entrega um token de acesso válido, renovando-o com o refresh token (e guardando
+os novos) quando está perto de vencer. Isso precisa de um **app registrado na Microsoft** (Entra ID, um *cliente público* com "permitir fluxos de cliente
+público"): o client id vai em `applications/.pbgo/oauth.json` como `{"microsoft": "<client id>"}`. **Sem esse arquivo o botão do Outlook explica isso em vez
+de entrar.** O Google não permite o fluxo por código para o Gmail, então o Gmail usa senha de app.
 
 ## O código
 
