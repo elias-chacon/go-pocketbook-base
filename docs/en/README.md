@@ -34,6 +34,7 @@
 | 14 | [Architecture (DDD)](14-architecture.md) | bounded contexts, layers, ubiquitous language, the dependency rule |
 | 15 | [The Launcher](15-launcher.md) | the home screen of the apps: installed grid, running an app and coming back |
 | 16 | [The installer and the releases](16-installer.md) | the program for people (Windows/Linux/macOS), how a release is made |
+| 17 | [Productivity apps: decisions](17-productivity-apps-decisions.md) | ADR for the mail, task list and calendar apps, with the libraries tested on Go 1.17/ARM |
 
 ## Quick look
 
