@@ -203,12 +203,7 @@ func (t *Table) paintFooter(c *gfx.Canvas) {
 }
 
 func (t *Table) paintPager(c *gfx.Canvas, r geom.Rect, icon gfx.IconKind, enabled bool) {
-	col, line := Ink, Ink
-	if !enabled {
-		col, line = Disabled, Mid
-	}
-	c.StrokeRoundRect(r, 12, BorderThin, line)
-	c.Icon(icon, r.Inset(geom.All(14)), iconStroke, col)
+	paintPagerButton(c, r, icon, enabled)
 }
 
 // HandlePointer implements PointerHandler.

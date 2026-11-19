@@ -75,6 +75,8 @@ func examples() []example {
 		{"chips", 640, 0, chipsExample, nil},
 		{"calendar", 640, 0, calendarExample, nil},
 		{"card", 640, 0, cardExample, nil},
+		{"pager", 760, 0, pagerExample, nil},
+		{"textpager", 760, 0, textPagerExample, nil},
 		{"image", 760, 0, imageExample, nil},
 		{"modal", 760, 0, modalExample, nil},
 		{"custom", 640, 0, customRecipe, nil},
@@ -252,6 +254,29 @@ func progressExample() widget.Widget {
 	done.Text = "Concluído"
 	return widget.NewColumn(16, captioned("0%", widget.NewProgress(0)), captioned("35%", widget.NewProgress(35)),
 		captioned("80%", widget.NewProgress(80)), captioned("texto próprio", done))
+}
+
+func pagerExample() widget.Widget {
+	senders := []string{"Ana Souza", "Banco do Brasil", "Carlos Lima", "Diretoria", "Editora Nova", "Fernanda", "GitHub", "Helena"}
+	var rows []widget.Widget
+	for i := 0; i < 10; i++ {
+		who := widget.NewLabel(senders[i%len(senders)])
+		who.Style.Bold, who.Style.FlexGrow = true, 1
+		subject := widget.NewLabel("Assunto " + string(rune('1'+i%9)))
+		subject.Style.FlexGrow = 2
+		row := widget.NewRow(16, who, subject)
+		row.Style.Padding = geom.XY(14, 20)
+		row.Style.BorderColor, row.Style.BorderWidth, row.Style.BorderRadius = widget.Mid, 2, widget.Radius
+		rows = append(rows, row)
+	}
+	return widget.NewPager(4, rows...).Root
+}
+
+func textPagerExample() widget.Widget {
+	text := "Um texto longo se lê virando páginas, não rolando a tela. Cada página tem um número fixo de linhas, então nada se mexe enquanto você lê, e a tela do leitor é atualizada uma vez por página. "
+	t := widget.NewTextPager(text + text + text + text)
+	t.Lines = 6
+	return t
 }
 
 func gaugeExample() widget.Widget {

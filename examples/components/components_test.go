@@ -17,6 +17,7 @@ func TestEveryComponentExampleRendersAndRespondsToTouch(t *testing.T) {
 		"TextAreaExample": TextAreaExample, "TableExample": TableExample, "ProgressExample": ProgressExample,
 		"GaugeExample": GaugeExample, "SliderExample": SliderExample, "SlideButtonExample": SlideButtonExample,
 		"ChipsExample": ChipsExample, "CalendarExample": CalendarExample, "CardExample": CardExample, "ImageExample": ImageExample,
+		"PagerExample": PagerExample, "TextPagerExample": TextPagerExample,
 	}
 	for name, build := range examples {
 		doc, _ := harness.NewDoc(build())

@@ -10,7 +10,7 @@ Cada componente abaixo mostra o seu **desenho real** (gerado pela própria bibli
 [Menu bar](#menu-bar) · [Campo de texto](#campo-de-texto-e-senha) · [Campo numérico](#campo-numérico) ·
 [Campo com máscara](#campo-com-máscara) · [Campo de busca](#campo-de-busca) · [Text-area](#text-area) ·
 [Tabela de dados](#tabela-de-dados) · [Barra de progresso](#barra-de-progresso) · [Gauge](#gauge) ·
-[Slider](#slider-slide-button) · [Chips](#chips) · [Calendário](#calendário) · [Card](#card)
+[Slider](#slider-slide-button) · [Chips](#chips) · [Calendário](#calendário) · [Card](#card) · [Pager e leitor de texto](#pager-e-leitor-de-texto)
 
 > **Propriedades comuns a todos** (vindas da `Base`): `ID`, `ClassName`, `Style`, `Hidden`, `Disabled`, `OnClick`,
 > `AppendChild/RemoveChild`. Um elemento **desabilitado** é desenhado apagado e ignora o toque. Os callbacks recebem
@@ -582,6 +582,62 @@ func CardExample() widget.Widget {
 	return widget.NewCard("Card title", "Optional subtitle",
 		widget.NewLabel("A card groups related content."),
 		widget.NewRow(14, ok, later))
+}
+```
+
+## Pager e leitor de texto
+
+![pager](../components/pager.png)
+
+![leitor de texto](../components/textpager.png)
+
+O e-ink se lê **virando páginas**, não rolando: uma página é uma repintura e nada se mexe enquanto você lê. Dois componentes fazem isso.
+
+O **Pager** mostra uma lista longa de *quaisquer widgets* uma página por vez (linhas de mensagens, tarefas, eventos), com botões
+anterior e próximo e o indicador "página / páginas". É feito de widgets que já existem: adicione `pager.Root` ao documento.
+
+| | |
+|---|---|
+| Criar | `widget.NewPager(tamanhoDaPagina, itens...)`; adicione `pager.Root` |
+| Propriedades | `Len()`, `PageSize()`, `Pages()`, `Page()`; `SetItems(itens)` mantém a página se ela ainda existir |
+| Navegação | `GoTo(n)` (limitado), `Prev()`, `Next()` |
+| Eventos | `OnPage` (só quando a página realmente mudou) |
+
+```go
+// examples/components/pager.go#PagerExample
+// PagerExample is a list of rows shown four at a time, with previous and next buttons.
+func PagerExample() widget.Widget {
+	var rows []widget.Widget
+	for i := 1; i <= 10; i++ {
+		row := widget.NewLabel(fmt.Sprintf("Message %d", i))
+		row.OnClick = func(e *widget.Event) { fmt.Println("opened", row.Text) }
+		rows = append(rows, row)
+	}
+	pager := widget.NewPager(4, rows...)
+	pager.OnPage = func(e *widget.Event) { fmt.Println("now on page", pager.Page()+1, "of", pager.Pages()) }
+	return pager.Root // add this to the document
+}
+```
+
+O **TextPager** mostra um *texto* longo uma página por vez, quebrado na sua largura: o número de páginas acompanha a tela. A altura é
+`Lines` linhas de texto mais o rodapé, então o rodapé não pula entre as páginas.
+
+| | |
+|---|---|
+| Criar | `widget.NewTextPager(texto)` |
+| Propriedades | `Text`, `Lines` (por página, 20 por padrão), `Page`, `Pages()`; `SetText(texto)` volta à primeira página; a fonte segue `Style.FontSize` |
+| Navegação | `GoTo(n)` (limitado), `Prev()`, `Next()`; os botões do rodapé viram a página |
+| Eventos | `OnPage` |
+
+```go
+// examples/components/pager.go#TextPagerExample
+// TextPagerExample is a long text read by turning pages.
+func TextPagerExample() widget.Widget {
+	article := widget.NewTextPager("A long text is read by turning pages, not by scrolling. " +
+		"Each page holds a fixed number of lines, so nothing moves while you read.")
+	article.Lines = 12 // lines per page (20 by default)
+	article.OnPage = func(e *widget.Event) { fmt.Println("page", article.Page+1) }
+	return article
 }
 ```
 
