@@ -2,8 +2,8 @@
 # It first runs the continuous integration (ci.yml), then builds every app of
 # apps/ for the reader and the installer for Windows, Linux and macOS, and
 # publishes one GitHub Release with:
-#   - <id>.app.bin and <id>.json for every app (the Launcher's catalog reads these;
-#     GitHub refuses release files named *.app)
+#   - <id>.zip (the <id>.app and its app.json) for every app, and catalog.json that
+#     lists them (the Launcher reads these; GitHub refuses release files named *.app)
 #   - pbgo-installer_<os>_<arch>.zip|.tar.gz  the installer for people
 #   - SHA256SUMS
 #   - release notes with the install command for each system (tools/release)

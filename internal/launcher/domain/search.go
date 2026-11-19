@@ -11,8 +11,9 @@ type Listing struct {
 	Title       string
 	Description string
 	Version     string
-	URL         string // where the <id>.app is downloaded from
+	URL         string // where the app's zip (<id>.app + app.json) is downloaded from
 	Size        int64  // its size in bytes (0 when unknown)
+	SHA256      string // hex digest of the download ("" when unknown)
 	Manifest    []byte // the app.json, kept to register the app once installed
 }
 

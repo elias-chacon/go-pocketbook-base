@@ -1,7 +1,8 @@
 // Command release prepares what is published on a GitHub Release:
 //
-//   - the apps built for the reader (dist/applications/<id>.app), as they are, so
-//     the Launcher can download them;
+//   - one <id>.zip per app (its <id>.app built for the reader and its app.json) and
+//     a catalog.json that lists them with manifests, sizes and SHA-256, which the
+//     Launcher reads to list and install the apps (and people can unzip by hand);
 //   - the installer for people (cmd/pbinstaller) for Windows, Linux and macOS,
 //     each carrying the apps inside, as a zip / tar.gz;
 //   - SHA256SUMS of everything.
@@ -61,18 +62,19 @@ func run() error {
 		return err
 	}
 	var files []string
-	for _, id := range ids { // the apps themselves, for the Launcher to download
-		asset := id + github.AppAssetSuffix // GitHub refuses release files named *.app
-		if err := copyFile(filepath.Join(distApps, id+".app"), filepath.Join(outDir, asset)); err != nil {
+	var entries []github.IndexEntry
+	for _, id := range ids { // one zip per app, for the Launcher (and people) to download
+		entry, err := packageApp(distApps, "apps", outDir, id, version)
+		if err != nil {
 			return err
 		}
-		files = append(files, asset)
-		// the manifest next to it: the Launcher lists the catalog from the pair
-		if err := copyFile(filepath.Join("apps", id, "app.json"), filepath.Join(outDir, id+".json")); err != nil {
-			return err
-		}
-		files = append(files, id+".json")
+		entries = append(entries, entry)
+		files = append(files, entry.Asset)
 	}
+	if err := writeCatalog(outDir, entries); err != nil {
+		return err
+	}
+	files = append(files, github.CatalogAsset)
 
 	windowsIcon()
 	for _, t := range targets {

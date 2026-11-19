@@ -12,9 +12,9 @@ import (
 
 const helloManifest = `{"id":"hello","title":{"pt-BR":"Olá","en":"Hello"},"description":{"pt-BR":"Vitrine","en":"Showcase"}}`
 
-// server serves a release with hello (valid), books (manifest of another id),
-// notes.app without a manifest, and a stray file.
-func server(t *testing.T, hits *int32) *httptest.Server {
+// server serves a release whose catalog.json lists hello (valid), books (a
+// manifest of another id), notes (its zip is not in the release) and a stray file.
+func server(t *testing.T, hits *int32, withCatalog bool) *httptest.Server {
 	t.Helper()
 	mux := http.NewServeMux()
 	var srv *httptest.Server
@@ -23,17 +23,23 @@ func server(t *testing.T, hits *int32) *httptest.Server {
 		if r.Header.Get("User-Agent") == "" {
 			t.Error("GitHub requires a User-Agent")
 		}
-		fmt.Fprintf(w, `{"tag_name":"v1.2.3","assets":[
-			{"name":"hello.app.bin","browser_download_url":"%[1]s/dl/hello.app","size":4096},
-			{"name":"hello.json","browser_download_url":"%[1]s/dl/hello.json","size":10},
-			{"name":"books.app.bin","browser_download_url":"%[1]s/dl/books.app","size":1},
-			{"name":"books.json","browser_download_url":"%[1]s/dl/books-wrong.json","size":10},
-			{"name":"notes.app.bin","browser_download_url":"%[1]s/dl/notes.app","size":1},
-			{"name":"stray.app","browser_download_url":"%[1]s/dl/stray","size":1},
-			{"name":"SHA256SUMS","browser_download_url":"%[1]s/dl/sums","size":1}]}`, srv.URL)
+		catalog := ""
+		if withCatalog {
+			catalog = fmt.Sprintf(`{"name":"catalog.json","browser_download_url":"%s/dl/catalog.json"},`, srv.URL)
+		}
+		fmt.Fprintf(w, `{"tag_name":"v1.2.3","assets":[%[2]s
+			{"name":"hello.zip","browser_download_url":"%[1]s/dl/hello.zip"},
+			{"name":"books.zip","browser_download_url":"%[1]s/dl/books.zip"},
+			{"name":"stray.app","browser_download_url":"%[1]s/dl/stray"},
+			{"name":"SHA256SUMS","browser_download_url":"%[1]s/dl/sums"}]}`, srv.URL, catalog)
 	})
-	mux.HandleFunc("/dl/hello.json", func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, helloManifest) })
-	mux.HandleFunc("/dl/books-wrong.json", func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, helloManifest) })
+	mux.HandleFunc("/dl/catalog.json", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `{"apps":[
+			{"id":"hello","version":"v1.2.3","asset":"hello.zip","size":4096,"sha256":"abc","manifest":%[1]s},
+			{"id":"books","version":"1.0.0","asset":"books.zip","size":1,"sha256":"d","manifest":%[1]s},
+			{"id":"notes","version":"1.0.0","asset":"notes.zip","size":1,"sha256":"e","manifest":%[1]s},
+			{"id":"broken","version":"1.0.0","asset":"hello.zip","size":1,"sha256":"f","manifest":{"id":"broken"}}]}`, helloManifest)
+	})
 	srv = httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 	return srv
@@ -41,18 +47,18 @@ func server(t *testing.T, hits *int32) *httptest.Server {
 
 func TestTheCatalogListsTheAppsOfTheLatestReleaseInTheLanguage(t *testing.T) {
 	var hits int32
-	srv := server(t, &hits)
+	srv := server(t, &hits, true)
 	c := &Catalog{Client: srv.Client(), Owner: "o", Repo: "r", BaseURL: srv.URL}
 
 	list, err := c.List("en")
 	if err != nil || len(list) != 1 {
-		t.Fatalf("only hello is a valid app: %+v %v", list, err)
+		t.Fatalf("only hello is valid (books has another id, notes is not in the release, broken has no title): %+v %v", list, err)
 	}
 	l := list[0]
 	if l.ID != "hello" || l.Title != "Hello" || l.Description != "Showcase" || l.Version != "1.2.3" {
 		t.Errorf("%+v", l)
 	}
-	if !strings.HasSuffix(l.URL, "/dl/hello.app") || l.Size != 4096 || string(l.Manifest) != helloManifest {
+	if !strings.HasSuffix(l.URL, "/dl/hello.zip") || l.Size != 4096 || l.SHA256 != "abc" || string(l.Manifest) != helloManifest {
 		t.Errorf("download data: %+v", l)
 	}
 
@@ -62,9 +68,18 @@ func TestTheCatalogListsTheAppsOfTheLatestReleaseInTheLanguage(t *testing.T) {
 	}
 }
 
+func TestAReleaseWithoutACatalogIsAnError(t *testing.T) {
+	var hits int32
+	srv := server(t, &hits, false)
+	c := &Catalog{Client: srv.Client(), Owner: "o", Repo: "r", BaseURL: srv.URL}
+	if _, err := c.List("en"); err == nil || !strings.Contains(err.Error(), "catalog.json") {
+		t.Errorf("%v", err)
+	}
+}
+
 func TestTheAnswerIsKeptForAWhile(t *testing.T) {
 	var hits int32
-	srv := server(t, &hits)
+	srv := server(t, &hits, true)
 	now := time.Unix(1000, 0)
 	c := &Catalog{Client: srv.Client(), Owner: "o", Repo: "r", BaseURL: srv.URL, Now: func() time.Time { return now }}
 
@@ -92,6 +107,19 @@ func TestFailuresAreReported(t *testing.T) {
 	defer garbage.Close()
 	if _, err := (&Catalog{Client: garbage.Client(), Owner: "o", Repo: "r", BaseURL: garbage.URL}).List("en"); err == nil {
 		t.Error("an answer that is not JSON")
+	}
+
+	badIndex := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "latest") {
+			fmt.Fprintf(w, `{"tag_name":"v1","assets":[{"name":"catalog.json","browser_download_url":"http://%s/idx"}]}`, r.Host)
+			return
+		}
+		fmt.Fprint(w, "not json")
+	}))
+	defer badIndex.Close()
+	if _, err := (&Catalog{Client: badIndex.Client(), Owner: "o", Repo: "r", BaseURL: badIndex.URL}).List("en"); err == nil ||
+		!strings.Contains(err.Error(), "catalog.json") {
+		t.Errorf("a catalog.json that is not JSON: %v", err)
 	}
 
 	if _, err := (&Catalog{Client: http.DefaultClient, Owner: "o", Repo: "r", BaseURL: "http://127.0.0.1:1"}).List("en"); err == nil {
@@ -124,6 +152,12 @@ func TestTheDefaultBaseURLIsGitHub(t *testing.T) {
 	c.List("en")
 	if got != "https://api.github.com/repos/o/r/releases/latest" {
 		t.Errorf("%s", got)
+	}
+}
+
+func TestAppAssetsAreZips(t *testing.T) {
+	if AppAsset("hello") != "hello.zip" {
+		t.Error(AppAsset("hello"))
 	}
 }
 

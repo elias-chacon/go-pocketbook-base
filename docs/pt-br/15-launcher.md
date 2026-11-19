@@ -20,8 +20,8 @@ O `apps/launcher` é o App Launcher do ecossistema: a tela inicial dos apps feit
   `-- Disponíveis --` (os apps do catálogo que combinam e ainda não estão instalados, até 4 linhas e "… e mais N"). Sem catálogo
   (ou sem rede) a segunda seção diz o motivo e os instalados continuam respondendo.
 - **Instalação com um toque.** As linhas de *Disponíveis* vêm da **última Release do GitHub** do repositório
-  (`elias-chacon/go-pocketbook-base`): cada app é publicado como `<id>.app.bin` (o GitHub recusa `*.app`) + `<id>.json`, e o catálogo lista os pares cujo manifesto
-  segue o contrato. Tocar numa linha mostra *Baixando…*, baixa o `.app` para `applications/`, confere o tamanho, registra na tela
+  (`elias-chacon/go-pocketbook-base`): cada app é um `<id>.zip` (o `<id>.app` e o seu `app.json`) e um `catalog.json` os lista com manifesto, tamanho e SHA-256, então a lista custa um download pequeno.
+  Tocar numa linha mostra *Baixando…*, baixa o zip, confere o tamanho e o SHA-256, extrai o `<id>.app` para `applications/`, registra na tela
   inicial (com o ícone padrão: o app só desenha o próprio se for executado, e a tela inicial mantém o primeiro ícone) e o move
   para *Instalados*. A lista fica guardada por 5 minutos. Precisa do Wi-Fi ligado; sem ele (ou sem release) a seção mostra o erro.
 - Textos em português (pt-BR) com inglês como fallback, no idioma escolhido nas configurações compartilhadas.
@@ -47,8 +47,8 @@ Launcher ──exec──► app          (PBGO_LAUNCHER=/…/launcher.app)
 | domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (traduzido, ordenado sem ligar para maiúsculas e acentos), `Grid` e paginação, `Matches`/`FilterTiles`/`FilterListings`, `Listing`, `SearchResult`, as portas `AppLauncher`, `Catalog` e `Installer` |
 | application | `internal/launcher/application` | `Home`: os blocos dos apps instalados e a abertura de um; `Search`: apps instalados e disponíveis para uma busca |
 | infrastructure | `internal/launcher/infrastructure/processlauncher` | inicia um app substituindo o processo |
-| | `…/infrastructure/github` | o `Catalog`: os pares `<id>.app.bin` + `<id>.json` da última release (guardados por 5 min) |
-| | `…/infrastructure/appinstaller` | o `Installer`: baixa por um arquivo temporário, confere o tamanho, registra |
+| | `…/infrastructure/github` | o `Catalog`: o `catalog.json` da última release e os apps que ele lista (guardados por 5 min) |
+| | `…/infrastructure/appinstaller` | o `Installer`: baixa o zip, confere tamanho e SHA-256, extrai o `<id>.app` por um arquivo temporário, registra |
 | presentation | `internal/launcher/presentation` | a tela inicial, com os widgets do toolkit (`Image`, `Grid`, `Label`…) |
 | raiz de composição | `apps/launcher` | liga a plataforma ao contexto; carrega os ícones BMP |
 

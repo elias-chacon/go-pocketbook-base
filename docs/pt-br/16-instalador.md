@@ -57,7 +57,7 @@ go run ./tools/release    # prepara o payload e gera os instaladores em ./releas
 O `tools/release` copia cada `dist/applications/<id>.app` e o seu `apps/<id>/app.json` para `cmd/pbinstaller/payload`, compila o
 instalador para Windows (amd64), Linux (amd64) e macOS (amd64, arm64) com a versão no binário, dá ao do Windows o ícone do
 Launcher (o `tools/release/syso.go` escreve o arquivo de recursos do Windows por conta própria, então nada é baixado), empacota cada um em zip ou
-tar.gz, copia os apps crus (como `<id>.app.bin`, pois o GitHub recusa arquivos de release chamados `*.app`) e os manifestos `<id>.json` (o catálogo do Launcher lista e baixa estes) e escreve o `SHA256SUMS`.
+tar.gz, compacta cada app (`<id>.zip` com o `<id>.app` e o seu `app.json`; o GitHub recusa arquivos de release chamados `*.app`), escreve o `catalog.json` (id, versão, nome do zip, tamanho, SHA-256 e manifesto de cada app: é o que o Launcher lê) e o `SHA256SUMS`.
 
 ## Integração contínua e releases são dois workflows
 
@@ -66,7 +66,7 @@ tar.gz, copia os apps crus (como `<id>.app.bin`, pois o GitHub recusa arquivos d
 | `.github/workflows/ci.yml` | todo push na `main`, todo pull request e antes de uma release | `go vet`, todos os testes no Linux, a cobertura que conta (`tools/coverage`, as mesmas exclusões do Sonar), os dois apps compilados para o leitor; na `main` publica o badge de cobertura (JSON na branch `badges`) |
 | `.github/workflows/release.yml` | uma tag `vMAJOR.MINOR.BUILD` é enviada (deve ser igual ao `.version`) | roda o `ci.yml` antes, depois compila **todos os apps** de `apps/`, os instaladores e os checksums, e publica **uma Release do GitHub** com tudo |
 
-A release leva `<id>.app.bin` + `<id>.json` de cada app (o catálogo do Launcher), o instalador de cada sistema com **nome sem versão**
+A release leva um `<id>.zip` por app e o `catalog.json` que os lista (o catálogo do Launcher; para instalar à mão, baixe o zip e copie o `<id>.app` para a pasta `applications` do leitor: o app se registra na primeira execução), o instalador de cada sistema com **nome sem versão**
 (então `…/releases/latest/download/pbgo-installer_windows_amd64.zip` é sempre o mais novo) e notas com o comando de instalação para
 Windows, Linux e macOS, geradas pelo `tools/release`. O README mostra os mesmos comandos para o `latest` e os badges (ci, cobertura,
 issues abertas, versão, última atualização).

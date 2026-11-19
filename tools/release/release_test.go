@@ -3,7 +3,12 @@ package main
 import (
 	"archive/tar"
 	"archive/zip"
+	"bytes"
 	"compress/gzip"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"go-pocketbook-base/internal/launcher/infrastructure/github"
 	"io"
 	"os"
 	"path/filepath"
@@ -141,5 +146,83 @@ func TestTheNotesGiveTheInstallCommandOfEachSystem(t *testing.T) {
 	}
 	if strings.Contains(text, "%!") {
 		t.Errorf("a formatting mistake:\n%s", text)
+	}
+}
+
+func TestPackageAppZipsTheBinaryWithItsManifestAndDescribesIt(t *testing.T) {
+	root := t.TempDir()
+	write(t, filepath.Join(root, "dist", "hello.app"), "BINARY")
+	manifest := `{"id":"hello","title":{"pt-BR":"Olá"},"description":{"pt-BR":"D"}}`
+	write(t, filepath.Join(root, "apps", "hello", "app.json"), manifest)
+	out := filepath.Join(root, "out")
+	os.MkdirAll(out, 0o755)
+
+	entry, err := packageApp(filepath.Join(root, "dist"), filepath.Join(root, "apps"), out, "hello", "1.2.3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if entry.ID != "hello" || entry.Asset != "hello.zip" || entry.Version != "1.2.3" || string(entry.Manifest) != manifest {
+		t.Errorf("%+v", entry)
+	}
+
+	data, err := os.ReadFile(filepath.Join(out, "hello.zip"))
+	if err != nil || int64(len(data)) != entry.Size {
+		t.Fatalf("size %d vs %d: %v", len(data), entry.Size, err)
+	}
+	if sum := sha256.Sum256(data); hex.EncodeToString(sum[:]) != entry.SHA256 {
+		t.Error("the catalog's SHA-256 is the zip's")
+	}
+	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil || len(zr.File) != 2 {
+		t.Fatalf("%v %v", err, zr)
+	}
+	got := map[string]string{}
+	for _, f := range zr.File {
+		rc, _ := f.Open()
+		body, _ := io.ReadAll(rc)
+		rc.Close()
+		got[f.Name] = string(body)
+		if f.Name == "hello.app" && f.Mode()&0o111 == 0 {
+			t.Error("the app stays executable")
+		}
+	}
+	if got["hello.app"] != "BINARY" || got["app.json"] != manifest {
+		t.Errorf("%v", got)
+	}
+
+	again, _ := packageApp(filepath.Join(root, "dist"), filepath.Join(root, "apps"), out, "hello", "1.2.3")
+	if again.SHA256 != entry.SHA256 {
+		t.Error("the same build gives the same zip")
+	}
+}
+
+func TestPackageAppReportsWhatIsMissing(t *testing.T) {
+	root := t.TempDir()
+	if _, err := packageApp(root, root, root, "x", "1"); err == nil {
+		t.Error("no built app")
+	}
+	write(t, filepath.Join(root, "x.app"), "B")
+	if _, err := packageApp(root, filepath.Join(root, "apps"), root, "x", "1"); err == nil || !strings.Contains(err.Error(), "manifest") {
+		t.Errorf("no manifest: %v", err)
+	}
+	write(t, filepath.Join(root, "apps", "x", "app.json"), "{}")
+	if _, err := packageApp(root, filepath.Join(root, "apps"), filepath.Join(root, "no-such-dir"), "x", "1"); err == nil {
+		t.Error("an output folder that does not exist")
+	}
+}
+
+func TestTheCatalogIsWrittenInTheFormatTheLauncherReads(t *testing.T) {
+	dir := t.TempDir()
+	entries := []github.IndexEntry{{ID: "a", Version: "1", Asset: "a.zip", Size: 3, SHA256: "ff", Manifest: json.RawMessage(`{"id":"a"}`)}}
+	if err := writeCatalog(dir, entries); err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := os.ReadFile(filepath.Join(dir, "catalog.json"))
+	var index github.Index
+	if err := json.Unmarshal(raw, &index); err != nil || len(index.Apps) != 1 || index.Apps[0].Asset != "a.zip" {
+		t.Errorf("%v %+v", err, index)
+	}
+	if err := writeCatalog(filepath.Join(dir, "none"), entries); err == nil {
+		t.Error("an output folder that does not exist")
 	}
 }

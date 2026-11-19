@@ -20,8 +20,9 @@ other (it follows the [contract](13-apps-and-the-contract.md)) and the compositi
   apps of the catalog that match and are not installed, up to 4 rows and "… and N more"). Without a catalog (or without
   network) the second section says why and the installed ones still answer.
 - **Install with one tap.** The *Available* rows come from the **latest GitHub Release** of the repository (`elias-chacon/go-pocketbook-base`):
-  every app is published as `<id>.app.bin` (GitHub refuses `*.app`) + `<id>.json`, and the catalog lists the pairs whose manifest follows the contract. Tapping a
-  row shows *Downloading…*, downloads the `.app` into `applications/`, checks its size, registers it on the home screen (with the
+  every app is a `<id>.zip` (the `<id>.app` and its `app.json`) and a `catalog.json` lists them with manifest, size and SHA-256, so the list
+  costs one small download. Tapping a row shows *Downloading…*, downloads the zip, checks its size and SHA-256, extracts the `<id>.app` into
+  `applications/`, registers it on the home screen (with the
   default icon: the app draws its own only if it is run, and the home screen keeps the first icon) and moves it to *Installed*.
   The list is kept for 5 minutes. It needs Wi-Fi on; without it (or without a release) the section shows the error.
 - Texts in Portuguese (pt-BR) with English as the fallback, in the language chosen in the shared settings.
@@ -48,8 +49,8 @@ Launcher ──exec──► app          (PBGO_LAUNCHER=/…/launcher.app)
 | domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (translated, sorted ignoring case and accents), `Grid` and paging, `Matches`/`FilterTiles`/`FilterListings`, `Listing`, `SearchResult`, the `AppLauncher`, `Catalog` and `Installer` ports |
 | application | `internal/launcher/application` | `Home`: the tiles of the installed apps, and opening one; `Search`: installed and available apps for a query |
 | infrastructure | `internal/launcher/infrastructure/processlauncher` | starts an app by replacing the process |
-| | `…/infrastructure/github` | the `Catalog`: the latest release's `<id>.app.bin` + `<id>.json` pairs (cached 5 min) |
-| | `…/infrastructure/appinstaller` | the `Installer`: download through a temporary file, check the size, register |
+| | `…/infrastructure/github` | the `Catalog`: the latest release's `catalog.json` and the apps it lists (cached 5 min) |
+| | `…/infrastructure/appinstaller` | the `Installer`: download the zip, check size and SHA-256, extract `<id>.app` through a temporary file, register |
 | presentation | `internal/launcher/presentation` | the home screen, from the toolkit's widgets (`Image`, `Grid`, `Label`…) |
 | composition root | `apps/launcher` | wires the platform to the context; loads the BMP icons |
 

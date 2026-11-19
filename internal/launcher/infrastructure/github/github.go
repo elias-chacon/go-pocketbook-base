@@ -1,8 +1,9 @@
 // Package github is the domain.Catalog of the ecosystem: the apps published on
 // the latest GitHub Release of the repository. The repository itself holds only
-// source; each release carries, for every app, the app built for the reader as
-// <id>.app.bin and its <id>.json manifest (tools/release publishes both). GitHub
-// refuses release files named *.app, hence the extra extension.
+// source; a release carries one <id>.zip per app (the <id>.app built for the
+// reader and its app.json) and a catalog.json that lists them with their
+// manifests, sizes and SHA-256, so the Launcher lists the apps with one small
+// download instead of one per app (tools/release builds all of it).
 package github
 
 import (
@@ -21,13 +22,31 @@ import (
 // DefaultBaseURL is GitHub's API.
 const DefaultBaseURL = "https://api.github.com"
 
-// AppAssetSuffix ends the name of the release file that holds an app: GitHub
-// rejects uploads named *.app, so <id>.app is published as <id>.app.bin.
-const AppAssetSuffix = ".app.bin"
+// CatalogAsset is the name of the release file that lists the apps.
+const CatalogAsset = "catalog.json"
+
+// AppAsset is the name of the release file that holds app id: a zip with
+// <id>.app and app.json. (GitHub refuses release files named *.app.)
+func AppAsset(id string) string { return id + ".zip" }
+
+// Index is the content of catalog.json.
+type Index struct {
+	Apps []IndexEntry `json:"apps"`
+}
+
+// IndexEntry describes one app of the release.
+type IndexEntry struct {
+	ID       string          `json:"id"`
+	Version  string          `json:"version"`
+	Asset    string          `json:"asset"`  // the zip's name in the release
+	Size     int64           `json:"size"`   // of the zip
+	SHA256   string          `json:"sha256"` // of the zip, hex
+	Manifest json.RawMessage `json:"manifest"`
+}
 
 const (
 	userAgent    = "go-pocketbook-base-launcher"
-	maxManifest  = 64 << 10 // a manifest is a few hundred bytes
+	maxIndex     = 1 << 20
 	maxReleaseJS = 1 << 20
 	cacheFor     = 5 * time.Minute
 )
@@ -55,7 +74,6 @@ type release struct {
 	Assets []struct {
 		Name string `json:"name"`
 		URL  string `json:"browser_download_url"`
-		Size int64  `json:"size"`
 	} `json:"assets"`
 }
 
@@ -72,29 +90,34 @@ func (c *Catalog) List(lang string) ([]domain.Listing, error) {
 	if err != nil {
 		return nil, err
 	}
-	version := strings.TrimPrefix(rel.Tag, "v")
-	byName := map[string]int{}
-	for i, a := range rel.Assets {
-		byName[a.Name] = i
-	}
-	var out []domain.Listing
+	urls := map[string]string{}
 	for _, a := range rel.Assets {
-		id := strings.TrimSuffix(a.Name, AppAssetSuffix)
-		j, ok := byName[id+".json"]
-		if id == a.Name || !ok {
-			continue // not an app, or it has no manifest
-		}
-		manifest, err := c.get(rel.Assets[j].URL, maxManifest)
-		if err != nil {
-			return nil, err
-		}
-		m, err := platform.ParseManifest(manifest)
-		if err != nil || m.ID != id {
-			continue // a manifest that does not follow the contract is not listed
+		urls[a.Name] = a.URL
+	}
+	indexURL, ok := urls[CatalogAsset]
+	if !ok {
+		return nil, fmt.Errorf("github: release %s has no %s", rel.Tag, CatalogAsset)
+	}
+	raw, err := Get(c.Client, indexURL, maxIndex)
+	if err != nil {
+		return nil, err
+	}
+	var index Index
+	if err := json.Unmarshal(raw, &index); err != nil {
+		return nil, fmt.Errorf("github: unexpected %s: %w", CatalogAsset, err)
+	}
+
+	var out []domain.Listing
+	for _, e := range index.Apps {
+		url, ok := urls[e.Asset]
+		m, err := platform.ParseManifest(e.Manifest)
+		if !ok || err != nil || m.ID != e.ID {
+			continue // missing from the release, or a manifest that does not follow the contract
 		}
 		out = append(out, domain.Listing{
-			ID: id, Title: m.TitleIn(lang), Description: m.DescriptionIn(lang), Version: version,
-			URL: a.URL, Size: a.Size, Manifest: manifest,
+			ID: e.ID, Title: m.TitleIn(lang), Description: m.DescriptionIn(lang),
+			Version: strings.TrimPrefix(e.Version, "v"), URL: url, Size: e.Size, SHA256: e.SHA256,
+			Manifest: e.Manifest,
 		})
 	}
 	c.list, c.langs, c.at = out, lang, now
@@ -113,7 +136,7 @@ func (c *Catalog) latest() (release, error) {
 	if base == "" {
 		base = DefaultBaseURL
 	}
-	body, err := c.get(fmt.Sprintf("%s/repos/%s/%s/releases/latest", base, c.Owner, c.Repo), maxReleaseJS)
+	body, err := Get(c.Client, fmt.Sprintf("%s/repos/%s/%s/releases/latest", base, c.Owner, c.Repo), maxReleaseJS)
 	if err != nil {
 		return release{}, err
 	}
@@ -122,11 +145,6 @@ func (c *Catalog) latest() (release, error) {
 		return release{}, fmt.Errorf("github: unexpected answer: %w", err)
 	}
 	return rel, nil
-}
-
-// get downloads url, refusing anything above limit bytes.
-func (c *Catalog) get(url string, limit int64) ([]byte, error) {
-	return Get(c.Client, url, limit)
 }
 
 // Get is a GET that checks the status and reads at most limit bytes.
