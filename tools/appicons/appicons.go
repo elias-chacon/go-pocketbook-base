@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 
 	"go-pocketbook-base/internal/launcher/presentation"
+	"go-pocketbook-base/internal/platform"
 	"go-pocketbook-base/internal/showcase"
 )
 
@@ -28,6 +29,7 @@ const edge = 128
 var renderers = map[string]func(size int, focused bool) image.Image{
 	"hello":    func(size int, focused bool) image.Image { return showcase.RenderIcon(size, focused) },
 	"launcher": presentation.RenderIcon,
+	"mail":     platform.DefaultIcon("E-mail"),
 }
 
 // iconPNG is the encoded icon of an app, or false when it has no renderer.

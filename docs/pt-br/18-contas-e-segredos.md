@@ -60,12 +60,21 @@ A configuração da Microsoft (`oauthdevice.Microsoft(clientID)`) usa o *tenant*
 apps (e-mail, calendário e tarefas). Ela precisa de um **client ID**: registre um aplicativo no Entra ID como **cliente público** e ligue
 "permitir fluxos de cliente público". O Google não entra aqui: o fluxo por dispositivo dele não permite o Gmail nem o Calendar.
 
+## Adicionar uma conta (a tela compartilhada)
+
+`Accounts.Register` transforma o que a pessoa digita (endereço, senha e os servidores quando o provedor é desconhecido) em uma conta: o provedor vem do
+endereço (**Gmail, iCloud...**), um desconhecido precisa dos servidores IMAP e SMTP (993 com TLS, 587 com STARTTLS), um provedor que entra com OAuth2
+(Outlook.com) é recusado até o login por código ser ligado, e a senha vai para o cofre. O `internal/accounts/presentation` tem a **tela de login** que todos
+os apps da suíte compartilham: os servidores só aparecem para um provedor desconhecido, uma dica diz que é preciso uma senha de app, toda falha é explicada e
+a senha nunca aparece numa mensagem.
+
 ## O código
 
 | Camada | Pacote | Guarda |
 |---|---|---|
 | domain | `internal/accounts/domain` | `Account`, `Endpoint`, `Secret`, `Preset`, as portas `AccountStore`, `Vault` e `Eraser` |
-| application | `internal/accounts/application` | `Accounts`: adicionar, atualizar, remover, listar por serviço, credenciais, renovar tokens |
+| application | `internal/accounts/application` | `Accounts`: adicionar, registrar (a partir de um endereço), atualizar, remover, listar por serviço, credenciais, renovar tokens |
+| presentation | `internal/accounts/presentation` | a tela de login compartilhada pelos apps |
 | infrastructure | `…/infrastructure/jsonaccounts` | o `AccountStore` em `accounts.json` |
 | | `…/infrastructure/securefile` | o `Vault` cifrado, o PIN e o PBKDF2 |
 | | `…/infrastructure/oauthdevice` | o `Authorizer`: o fluxo de código de dispositivo e a renovação, com a configuração da Microsoft |

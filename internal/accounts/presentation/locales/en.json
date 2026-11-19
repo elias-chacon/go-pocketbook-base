@@ -1,0 +1,20 @@
+{
+  "signin.title": "Add an account",
+  "signin.email": "Email address",
+  "signin.name": "Name shown (optional)",
+  "signin.password": "Password",
+  "signin.password.app": "App password",
+  "signin.hint.app": "This provider asks for an app password, created in its security settings. Your normal password does not work.",
+  "signin.hint.custom": "Provider not recognized: type the servers of your mail.",
+  "signin.imap": "IMAP server (e.g. imap.example.com)",
+  "signin.smtp": "SMTP server (e.g. smtp.example.com)",
+  "signin.hint.oauth": "%s signs in with a code on another device. This is not available in this version yet.",
+  "signin.add": "Add account",
+  "signin.cancel": "Cancel",
+  "signin.invalid": "Check the address: it needs a name, an @ and a domain.",
+  "signin.nopassword": "Type the password.",
+  "signin.noservers": "Type the IMAP and SMTP servers.",
+  "signin.failed": "Could not add the account: %s",
+  "signin.exists": "This account was already added.",
+  "signin.provider": "Provider: %s"
+}

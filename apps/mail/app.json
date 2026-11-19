@@ -1,0 +1,12 @@
+{
+  "id": "mail",
+  "title": {
+    "pt-BR": "E-mail",
+    "en": "Mail"
+  },
+  "description": {
+    "pt-BR": "Leia seus e-mails em qualquer servidor IMAP, com cache para ler offline.",
+    "en": "Read your email from any IMAP server, with a cache to read offline."
+  },
+  "group": "@Productivity"
+}

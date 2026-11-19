@@ -1,0 +1,20 @@
+{
+  "signin.title": "Adicionar conta",
+  "signin.email": "Endereço de e-mail",
+  "signin.name": "Nome exibido (opcional)",
+  "signin.password": "Senha",
+  "signin.password.app": "Senha de app",
+  "signin.hint.app": "Este provedor pede uma senha de app, criada nas configurações de segurança dele. A senha normal não funciona.",
+  "signin.hint.custom": "Provedor não reconhecido: digite os servidores do seu e-mail.",
+  "signin.imap": "Servidor IMAP (ex.: imap.exemplo.com)",
+  "signin.smtp": "Servidor SMTP (ex.: smtp.exemplo.com)",
+  "signin.hint.oauth": "%s entra com um código em outro aparelho. Isso ainda não está disponível nesta versão.",
+  "signin.add": "Adicionar conta",
+  "signin.cancel": "Cancelar",
+  "signin.invalid": "Confira o endereço: precisa de um nome, um @ e um domínio.",
+  "signin.nopassword": "Digite a senha.",
+  "signin.noservers": "Digite os servidores IMAP e SMTP.",
+  "signin.failed": "Não foi possível adicionar a conta: %s",
+  "signin.exists": "Esta conta já foi adicionada.",
+  "signin.provider": "Provedor: %s"
+}

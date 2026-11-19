@@ -60,12 +60,21 @@ Microsoft's configuration (`oauthdevice.Microsoft(clientID)`) uses the `common` 
 apps (mail, calendar and tasks). It needs a **client ID**: register an application in Entra ID as a **public client** and turn on
 "allow public client flows". Google is not here: its device flow does not allow Gmail or Calendar.
 
+## Adding an account (the shared screen)
+
+`Accounts.Register` turns what the person types (address, password, and the servers when the provider is unknown) into an account: the provider comes
+from the address (**Gmail, iCloud...**), an unknown one needs its IMAP and SMTP servers (993 with TLS, 587 with STARTTLS), a provider that signs in with
+OAuth2 (Outlook.com) is refused until the sign-in by code is wired, and the password goes to the vault. `internal/accounts/presentation` has the
+**sign-in screen** every app of the suite shares: the servers only appear for an unknown provider, a hint says an app password is needed, every failure is
+explained and the password never appears in a message.
+
 ## The code
 
 | Layer | Package | Holds |
 |---|---|---|
 | domain | `internal/accounts/domain` | `Account`, `Endpoint`, `Secret`, `Preset`, the `AccountStore`, `Vault` and `Eraser` ports |
-| application | `internal/accounts/application` | `Accounts`: add, update, remove, list by service, credentials, refresh tokens |
+| application | `internal/accounts/application` | `Accounts`: add, register (from an address), update, remove, list by service, credentials, refresh tokens |
+| presentation | `internal/accounts/presentation` | the sign-in screen shared by the apps |
 | infrastructure | `…/infrastructure/jsonaccounts` | the `AccountStore` in `accounts.json` |
 | | `…/infrastructure/securefile` | the encrypted `Vault`, the PIN and PBKDF2 |
 | | `…/infrastructure/oauthdevice` | the `Authorizer`: the device code flow and token renewal, with Microsoft's configuration |

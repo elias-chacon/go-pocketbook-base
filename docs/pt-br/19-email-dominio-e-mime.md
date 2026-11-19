@@ -77,12 +77,23 @@ O **`smtpsend`** envia por SMTP com o `net/smtp` (STARTTLS na 587, TLS na 465), 
 montou, então o Cco nunca vai no cabeçalho. O `imapmail` compõe o rascunho, entrega ao `Sender` e, com `SaveSent`, grava uma cópia em Enviados (Gmail e
 Outlook fazem isso sozinhos). Testado contra o servidor IMAP em memória do go-imap e um servidor SMTP minúsculo; **ainda não contra um provedor de verdade**.
 
+## O app E-mail
+
+O `apps/mail` é a raiz de composição: abre o banco compartilhado, as contas e o cofre em `applications/.pbgo` e mostra **um só documento** que é a tela de
+login enquanto não há conta de e-mail e a caixa de entrada depois. O caso de uso **`Mailbox`** é o `Sync` mais o que as telas leem do cache (pastas com
+contagens, uma página de uma pasta, busca). A tela (`presentation`, só widgets do toolkit) mostra o título da pasta com as não lidas, o menu **Pastas**,
+**Sincronizar**, a busca, **7 mensagens por página** (remetente, data, assunto e prévia; não lidas em negrito) e as teclas de página. Tocar numa mensagem a abre
+**página a página** (`TextPager`) e a marca como lida; há **Marcar não lida** e **Apagar** (servidor primeiro: se ele recusar, a mensagem continua aberta).
+Tudo é lido do cache, então funciona offline; **Sincronizar** traz as 50 mais novas de cada pasta. A conta precisa ser de **senha de app** por enquanto (o
+OAuth2 vem com o login por código). Falta (T62): escrever, responder, encaminhar, anexos e marcadores. **Ainda não testado no aparelho.**
+
 ## O código
 
 | Camada | Pacote | Guarda |
 |---|---|---|
 | domain | `internal/mail/domain` | `Message`, `Folder`, `Draft`, `Address`, `Reply`, `Forward`, `Quote`, as portas `MessageStore` e `Backend`, `Query` |
-| application | `internal/mail/application` | `Sync`: `Run`, `Open`, `MarkRead`, `Delete` |
+| application | `internal/mail/application` | `Sync`: `Run`, `Open`, `MarkRead`, `Delete`; `Mailbox`: o `Sync` mais a leitura do cache |
+| presentation | `internal/mail/presentation` | as telas do e-mail: lista, pastas, leitura |
 | infrastructure | `internal/mail/infrastructure/mime` | `Parse`, `Compose`, a conversão de HTML em texto |
 | | `internal/mail/infrastructure/sqlstore` | o `MessageStore` no SQLite: páginas, busca, pastas, marcas |
 | | `internal/mail/infrastructure/graph` | o `Backend` do Outlook.com e do Microsoft 365 (Microsoft Graph) |

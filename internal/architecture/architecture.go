@@ -48,7 +48,9 @@
 //	              of replying and forwarding, and the MIME reader and writer. Layers:
 //	                domain          Message, Folder, Draft, Address, Reply, Forward, the
 //	                                MessageStore and Backend ports
-//	                application     Sync: bring the cache up to date, open, mark, delete
+//	                application     Sync (bring the cache up to date, open, mark, delete)
+//	                                and Mailbox (what the screens read)
+//	                presentation    the Mail app screens: list, folders, reading
 //	                infrastructure  mime (RFC 5322 and MIME on the wire), sqlstore (the
 //	                                messages in the shared database), graph (Outlook.com
 //	                                and Microsoft 365 over Microsoft Graph), imapmail
@@ -139,10 +141,12 @@ const (
 	mailDir           = "internal/mail"
 	mailDomain        = mailDir + domainLayer
 	mailApp           = mailDir + applicationLayer
+	mailUI            = mailDir + presentationLayer
 	mailInfra         = mailDir + infrastructureLayer
 	accountsDomain    = accountsDir + domainLayer
 	accountsApp       = accountsDir + applicationLayer
 	accountsInfra     = accountsDir + infrastructureLayer
+	accountsUI        = accountsDir + presentationLayer
 	installerDir      = "internal/installer"
 	installerDomain   = installerDir + domainLayer
 	installerApp      = installerDir + applicationLayer
@@ -180,9 +184,11 @@ var Rules = []Rule{
 	{accountsDomain, []string{kernelDir, accountsDomain}},
 	{accountsApp, []string{kernelDir, accountsDomain, accountsApp}},
 	{accountsInfra, []string{kernelDir, accountsDomain, accountsInfra}},
+	{accountsUI, []string{kernelDir, localizationDir, toolkitDir, accountsDomain, accountsApp, accountsUI}},
 	// The Mail: its own vocabulary only.
 	{mailDomain, []string{kernelDir, mailDomain}},
 	{mailApp, []string{kernelDir, mailDomain, mailApp}},
+	{mailUI, []string{kernelDir, localizationDir, toolkitDir, mailDomain, mailApp, mailUI}},
 	{mailInfra, []string{kernelDir, mailDomain, mailInfra, storageDir}}, // sqlstore keeps the messages in the shared database
 	// The Calendar: its own vocabulary only.
 	{calendarDomain, []string{kernelDir, calendarDomain}},

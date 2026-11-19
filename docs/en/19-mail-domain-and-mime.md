@@ -78,12 +78,23 @@ message (up to 10 MB); `Delete` copies to the Trash and expunges, or deletes for
 made, so Bcc never goes in the header. `imapmail` composes the draft, hands it to the `Sender` and, with `SaveSent`, appends a copy to the Sent folder
 (Gmail and Outlook do that themselves). Tested against the in-memory IMAP server of go-imap and a tiny SMTP server; **not yet against a real provider**.
 
+## The Mail app
+
+`apps/mail` is the composition root: it opens the shared database, the accounts and the vault in `applications/.pbgo`, and shows **one document** that
+is the sign-in screen until there is a mail account and the mailbox after that. The **`Mailbox`** use case is `Sync` plus what the screens read from the
+cache (folders with counts, a page of a folder, search). The screen (`presentation`, only toolkit widgets) shows the folder title with its unread count, a
+**Folders** menu, **Sync**, a search field, **7 messages a page** (sender, date, subject and preview; unread in bold) and the page keys. Tapping a message opens
+it **page by page** (`TextPager`) and marks it read; there are **Mark unread** and **Delete** (server first: if it refuses, the message stays open).
+Everything is read from the cache, so it works offline; **Sync** brings the 50 newest of each folder. The account must use an **app password** for now
+(OAuth2 comes with the sign-in by code). Still to do (T62): writing, replying, forwarding, attachments and flags. **Not yet tried on the device.**
+
 ## The code
 
 | Layer | Package | Holds |
 |---|---|---|
 | domain | `internal/mail/domain` | `Message`, `Folder`, `Draft`, `Address`, `Reply`, `Forward`, `Quote`, the `MessageStore` and `Backend` ports, `Query` |
-| application | `internal/mail/application` | `Sync`: `Run`, `Open`, `MarkRead`, `Delete` |
+| application | `internal/mail/application` | `Sync`: `Run`, `Open`, `MarkRead`, `Delete`; `Mailbox`: `Sync` plus reading the cache |
+| presentation | `internal/mail/presentation` | the Mail screens: list, folders, reading |
 | infrastructure | `internal/mail/infrastructure/mime` | `Parse`, `Compose`, the HTML to text conversion |
 | | `internal/mail/infrastructure/sqlstore` | the `MessageStore` on SQLite: pages, search, folders, flags |
 | | `internal/mail/infrastructure/graph` | the `Backend` for Outlook.com and Microsoft 365 (Microsoft Graph) |
