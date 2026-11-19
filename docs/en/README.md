@@ -39,6 +39,7 @@
 | 19 | [Mail: domain and MIME](19-mail-domain-and-mime.md) | messages, drafts, replying and forwarding, and the MIME reader and writer |
 | 20 | [Calendar: domain and iCalendar](20-calendar-domain-and-icalendar.md) | events, recurrence, reminders, and reading and writing `.ics` files |
 | 21 | [Tasks: domain](21-tasks-domain.md) | tasks, steps, due dates, repetition and the smart views |
+| 22 | [Local storage](22-local-storage.md) | the shared SQLite database: migrations per module and erasing an account |
 
 ## Quick look
 

@@ -59,6 +59,9 @@
 //	              repetition and the smart views (My Day, Important, Planned). Layer:
 //	                domain          Task, List, Step, View, Complete, Filter, Count
 //	              It depends on nothing but the kernel.
+//	storage       the shared local database (SQLite, pure Go) of the productivity apps:
+//	              open, migrate per module, erase an account. A single package, depending
+//	              on nothing but the kernel; each context keeps its own tables in it.
 //	showcase      the content of the hello app: every widget on four pages.
 //
 // Outside internal/: apps/ (one composition root per app, free to wire any
@@ -123,6 +126,7 @@ const (
 	calendarDomain    = calendarDir + domainLayer
 	calendarInfra     = calendarDir + infrastructureLayer
 	tasksDir          = "internal/tasks"
+	storageDir        = "internal/storage"
 	tasksDomain       = tasksDir + domainLayer
 	mailDir           = "internal/mail"
 	mailDomain        = mailDir + domainLayer
@@ -175,13 +179,14 @@ var Rules = []Rule{
 	{calendarInfra, []string{kernelDir, calendarDomain, calendarInfra}},
 	// The Tasks: its own vocabulary only.
 	{tasksDomain, []string{kernelDir, tasksDomain}},
+	{storageDir, []string{kernelDir}},
 	{architectureDir, nil},
 	{examplesDir, []string{kernelDir, localizationDir, toolkitDir, showcaseDir, examplesDir}},
 }
 
 // Contexts are the folders allowed directly under internal/. A new one must be
 // added here (and to the documentation above) on purpose.
-var Contexts = []string{"architecture", "accounts", "calendar", "device", "installer", "kernel", "launcher", "localization", "mail", "platform", "showcase", "tasks", "toolkit"}
+var Contexts = []string{"architecture", "accounts", "calendar", "device", "installer", "kernel", "launcher", "localization", "mail", "platform", "showcase", "storage", "tasks", "toolkit"}
 
 // within reports whether dir is base or a folder below it.
 func within(dir, base string) bool { return dir == base || strings.HasPrefix(dir, base+"/") }

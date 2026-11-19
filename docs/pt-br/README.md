@@ -41,6 +41,7 @@ Ele traz:
 | 19 | [E-mail: domínio e MIME](19-email-dominio-e-mime.md) | mensagens, rascunhos, responder e encaminhar, e o leitor e escritor de MIME |
 | 20 | [Calendário: domínio e iCalendar](20-calendario-dominio-e-icalendar.md) | eventos, recorrência, lembretes, e a leitura e escrita de arquivos `.ics` |
 | 21 | [Tarefas: domínio](21-tarefas-dominio.md) | tarefas, passos, prazos, repetição e as visões inteligentes |
+| 22 | [Armazenamento local](22-armazenamento-local.md) | o banco SQLite compartilhado: migrações por módulo e apagar uma conta |
 
 ## Uma olhada rápida
 
