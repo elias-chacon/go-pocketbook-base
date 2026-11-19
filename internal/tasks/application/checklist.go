@@ -4,6 +4,8 @@
 package application
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"strings"
 	"time"
@@ -16,6 +18,12 @@ const DefaultListID = "tasks"
 
 // ErrEmptyTitle is returned when adding a task with no title.
 var ErrEmptyTitle = errors.New("tasks: a task needs a title")
+
+// ErrEmptyName is returned when creating a list with no name.
+var ErrEmptyName = errors.New("tasks: a list needs a name")
+
+// ErrLastList is returned when deleting the only list.
+var ErrLastList = errors.New("tasks: the last list cannot be deleted")
 
 // Checklist is the use case of the to-do list of one account.
 type Checklist struct {
@@ -68,6 +76,11 @@ func (u Checklist) View(v domain.View) ([]domain.Task, domain.Counts, error) {
 // view belongs to it: in My Day it is for today, in Important it is starred, in
 // Planned it is due today.
 func (u Checklist) Add(title string, v domain.View) (domain.Task, error) {
+	return u.AddTo("", title, v)
+}
+
+// AddTo creates a task in a list (the first one when listID is empty).
+func (u Checklist) AddTo(listID, title string, v domain.View) (domain.Task, error) {
 	title = strings.TrimSpace(title)
 	if title == "" {
 		return domain.Task{}, ErrEmptyTitle
@@ -75,6 +88,9 @@ func (u Checklist) Add(title string, v domain.View) (domain.Task, error) {
 	list, err := u.EnsureList("")
 	if err != nil {
 		return domain.Task{}, err
+	}
+	if listID != "" {
+		list.ID = listID
 	}
 	t := domain.Task{ListID: list.ID, Title: title, CreatedAt: u.now()}
 	switch v {
@@ -92,6 +108,54 @@ func (u Checklist) Add(title string, v domain.View) (domain.Task, error) {
 		return domain.Task{}, err
 	}
 	return t, nil
+}
+
+// Lists returns the lists of the account.
+func (u Checklist) Lists() ([]domain.List, error) { return u.Store.Lists(u.AccountID) }
+
+// CreateList adds a list with a name.
+func (u Checklist) CreateList(name string) (domain.List, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return domain.List{}, ErrEmptyName
+	}
+	lists, err := u.EnsureListsLoaded()
+	if err != nil {
+		return domain.List{}, err
+	}
+	var salt [4]byte
+	_, _ = rand.Read(salt[:])
+	l := domain.List{ID: "l" + hex.EncodeToString(salt[:]), AccountID: u.AccountID, Name: name}
+	return l, u.Store.SaveLists(u.AccountID, append(lists, l))
+}
+
+// EnsureListsLoaded returns the lists, creating the default one when there is none.
+func (u Checklist) EnsureListsLoaded() ([]domain.List, error) {
+	if _, err := u.EnsureList(""); err != nil {
+		return nil, err
+	}
+	return u.Lists()
+}
+
+// DeleteList removes a list and, with it, its tasks. The last list cannot be removed.
+func (u Checklist) DeleteList(id string) error {
+	lists, err := u.Lists()
+	if err != nil {
+		return err
+	}
+	if len(lists) <= 1 {
+		return ErrLastList
+	}
+	kept := make([]domain.List, 0, len(lists)-1)
+	for _, l := range lists {
+		if l.ID != id {
+			kept = append(kept, l)
+		}
+	}
+	if len(kept) == len(lists) {
+		return domain.ErrNotFound
+	}
+	return u.Store.SaveLists(u.AccountID, kept)
 }
 
 // Toggle ticks an open task (a repeating one gives its next occurrence) or reopens a done one.

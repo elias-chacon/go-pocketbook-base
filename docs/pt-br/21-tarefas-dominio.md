@@ -38,8 +38,8 @@ O `apps/tasks` é a raiz de composição. Ele **não precisa de conta**: as tare
 olhando o Meu dia é para hoje, em Importante vem marcada, em Planejado vence hoje), **Toggle** (conclui, guardando a próxima ocorrência de uma tarefa que se
 repete, ou reabre), estrela, Meu dia, prazo, salvar e apagar. A tela tem as cinco visões como chips com contagem, um campo para adicionar, **8 tarefas por
 página** com uma caixa de marcar (o alvo de toque mais profundo) e o título e o prazo (as atrasadas dizem isso); tocar no texto abre a tarefa para editar:
-título, notas, **etapas** (adicionar, marcar, remover), importante, Meu dia e o prazo (hoje, amanhã, próxima semana, nenhum). Nada é salvo até **Salvar**. **Ainda não testado no aparelho.** Falta
-(T63): listas, lembretes e repetição na tela.
+título, notas, **etapas** (adicionar, marcar, remover), importante, Meu dia e o prazo (hoje, amanhã, próxima semana, nenhum). Nada é salvo até **Salvar**. **Ainda não testado no aparelho.** **Listas:** o menu **Listas** ao lado do campo de adicionar mostra uma lista ou todas (as tarefas novas vão para a mostrada), cria uma lista (o campo passa a pedir o nome) e apaga a mostrada com suas tarefas (a última lista não pode ser apagada). Falta
+(T63): lembretes e repetição na tela.
 
 ## O código
 

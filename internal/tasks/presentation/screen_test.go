@@ -309,3 +309,43 @@ func TestStepsAreAddedTickedRemovedAndSaved(t *testing.T) {
 		t.Errorf("info = %q", s.info(got))
 	}
 }
+
+func TestListsFilterAndReceiveNewTasks(t *testing.T) {
+	s, st := newScreen("em casa")
+	s.StartNewList()
+	byID(t, s, "task-add").(*widget.Input).Value = "Trabalho"
+	s.Add("Trabalho")
+	if s.listID == "" || len(st.lists) != 2 || s.naming {
+		t.Fatalf("listID %q lists %d naming %v", s.listID, len(st.lists), s.naming)
+	}
+	if len(s.tasks) != 0 {
+		t.Errorf("a new list must start empty: %d", len(s.tasks))
+	}
+	s.Add("relatório")
+	if len(s.tasks) != 1 || s.tasks[0].Title != "relatório" || s.tasks[0].ListID != s.listID {
+		t.Fatalf("tasks = %+v", s.tasks)
+	}
+	s.ShowList("")
+	if len(s.tasks) != 2 {
+		t.Errorf("every list: %d tasks", len(s.tasks))
+	}
+	s.ShowList(st.lists[1].ID)
+	menu := byID(t, s, "tasks-lists").(*widget.Dropdown)
+	if menu.Text != "Trabalho" {
+		t.Errorf("label = %q", menu.Text)
+	}
+	s.DeleteShownList()
+	if s.listID != "" || len(st.lists) != 1 {
+		t.Errorf("after delete: %q %d", s.listID, len(st.lists))
+	}
+	s.DeleteShownList() // nothing shown: nothing happens
+	s.StartNewList()
+	s.Add("  ") // empty name: ignored
+	s.Add("x")
+	st.err = errors.New("falhou")
+	s.StartNewList()
+	s.Add("y")
+	if s.naming || !strings.Contains(s.notice, "falhou") {
+		t.Errorf("naming %v notice %q", s.naming, s.notice)
+	}
+}

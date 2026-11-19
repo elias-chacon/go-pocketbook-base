@@ -33,7 +33,10 @@ func NewTranslator(lang string) *i18n.Bundle {
 // Checklist is what the screen needs of the Tasks context (application.Checklist).
 type Checklist interface {
 	View(v domain.View) ([]domain.Task, domain.Counts, error)
-	Add(title string, v domain.View) (domain.Task, error)
+	AddTo(listID, title string, v domain.View) (domain.Task, error)
+	Lists() ([]domain.List, error)
+	CreateList(name string) (domain.List, error)
+	DeleteList(id string) error
 	Toggle(id string) error
 	Get(id string) (domain.Task, error)
 	Save(t domain.Task) error
@@ -74,6 +77,9 @@ type Screen struct {
 	page   int
 	notice string
 	editor *editor
+	listID string // the list shown ("" is every list)
+	lists  []domain.List
+	naming bool // the add field is asking for the name of a new list
 
 	body            *widget.Panel
 	note, indicator *widget.Label
@@ -170,7 +176,11 @@ func (s *Screen) showList() {
 	s.add.ID = "task-add"
 	s.add.Style.FlexGrow = 1
 	s.add.OnSubmit = func(*widget.Event) { s.Add(s.add.Value) }
-	addRow := widget.NewRow(0, s.add)
+	if s.naming {
+		s.add.Placeholder = s.t("tasks.list.name")
+	}
+	listsMenu := s.listsMenu()
+	addRow := widget.NewRow(12, s.add, listsMenu)
 	addRow.Style.Padding = geom.XY(16, 28)
 
 	s.body = widget.NewColumn(8)
@@ -233,6 +243,15 @@ func (s *Screen) reload() {
 	if err != nil {
 		s.fail(err)
 		return
+	}
+	if s.listID != "" {
+		kept := tasks[:0:0]
+		for _, t := range tasks {
+			if t.ListID == s.listID {
+				kept = append(kept, t)
+			}
+		}
+		tasks = kept
 	}
 	s.tasks, s.counts = tasks, counts
 	for i, v := range views {
@@ -319,7 +338,11 @@ func (s *Screen) Add(title string) {
 	if strings.TrimSpace(title) == "" {
 		return
 	}
-	if _, err := s.cfg.Checklist.Add(title, s.view); err != nil {
+	if s.naming {
+		s.createList(title)
+		return
+	}
+	if _, err := s.cfg.Checklist.AddTo(s.listID, title, s.view); err != nil {
 		s.fail(err)
 		return
 	}

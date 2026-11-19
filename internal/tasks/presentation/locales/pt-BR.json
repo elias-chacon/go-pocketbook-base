@@ -26,5 +26,10 @@
   "tasks.due.week": "Próxima semana",
   "tasks.due.clear": "Limpar",
   "tasks.default.list": "Tarefas",
-  "tasks.step.add": "Adicionar etapa…"
+  "tasks.step.add": "Adicionar etapa…",
+  "tasks.lists": "Listas",
+  "tasks.list.all": "Todas as listas",
+  "tasks.list.new": "Nova lista…",
+  "tasks.list.delete": "Apagar esta lista",
+  "tasks.list.name": "Nome da nova lista…"
 }

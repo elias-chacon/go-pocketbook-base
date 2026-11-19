@@ -26,5 +26,10 @@
   "tasks.due.week": "Next week",
   "tasks.due.clear": "Clear",
   "tasks.default.list": "Tasks",
-  "tasks.step.add": "Add a step…"
+  "tasks.step.add": "Add a step…",
+  "tasks.lists": "Lists",
+  "tasks.list.all": "All lists",
+  "tasks.list.new": "New list…",
+  "tasks.list.delete": "Delete this list",
+  "tasks.list.name": "Name of the new list…"
 }

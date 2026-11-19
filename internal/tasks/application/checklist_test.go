@@ -174,3 +174,36 @@ func TestStoreErrorsArePassedOn(t *testing.T) {
 		t.Error("the default clock gave zero")
 	}
 }
+
+func TestListsAreCreatedUsedAndDeleted(t *testing.T) {
+	u, st := todo()
+	if _, err := u.CreateList("  "); !errors.Is(err, ErrEmptyName) {
+		t.Errorf("err = %v", err)
+	}
+	work, err := u.CreateList("Trabalho")
+	if err != nil || len(st.lists) != 2 {
+		t.Fatalf("lists = %+v %v", st.lists, err)
+	}
+	if _, err := u.AddTo(work.ID, "relatório", domain.ViewAll); err != nil {
+		t.Fatal(err)
+	}
+	if st.tasks["t1"].ListID != work.ID {
+		t.Errorf("list = %q", st.tasks["t1"].ListID)
+	}
+	if err := u.DeleteList("nope"); !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("err = %v", err)
+	}
+	if err := u.DeleteList(work.ID); err != nil || len(st.lists) != 1 {
+		t.Errorf("delete: %v %+v", err, st.lists)
+	}
+	if err := u.DeleteList(st.lists[0].ID); !errors.Is(err, ErrLastList) {
+		t.Errorf("the last list was deleted: %v", err)
+	}
+	st.err = errors.New("disco")
+	if _, err := u.CreateList("x"); err == nil {
+		t.Error("create ignored the store error")
+	}
+	if err := u.DeleteList("x"); err == nil {
+		t.Error("delete ignored the store error")
+	}
+}
