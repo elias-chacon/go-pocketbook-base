@@ -53,11 +53,24 @@ do intervalo, e as **alterações de uma só aparição** (inclusive as que saí
 original precisa ser substituída). Salvar de novo substitui (mesmo calendário, `UID` e `RecurrenceID`); apagar um evento que se repete leva as
 alterações dele; um calendário que sumiu do servidor leva os seus eventos; e remover a conta apaga tudo.
 
+## O app Calendário
+
+O `apps/calendar` é a raiz de composição. Ele **não precisa de conta**: os eventos ficam no leitor, no banco compartilhado, sob a conta `local` (um
+calendário é criado na primeira execução). O caso de uso `Agenda` responde ao que as telas pedem: as **marcas de um mês** (quais dias têm algo), **o dia**
+(eventos de dia inteiro primeiro, depois por início, com os repetidos expandidos), **Add**, **Change** e **Delete**. Um evento de dia inteiro é uma **data**,
+não um instante, então nunca escorrega para o dia vizinho em outro fuso. O relógio vem de `TZ` ou `/etc/timezone` (UTC quando o leitor não tem nenhum: a
+configuração do fuso ainda falta). A tela reaproveita o `Calendar` mensal do toolkit (estendido com `Marked`, um ponto sob os dias com eventos, e `OnMonth`),
+com **Hoje** e **Novo**, o título do dia e **5 eventos por página**. Tocar num evento (ou em **Novo**) abre o formulário: título, local, o dia (com setas), dia
+inteiro, início e fim como `HH:MM`; um horário inválido mantém o formulário aberto. **Ainda não testado no aparelho.** Falta (T67): as visões de dia, semana
+e semana útil (precisam de um componente de grade de horários no toolkit), repetição e lembretes no formulário, e a sincronização.
+
 ## O código
 
 | Camada | Pacote | Guarda |
 |---|---|---|
 | domain | `internal/calendar/domain` | `Event`, `Occurrence`, `Calendar`, `Occurrences`, `Expand`, as regras de validação |
+| application | `internal/calendar/application` | `Agenda`: marcas do mês, um dia, adicionar, alterar, apagar |
+| presentation | `internal/calendar/presentation` | as telas do Calendário: o mês com a agenda do dia, e o editor |
 | infrastructure | `internal/calendar/infrastructure/icalendar` | `Parse`, `Write`, a tabela de fusos |
 | | `internal/calendar/infrastructure/sqlstore` | o `EventStore` no SQLite: `Between`, calendários |
 

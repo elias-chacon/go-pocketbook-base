@@ -133,6 +133,8 @@ const (
 	accountsDir       = "internal/accounts"
 	calendarDir       = "internal/calendar"
 	calendarDomain    = calendarDir + domainLayer
+	calendarApp       = calendarDir + applicationLayer
+	calendarUI        = calendarDir + presentationLayer
 	calendarInfra     = calendarDir + infrastructureLayer
 	tasksDir          = "internal/tasks"
 	storageDir        = "internal/storage"
@@ -194,6 +196,8 @@ var Rules = []Rule{
 	{mailInfra, []string{kernelDir, mailDomain, mailInfra, storageDir}}, // sqlstore keeps the messages in the shared database
 	// The Calendar: its own vocabulary only.
 	{calendarDomain, []string{kernelDir, calendarDomain}},
+	{calendarApp, []string{kernelDir, calendarDomain, calendarApp}},
+	{calendarUI, []string{kernelDir, localizationDir, toolkitDir, calendarDomain, calendarApp, calendarUI}},
 	{calendarInfra, []string{kernelDir, calendarDomain, calendarInfra, storageDir}}, // sqlstore keeps the events in the shared database
 	// The Tasks: its own vocabulary only.
 	{tasksDomain, []string{kernelDir, tasksDomain}},

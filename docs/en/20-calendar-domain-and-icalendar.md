@@ -52,11 +52,24 @@ end, and the **changes to a single occurrence** (including ones that moved out o
 because the original has to be replaced). Saving again replaces (same calendar, `UID` and `RecurrenceID`); deleting a repeating event takes its changes
 with it; a calendar that went away on the server takes its events; and removing the account clears everything.
 
+## The Calendar app
+
+`apps/calendar` is the composition root. It needs **no account**: the events live on the reader, in the shared database, under the account `local` (a
+calendar is created on the first run). The `Agenda` use case answers what the screens ask: the **marks of a month** (which days have something), **the
+day** (all-day events first, then by start, repeating ones expanded), **Add**, **Change** and **Delete**. An all-day event is a **date**, not an instant, so
+it never slips to the neighbouring day in another time zone. The clock comes from `TZ` or `/etc/timezone` (UTC when the reader has neither: the zone
+setting is still to do). The screen reuses the toolkit's month `Calendar` (extended with `Marked`, a dot under the days with events, and `OnMonth`),
+with **Today** and **New**, the heading of the day and **5 events a page**. Tapping an event (or **New**) opens the form: title, location, the day (with
+arrows), all day, start and end as `HH:MM`; a bad time keeps the form open. **Not yet tried on the device.** Still to do (T67): the day, week and work
+week views (they need a time grid component in the toolkit), repetition and reminders in the form, and sync.
+
 ## The code
 
 | Layer | Package | Holds |
 |---|---|---|
 | domain | `internal/calendar/domain` | `Event`, `Occurrence`, `Calendar`, `Occurrences`, `Expand`, the validation rules |
+| application | `internal/calendar/application` | `Agenda`: marks of a month, a day, add, change, delete |
+| presentation | `internal/calendar/presentation` | the Calendar screens: the month with the agenda of the day, and the editor |
 | infrastructure | `internal/calendar/infrastructure/icalendar` | `Parse`, `Write`, the zone table |
 | | `internal/calendar/infrastructure/sqlstore` | the `EventStore` on SQLite: `Between`, calendars |
 

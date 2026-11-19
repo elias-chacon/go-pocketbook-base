@@ -1,6 +1,7 @@
 package widget
 
 import (
+	"bytes"
 	"testing"
 	"time"
 )
@@ -269,6 +270,39 @@ func TestCalendarGridAndSelection(t *testing.T) {
 	}
 	if cal.Year != 2027 || cal.Month != time.February {
 		t.Errorf("next x2 from December = %d-%v", cal.Year, cal.Month)
+	}
+}
+
+func TestCalendarMarksDaysAndTellsWhenTheMonthChanges(t *testing.T) {
+	cal := NewCalendar(time.Date(2026, 11, 13, 0, 0, 0, 0, time.UTC))
+	asked := map[int]bool{}
+	cal.Marked = func(day time.Time) bool {
+		asked[day.Day()] = true
+		return day.Day() == 20 && day.Month() == time.November
+	}
+	months := &counter{}
+	cal.OnMonth = months.handler()
+	d := testDoc(cal)
+	d.Render()
+	if !asked[1] || !asked[30] {
+		t.Errorf("Marked was not asked about the visible days: %v", asked)
+	}
+	_, next := cal.navRects()
+	tapAt(d, next.Center())
+	if months.n != 1 || cal.Month != time.December {
+		t.Errorf("OnMonth fired %d times, month %v", months.n, cal.Month)
+	}
+	tapAt(d, cal.cellRect(10).Center()) // choosing a day is not a month change
+	if months.n != 1 {
+		t.Errorf("OnMonth fired for a day: %d", months.n)
+	}
+	// the dot is drawn: the marked day differs from the same day unmarked
+	cal.Month = time.November
+	with := append([]byte(nil), d.Render().Pix...)
+	cal.Marked = nil
+	without := append([]byte(nil), d.Render().Pix...)
+	if bytes.Equal(with, without) {
+		t.Error("a marked day looks like an unmarked one")
 	}
 }
 

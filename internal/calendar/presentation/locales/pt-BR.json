@@ -1,0 +1,20 @@
+{
+  "cal.title": "Calendário",
+  "cal.new": "Novo",
+  "cal.today": "Hoje",
+  "cal.empty": "Nada neste dia.\nToque em Novo para adicionar um evento.",
+  "cal.page": "%d / %d",
+  "cal.allday": "Dia inteiro",
+  "cal.failed": "Não foi possível: %s",
+  "cal.back": "Voltar",
+  "cal.save": "Salvar",
+  "cal.delete": "Apagar",
+  "cal.field.title": "Título",
+  "cal.field.location": "Local",
+  "cal.field.start": "Início (HH:MM)",
+  "cal.field.end": "Fim (HH:MM)",
+  "cal.field.allday": "Dia inteiro",
+  "cal.badtime": "Digite os horários como HH:MM, por exemplo 09:30.",
+  "cal.date": "Data: %s",
+  "cal.untitled": "(sem título)"
+}

@@ -1,0 +1,20 @@
+{
+  "cal.title": "Calendar",
+  "cal.new": "New",
+  "cal.today": "Today",
+  "cal.empty": "Nothing on this day.\nTap New to add an event.",
+  "cal.page": "%d / %d",
+  "cal.allday": "All day",
+  "cal.failed": "Could not do that: %s",
+  "cal.back": "Back",
+  "cal.save": "Save",
+  "cal.delete": "Delete",
+  "cal.field.title": "Title",
+  "cal.field.location": "Location",
+  "cal.field.start": "Start (HH:MM)",
+  "cal.field.end": "End (HH:MM)",
+  "cal.field.allday": "All day",
+  "cal.badtime": "Type the times as HH:MM, for example 09:30.",
+  "cal.date": "Date: %s",
+  "cal.untitled": "(no title)"
+}

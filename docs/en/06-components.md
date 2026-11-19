@@ -548,9 +548,9 @@ day of a neighboring month also goes there. Today gets a ring. Names come from `
 | | |
 |---|---|
 | Create | `widget.NewCalendar(selected)` (a zero `time.Time` shows today's month with nothing selected) |
-| Properties | `Selected`, `Today`, `Year`, `Month`, `Locale` (`widget.LocaleEN`, `widget.LocalePTBR`) |
+| Properties | `Selected`, `Today`, `Year`, `Month`, `Locale` (`widget.LocaleEN`, `widget.LocalePTBR`), `Marked(day) bool` (a dot under the days that have something: events, tasks) |
 | Methods | `ShiftMonth(delta)` |
-| Events | `OnChange` |
+| Events | `OnChange` (a day was chosen), `OnMonth` (the arrows changed the month: reload what `Marked` looks at) |
 
 ```go
 // examples/components/calendar.go#CalendarExample
@@ -559,6 +559,8 @@ func CalendarExample() widget.Widget {
 	calendar := widget.NewCalendar(time.Now())
 	calendar.Locale = widget.LocalePTBR
 	calendar.OnChange = func(e *widget.Event) { fmt.Println("date:", calendar.Selected.Format("2006-01-02")) }
+	// Marked puts a dot under the days that have something (here, every Friday).
+	calendar.Marked = func(day time.Time) bool { return day.Weekday() == time.Friday }
 	return calendar
 }
 ```

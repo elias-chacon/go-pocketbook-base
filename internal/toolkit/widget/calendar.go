@@ -35,7 +35,11 @@ type Calendar struct {
 	Month    time.Month
 	Selected time.Time // zero when nothing is selected
 	Today    time.Time // highlighted with a ring; defaults to now
-	OnChange Handler
+	// Marked says whether a day has something on it (an event, a task): it gets a
+	// dot under its number. Nil marks nothing. Called for every visible day on each paint.
+	Marked   func(day time.Time) bool
+	OnChange Handler // a day was chosen
+	OnMonth  Handler // the arrows changed the month (reload what Marked looks at)
 }
 
 const (
@@ -143,6 +147,9 @@ func (c *Calendar) paintDay(cv *gfx.Canvas, cell geom.Rect, day time.Time) {
 		cv.StrokeCircle(ctr, radius, BorderThin, Ink)
 	}
 	cv.Text(fmt.Sprintf("%d", day.Day()), cell, gfx.TextStyle{Size: FontBody, Bold: sameDay(day, c.Today), Color: color, Align: gfx.AlignCenter})
+	if c.Marked != nil && c.Marked(day) {
+		cv.FillCircle(geom.Point{X: ctr.X, Y: ctr.Y + radius - 10}, 5, color)
+	}
 }
 
 // HandlePointer implements PointerHandler.
@@ -155,8 +162,10 @@ func (c *Calendar) HandlePointer(e *PointerEvent) {
 	switch {
 	case prev.Contains(p):
 		c.ShiftMonth(-1)
+		Fire(c.OnMonth, c)
 	case next.Contains(p):
 		c.ShiftMonth(1)
+		Fire(c.OnMonth, c)
 	default:
 		for i, day := range monthGrid(c.Year, c.Month, c.Locale.FirstWeekday) {
 			if c.cellRect(i).Contains(p) {
