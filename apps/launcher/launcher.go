@@ -10,8 +10,10 @@ import (
 	"go-pocketbook-base/internal/launcher/application"
 	"go-pocketbook-base/internal/launcher/domain"
 	"go-pocketbook-base/internal/launcher/infrastructure/appinstaller"
+	"go-pocketbook-base/internal/launcher/infrastructure/backgrounds"
 	"go-pocketbook-base/internal/launcher/infrastructure/github"
 	"go-pocketbook-base/internal/launcher/infrastructure/iconcache"
+	"go-pocketbook-base/internal/launcher/infrastructure/prefsfile"
 	"go-pocketbook-base/internal/launcher/infrastructure/processlauncher"
 	"go-pocketbook-base/internal/launcher/presentation"
 	"go-pocketbook-base/internal/platform"
@@ -45,11 +47,15 @@ func newLauncher(env platform.Env) platform.App {
 	}
 	icons := iconcache.Cache{Client: client, Dir: filepath.Join(platform.DefaultRoot, "applications", ".pbgo", "cache", "icons")}
 	registrar := iconRegistrar{icons: icons}
+	prefs := prefsfile.New(platform.DefaultRoot)
+	backgroundsDir := backgrounds.Dir(platform.DefaultRoot)
 	catalog := &loggedCatalog{inner: &github.Catalog{Client: client, Owner: repoOwner, Repo: repoName}}
 	return &launcher{home: presentation.NewHome(presentation.Config{
 		Width: env.Width, Height: env.Height, Keyboard: env.Keyboard,
-		Tr:   presentation.NewTranslator(env.Lang),
-		Grid: domain.DefaultGrid,
+		Tr:    presentation.NewTranslator(env.Lang),
+		Prefs: prefs.Load(), SavePrefs: prefs.Save, SaveLang: languageSaver(env),
+		Backgrounds:    func() []string { return backgrounds.Names(backgroundsDir) },
+		LoadBackground: backgroundLoader(backgroundsDir, env.Width, env.Height),
 		Home: application.Home{
 			Apps:     env.Apps,
 			Launcher: processlauncher.Launcher{Self: self},
@@ -118,8 +124,24 @@ func (i iconRegistrar) iconOf(l domain.Listing) func(size int, focused bool) ima
 func (l *launcher) Document() *widget.Document { return l.home.Doc }
 
 // Key implements platform.KeyHandler. The platform already used left and Menu to
-// close a popup or a modal; with nothing open, left and right change the page.
+// close a popup or a modal; with nothing open, left and right change the page and
+// Menu opens the settings.
 func (l *launcher) Key(key platform.Key) bool {
+	if key == platform.KeyMenu { // the Menu key opens the settings and closes them
+		if l.home.InSettings() {
+			l.home.CloseSettings()
+		} else {
+			l.home.OpenSettings()
+		}
+		return true
+	}
+	if l.home.InSettings() { // left leaves the settings without saving; right does nothing there
+		if key == platform.KeyPrevious {
+			l.home.CloseSettings()
+			return true
+		}
+		return key == platform.KeyNext
+	}
 	switch key {
 	case platform.KeyPrevious:
 		l.home.PrevPage()
@@ -129,6 +151,30 @@ func (l *launcher) Key(key platform.Key) bool {
 		return false
 	}
 	return true
+}
+
+// languageSaver keeps the language in the settings every app shares (nil store: nothing to keep).
+func languageSaver(env platform.Env) func(lang string) error {
+	return func(lang string) error {
+		if env.Settings == nil {
+			return nil
+		}
+		s := env.Settings.Load()
+		s.Lang = lang
+		return env.Settings.Save(s)
+	}
+}
+
+// backgroundLoader opens a picture of the backgrounds folder, shrunk to the screen
+// (a photo is far bigger than the reader's memory should hold).
+func backgroundLoader(dir string, width, height int) func(name string) (image.Image, error) {
+	return func(name string) (image.Image, error) {
+		img, err := gfx.LoadImage(filepath.Join(dir, name), width, height)
+		if err != nil {
+			platform.Errorf("background %s: %v", name, err)
+		}
+		return img, err
+	}
 }
 
 // iconFor loads the BMP icon an app wrote when it first ran, or draws the

@@ -6,7 +6,7 @@ O `apps/launcher` é o App Launcher do ecossistema: a tela inicial dos apps feit
 (segue o [contrato](13-apps-e-o-contrato.md)) e a raiz de composição do contexto `internal/launcher`.
 
 > **Estado.** A tela inicial, a execução de um app, a busca e o catálogo do GitHub com instalação por toque estão prontos no
-> código (o catálogo e o download ainda não foram verificados no leitor). A tela de configurações vem a seguir.
+> código (o catálogo, o download e as configurações ainda não foram verificados no leitor).
 
 ## O que faz hoje
 
@@ -24,6 +24,10 @@ O `apps/launcher` é o App Launcher do ecossistema: a tela inicial dos apps feit
   Tocar numa linha mostra *Baixando…*, baixa o zip, confere o tamanho e o SHA-256, extrai o `<id>.app` para `applications/`, registra na tela
   inicial (com o ícone que o app publicou como `icon.png`, ou o padrão) e o move
   para *Instalados*. Cada linha de *Disponíveis* mostra esse ícone (baixado uma vez e guardado em `applications/.pbgo/cache/icons`). A lista fica guardada por 5 minutos. Precisa do Wi-Fi ligado; sem ele (ou sem release) a seção mostra o erro.
+- **Configurações** (o botão *Configurações* no rodapé, ou a tecla Menu; a tecla esquerda sai sem salvar): a **grade** (colunas e linhas, de 1 a 8), o **tamanho dos ícones**
+  (96 a 240), o **idioma** (compartilhado por todos os apps: os outros o leem ao abrir) e uma **imagem de fundo**, escolhida entre as imagens
+  (PNG, JPG, GIF, BMP) que a pessoa copiou para `applications/backgrounds` no leitor. As preferências ficam em `applications/.pbgo/launcher.json`; a imagem
+  é reduzida à tela ao carregar, e os blocos mantêm o fundo branco para continuar legíveis sobre ela.
 - Textos em português (pt-BR) com inglês como fallback, no idioma escolhido nas configurações compartilhadas.
 
 ## Como um app é executado, e como volta
@@ -44,10 +48,12 @@ Launcher ──exec──► app          (PBGO_LAUNCHER=/…/launcher.app)
 
 | Camada | Pacote | Guarda |
 |---|---|---|
-| domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (traduzido, ordenado sem ligar para maiúsculas e acentos), `Grid` e paginação, `Matches`/`FilterTiles`/`FilterListings`, `Listing`, `SearchResult`, as portas `AppLauncher`, `Catalog` e `Installer` |
+| domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (traduzido, ordenado sem ligar para maiúsculas e acentos), `Grid` e paginação, `Matches`/`FilterTiles`/`FilterListings`, `Listing`, `SearchResult`, `Preferences` (grade, tamanho do ícone e fundo, sempre dentro dos limites), as portas `AppLauncher`, `Catalog`, `Installer` e `PreferencesStore` |
 | application | `internal/launcher/application` | `Home`: os blocos dos apps instalados e a abertura de um; `Search`: apps instalados e disponíveis para uma busca |
 | infrastructure | `internal/launcher/infrastructure/processlauncher` | inicia um app substituindo o processo |
 | | `…/infrastructure/github` | o `Catalog`: o `catalog.json` da última release e os apps que ele lista (guardados por 5 min) |
+| | `…/infrastructure/prefsfile` | o `PreferencesStore`: `applications/.pbgo/launcher.json` |
+| | `…/infrastructure/backgrounds` | lista as imagens de `applications/backgrounds` |
 | | `…/infrastructure/iconcache` | baixa os ícones (PNG) do catálogo e os guarda no leitor |
 | | `…/infrastructure/appinstaller` | o `Installer`: baixa o zip, confere tamanho e SHA-256, extrai o `<id>.app` por um arquivo temporário, registra |
 | presentation | `internal/launcher/presentation` | a tela inicial, com os widgets do toolkit (`Image`, `Grid`, `Label`…) |

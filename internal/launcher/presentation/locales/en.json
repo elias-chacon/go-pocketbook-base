@@ -12,5 +12,20 @@
   "search.more": "… and %d more",
   "install.downloading": "Downloading “%s”…",
   "install.done": "“%s” installed. It is now under Installed.",
-  "install.failed": "Could not install “%s”: %s"
+  "install.failed": "Could not install “%s”: %s",
+  "home.settings": "Settings",
+  "settings.title": "Settings",
+  "settings.grid": "App grid",
+  "settings.columns": "Columns",
+  "settings.rows": "Rows",
+  "settings.icons": "Icon size",
+  "settings.language": "Language",
+  "settings.background": "Background image",
+  "settings.background.none": "None",
+  "settings.background.hint": "Copy pictures (PNG, JPG, BMP) to the applications/backgrounds folder of the reader to choose one here.",
+  "settings.save": "Save",
+  "settings.cancel": "Cancel",
+  "settings.reset": "Default",
+  "settings.invalid": "Type numbers for the columns and the rows.",
+  "settings.failed": "Could not save: %s"
 }

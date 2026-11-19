@@ -28,16 +28,23 @@ func NewTranslator(lang string) *i18n.Bundle {
 	return tr
 }
 
-// DefaultIconSize is the edge of an app icon, in design pixels.
-const DefaultIconSize = 150.0
-
 // Config is everything the home screen needs.
 type Config struct {
 	Width, Height int
 	Keyboard      widget.Keyboard
 	Tr            *i18n.Bundle
 	Home          application.Home
-	Grid          domain.Grid
+	// Prefs are the Launcher's preferences: the grid, the icon size, the background.
+	Prefs domain.Preferences
+	// Languages are the choices of the language setting (DefaultLanguages when nil).
+	Languages []Language
+	// SavePrefs and SaveLang keep what the settings screen changes (nil: it is not kept).
+	SavePrefs func(domain.Preferences) error
+	SaveLang  func(lang string) error
+	// Backgrounds lists the pictures a background can be chosen from and
+	// LoadBackground opens one by name (nil: there are no backgrounds).
+	Backgrounds    func() []string
+	LoadBackground func(name string) (image.Image, error)
 	// Catalog lists the apps that can be installed (nil: the search only knows the installed ones).
 	Catalog domain.Catalog
 	// Installer installs an app of the catalog when its row is tapped (nil: the rows only show).
@@ -48,7 +55,6 @@ type Config struct {
 	// ListingIcon is the icon of an app of the catalog, shown in its row (nil, or a
 	// nil result: the row has no icon).
 	ListingIcon func(l domain.Listing) image.Image
-	IconSize    float64 // 0 = DefaultIconSize
 	// IconFor loads the icon of a tile (nil results draw nothing); the composition
 	// root decides where icons come from and what to show when one is missing.
 	IconFor func(t domain.Tile) image.Image
@@ -64,7 +70,8 @@ const (
 )
 
 // Home is the main screen: a paged grid of the installed apps and a search field
-// that splits the answer into "Installed" and "Available".
+// that splits the answer into "Installed" and "Available"; the settings screen
+// takes its place when it is opened.
 type Home struct {
 	Doc *widget.Document
 
@@ -74,6 +81,8 @@ type Home struct {
 	query  string
 	page   int
 
+	root            *widget.Panel
+	settings        *settingsForm // non-nil while the settings screen is showing
 	search          *widget.Input
 	body            *widget.Panel
 	indicator, note *widget.Label
@@ -82,18 +91,59 @@ type Home struct {
 
 // NewHome builds the screen and loads the tiles.
 func NewHome(cfg Config) *Home {
-	cfg.Grid = cfg.Grid.Normalized()
-	if cfg.IconSize == 0 {
-		cfg.IconSize = DefaultIconSize
+	cfg.Prefs = cfg.Prefs.Normalized()
+	if cfg.Languages == nil {
+		cfg.Languages = DefaultLanguages
 	}
 	h := &Home{cfg: cfg}
 	h.Doc = widget.NewDocument(cfg.Width, cfg.Height)
 	h.Doc.Keyboard = cfg.Keyboard
+	h.build()
+	return h
+}
+
+// Apply puts new preferences (and a language) on the screen: the grid, the icon
+// size, the background and the texts are rebuilt, and the search is cleared.
+func (h *Home) Apply(prefs domain.Preferences, lang string) {
+	h.cfg.Prefs = prefs.Normalized()
+	if lang != "" && lang != h.cfg.Tr.Lang() {
+		h.cfg.Tr = NewTranslator(lang)
+	}
+	h.cfg.Notice = ""
+	h.page, h.query, h.settings = 0, "", nil
+	h.build()
+	h.Doc.ResetFrame()
+	h.Doc.Invalidate()
+}
+
+// paper gives a widget the page color, so it stays readable over a background picture.
+func paper(w widget.Widget) widget.Widget {
+	w.Elem().Style.Background = widget.Paper
+	return w
+}
+
+// background is the picture chosen for the background (nil when none or unreadable).
+func (h *Home) background() image.Image {
+	name := h.cfg.Prefs.Image
+	if name == "" || h.cfg.LoadBackground == nil {
+		return nil
+	}
+	img, err := h.cfg.LoadBackground(name)
+	if err != nil {
+		return nil
+	}
+	return img
+}
+
+// build creates the widgets of the home screen from the current configuration.
+func (h *Home) build() {
+	cfg := h.cfg
 
 	title := widget.NewLabel(cfg.Tr.T("home.title"))
 	title.Style.FontSize, title.Style.Bold = widget.FontTitle, true
 	title.Style.Padding = geom.XY(28, 28)
 	title.ID = "home-title"
+	paper(title)
 
 	h.search = widget.NewSearchInput(cfg.Tr.T("search.placeholder"))
 	h.search.ID = "home-search"
@@ -116,16 +166,23 @@ func NewHome(cfg Config) *Home {
 	h.prev.ID, h.next.ID = "home-prev", "home-next"
 	h.prev.OnClick = func(*widget.Event) { h.PrevPage() }
 	h.next.OnClick = func(*widget.Event) { h.NextPage() }
+	settings := widget.NewButton(cfg.Tr.T("home.settings"))
+	settings.ID = "home-settings"
+	settings.OnClick = func(*widget.Event) { h.OpenSettings() }
 
-	footer := widget.NewRow(12, h.note, h.prev, h.indicator, h.next)
+	footer := widget.NewRow(12, h.note, settings, h.prev, h.indicator, h.next)
 	footer.Style.Padding = geom.XY(14, 28)
+	paper(footer)
 
 	root := widget.NewColumn(0, title, searchBar, h.body, footer)
 	root.Style.Background = widget.Paper
+	if bg := h.background(); bg != nil {
+		root.Style.BackgroundImage = bg
+	}
+	h.root = root
 	h.Doc.SetRoot(root)
 
 	h.Refresh()
-	return h
 }
 
 // Refresh reloads the tiles from the registry and shows the current page.
@@ -156,7 +213,7 @@ func (h *Home) Query() string { return h.query }
 
 // grid is the layout of the current page: searching leaves room for "Available".
 func (h *Home) grid() domain.Grid {
-	g := h.cfg.Grid
+	g := h.cfg.Prefs.Grid
 	if h.query != "" && g.Rows > searchRows {
 		g.Rows = searchRows
 	}
@@ -222,7 +279,7 @@ func (h *Home) tile(t domain.Tile) widget.Widget {
 		icon = h.cfg.IconFor(t)
 	}
 	img := widget.NewImage(icon)
-	img.Style.Height = widget.Px(h.cfg.IconSize)
+	img.Style.Height = widget.Px(float64(h.cfg.Prefs.IconSize))
 
 	title := widget.NewLabel(t.Title)
 	title.Style.FontSize, title.Style.TextAlign = widget.FontSmall, gfx.AlignCenter
@@ -231,6 +288,7 @@ func (h *Home) tile(t domain.Tile) widget.Widget {
 	cell.ID = "app-" + t.ID
 	cell.Style.Padding = geom.All(12)
 	cell.Style.BorderColor, cell.Style.BorderWidth, cell.Style.BorderRadius = widget.Mid, 2, widget.Radius
+	paper(cell)
 	cell.OnClick = func(*widget.Event) { h.open(t) }
 	return cell
 }
@@ -258,7 +316,7 @@ func (h *Home) emptyText() string {
 func (h *Home) muted(id, text string) widget.Widget {
 	l := widget.NewLabel(text)
 	l.ID, l.Style.Color = id, widget.Muted
-	return l
+	return paper(l)
 }
 
 // section is the heading of a group of results ("-- Installed --").
@@ -266,7 +324,7 @@ func (h *Home) section(key string) widget.Widget {
 	l := widget.NewLabel(h.cfg.Tr.T(key))
 	l.ID = key
 	l.Style.FontSize, l.Style.Bold, l.Style.Padding = widget.FontSmall, true, geom.XY(8, 12)
-	return l
+	return paper(l)
 }
 
 // showAvailable lists the apps of the catalog that match and are not installed.
@@ -308,6 +366,7 @@ func (h *Home) listing(l domain.Listing) widget.Widget {
 	row.ID = "avail-" + l.ID
 	row.Style.Padding = geom.XY(14, 20)
 	row.Style.BorderColor, row.Style.BorderWidth, row.Style.BorderRadius = widget.Mid, 2, widget.Radius
+	paper(row)
 	if h.cfg.Installer != nil {
 		row.OnClick = func(*widget.Event) { h.install(l) }
 	}

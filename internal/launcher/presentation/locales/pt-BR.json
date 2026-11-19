@@ -12,5 +12,20 @@
   "search.more": "… e mais %d",
   "install.downloading": "Baixando “%s”…",
   "install.done": "“%s” instalado. Ele já está em Instalados.",
-  "install.failed": "Não foi possível instalar “%s”: %s"
+  "install.failed": "Não foi possível instalar “%s”: %s",
+  "home.settings": "Configurações",
+  "settings.title": "Configurações",
+  "settings.grid": "Grade de aplicativos",
+  "settings.columns": "Colunas",
+  "settings.rows": "Linhas",
+  "settings.icons": "Tamanho dos ícones",
+  "settings.language": "Idioma",
+  "settings.background": "Imagem de fundo",
+  "settings.background.none": "Nenhuma",
+  "settings.background.hint": "Copie imagens (PNG, JPG, BMP) para a pasta applications/backgrounds do leitor para escolher uma aqui.",
+  "settings.save": "Salvar",
+  "settings.cancel": "Cancelar",
+  "settings.reset": "Padrão",
+  "settings.invalid": "Digite números nas colunas e nas linhas.",
+  "settings.failed": "Não foi possível salvar: %s"
 }

@@ -39,7 +39,7 @@ func apps(n int) []platform.InstalledApp {
 
 func newHome(n int, grid domain.Grid, l *launcher) *Home {
 	return NewHome(Config{
-		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), Grid: grid,
+		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), Prefs: domain.Preferences{Grid: grid},
 		Home: application.Home{Apps: registry{apps: apps(n)}, Launcher: l, SelfID: "launcher"},
 		IconFor: func(domain.Tile) image.Image {
 			return image.NewGray(image.Rect(0, 0, 128, 128))

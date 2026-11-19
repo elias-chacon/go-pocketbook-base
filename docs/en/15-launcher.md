@@ -6,7 +6,7 @@
 other (it follows the [contract](13-apps-and-the-contract.md)) and the composition root of the `internal/launcher` context.
 
 > **Status.** The home screen, running an app, the search and the GitHub catalog with one-tap install are done in code (the
-> catalog and the download are not verified on the reader yet). The settings screen comes next.
+> catalog, the download and the settings are not verified on the reader yet).
 
 ## What it does today
 
@@ -26,6 +26,10 @@ other (it follows the [contract](13-apps-and-the-contract.md)) and the compositi
   icon the app published as `icon.png`, or the default one) and moves it to *Installed*. Each *Available* row shows that icon (downloaded once, kept in
   `applications/.pbgo/cache/icons`).
   The list is kept for 5 minutes. It needs Wi-Fi on; without it (or without a release) the section shows the error.
+- **Settings** (the *Settings* button in the footer, or the Menu key; left leaves without saving): the **grid** (columns and rows, 1 to 8), the **icon size**
+  (96 to 240), the **language** (shared by every app: the others read it when they start) and a **background image**, chosen among the pictures
+  (PNG, JPG, GIF, BMP) the person copied to `applications/backgrounds` on the reader. The preferences are kept in `applications/.pbgo/launcher.json`; a
+  picture is shrunk to the screen when loaded, and the tiles keep a white background so they stay readable over it.
 - Texts in Portuguese (pt-BR) with English as the fallback, in the language chosen in the shared settings.
 
 ## How an app is run, and how it comes back
@@ -47,10 +51,12 @@ Launcher ──exec──► app          (PBGO_LAUNCHER=/…/launcher.app)
 
 | Layer | Package | Holds |
 |---|---|---|
-| domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (translated, sorted ignoring case and accents), `Grid` and paging, `Matches`/`FilterTiles`/`FilterListings`, `Listing`, `SearchResult`, the `AppLauncher`, `Catalog` and `Installer` ports |
+| domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (translated, sorted ignoring case and accents), `Grid` and paging, `Matches`/`FilterTiles`/`FilterListings`, `Listing`, `SearchResult`, `Preferences` (grid, icon size and background, always inside their bounds), the `AppLauncher`, `Catalog`, `Installer` and `PreferencesStore` ports |
 | application | `internal/launcher/application` | `Home`: the tiles of the installed apps, and opening one; `Search`: installed and available apps for a query |
 | infrastructure | `internal/launcher/infrastructure/processlauncher` | starts an app by replacing the process |
 | | `…/infrastructure/github` | the `Catalog`: the latest release's `catalog.json` and the apps it lists (cached 5 min) |
+| | `…/infrastructure/prefsfile` | the `PreferencesStore`: `applications/.pbgo/launcher.json` |
+| | `…/infrastructure/backgrounds` | lists the pictures of `applications/backgrounds` |
 | | `…/infrastructure/iconcache` | downloads the catalog's icons (PNG) and keeps them on the reader |
 | | `…/infrastructure/appinstaller` | the `Installer`: download the zip, check size and SHA-256, extract `<id>.app` through a temporary file, register |
 | presentation | `internal/launcher/presentation` | the home screen, from the toolkit's widgets (`Image`, `Grid`, `Label`…) |

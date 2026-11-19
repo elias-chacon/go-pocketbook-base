@@ -186,3 +186,57 @@ func TestTheRegistrarUsesThePublishedIconOrTheDefaultOne(t *testing.T) {
 		}
 	}
 }
+
+func TestTheMenuKeyOpensAndClosesTheSettingsAndLeftLeavesThem(t *testing.T) {
+	app := newLauncher(testEnv(t, installed("hello", "Hello"))).(*launcher)
+	if !app.Key(platform.KeyMenu) || !app.home.InSettings() {
+		t.Fatal("Menu opens the settings")
+	}
+	if !app.Key(platform.KeyNext) || !app.home.InSettings() {
+		t.Error("right does nothing in the settings, but the key is ours")
+	}
+	if app.Key(platform.KeyOther) {
+		t.Error("another key is not ours")
+	}
+	if !app.Key(platform.KeyPrevious) || app.home.InSettings() {
+		t.Error("left leaves the settings")
+	}
+	app.Key(platform.KeyMenu)
+	if !app.Key(platform.KeyMenu) || app.home.InSettings() {
+		t.Error("Menu closes them too")
+	}
+}
+
+type memorySettings struct{ s platformdomain.Settings }
+
+func (m *memorySettings) Load() platformdomain.Settings        { return m.s }
+func (m *memorySettings) Save(s platformdomain.Settings) error { m.s = s; return nil }
+
+func TestTheLanguageIsKeptInTheSettingsEveryAppShares(t *testing.T) {
+	store := &memorySettings{s: platformdomain.DefaultSettings()}
+	env := testEnv(t)
+	env.Settings = store
+	if err := languageSaver(env)("en"); err != nil || store.s.Lang != "en" {
+		t.Errorf("%+v %v", store.s, err)
+	}
+	env.Settings = nil
+	if err := languageSaver(env)("en"); err != nil {
+		t.Errorf("without a store there is nothing to keep: %v", err)
+	}
+}
+
+func TestABackgroundIsShrunkToTheScreenAndAMissingOneIsAnError(t *testing.T) {
+	dir := t.TempDir()
+	var buf bytes.Buffer
+	png.Encode(&buf, image.NewGray(image.Rect(0, 0, 2000, 1000)))
+	os.WriteFile(filepath.Join(dir, "sea.png"), buf.Bytes(), 0o644)
+
+	load := backgroundLoader(dir, 700, 900)
+	img, err := load("sea.png")
+	if err != nil || img.Bounds().Dx() > 700 || img.Bounds().Dy() > 900 {
+		t.Errorf("shrunk to the screen: %v %v", img, err)
+	}
+	if _, err := load("missing.png"); err == nil {
+		t.Error("a missing picture")
+	}
+}
