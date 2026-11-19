@@ -31,5 +31,12 @@
   "tasks.list.all": "Todas as listas",
   "tasks.list.new": "Nova lista…",
   "tasks.list.delete": "Apagar esta lista",
-  "tasks.list.name": "Nome da nova lista…"
+  "tasks.list.name": "Nome da nova lista…",
+  "tasks.repeat": "Repetir",
+  "tasks.repeat.none": "Não repete",
+  "tasks.repeat.daily": "Todo dia",
+  "tasks.repeat.weekly": "Toda semana",
+  "tasks.repeat.monthly": "Todo mês",
+  "tasks.repeat.yearly": "Todo ano",
+  "tasks.repeat.custom": "Personalizada"
 }

@@ -11,7 +11,7 @@ where the code is. The technical details are in chapters [17](17-productivity-ap
 | App | Folder | Needs an account? | What it does today | What is missing |
 |---|---|---|---|---|
 | **Mail** | `apps/mail` | Yes (IMAP with an **app password**) | folders, list, reading, reply, forward, new message, delete, search, sync, offline reading | opening attachments, drafts, Bcc in the form, Outlook.com (OAuth) |
-| **Tasks** | `apps/tasks` | No (kept on the reader) | My Day, Important, Planned, Overdue and All views; add, tick, edit, delete; repeating tasks | reminders and repetition on screen, sync |
+| **Tasks** | `apps/tasks` | No (kept on the reader) | My Day, Important, Planned, Overdue and All views; add, tick, edit, delete; repeating tasks | reminders on screen, sync |
 | **Calendar** | `apps/calendar` | No (kept on the reader) | month with dots on the days with events, the day's agenda, create, edit and delete events (all-day or timed) | day and week views, ringing the reminders, sync, `.ics` import |
 
 ## How to install
@@ -39,6 +39,7 @@ Everything is read from the **offline cache**: without a network you keep readin
 - Type a title in the field and confirm to **add**: in My Day the task is for today, in Important it is starred, in Planned it is due today.
 - The box on the left **ticks** the task (a repeating task creates the next one by itself). Tapping the text opens the **editor**: title, notes, steps, important,
   My Day and the due date (today, tomorrow, next week, none). Nothing is saved until **Save**.
+- **Repeat** (every day, week, month or year) is in the editor.
 - The **Lists** menu picks a list (or all), starts a new one and deletes the one shown.
 - **8 tasks a page.**
 

@@ -21,6 +21,7 @@ type editor struct {
 	dueLabel, note   *widget.Label
 	important, myDay *widget.Toggle
 	today            time.Time
+	repeat           *widget.Dropdown
 }
 
 // Edit opens a task.
@@ -73,6 +74,7 @@ func (s *Screen) showEditor(t domain.Task) {
 	}
 
 	steps := s.stepsPanel(e)
+	e.repeat = s.repeatMenu(e)
 
 	e.dueLabel = widget.NewLabel("")
 	s.showDue()
@@ -86,7 +88,7 @@ func (s *Screen) showEditor(t domain.Task) {
 	e.note = widget.NewLabel(s.notice)
 	e.note.Style.FontSize, e.note.Style.Color = widget.FontSmall, widget.Muted
 
-	form := widget.NewColumn(16, e.title, e.notes, steps, e.important, e.myDay, e.dueLabel, days, e.note)
+	form := widget.NewColumn(16, e.title, e.notes, steps, e.important, e.myDay, e.dueLabel, days, e.repeat, e.note)
 	form.Style.Padding = geom.XY(28, 28)
 	form.Style.FlexGrow = 1
 	root := widget.NewColumn(0, bar, form)
@@ -137,6 +139,43 @@ func (s *Screen) keepFields() {
 	e.task.Title, e.task.Notes = e.title.Value, e.notes.Value
 }
 
+// The repetitions the editor offers, by their rule ("" is none).
+var repeatRules = []struct{ rule, key string }{
+	{"", "tasks.repeat.none"}, {"FREQ=DAILY", "tasks.repeat.daily"}, {"FREQ=WEEKLY", "tasks.repeat.weekly"},
+	{"FREQ=MONTHLY", "tasks.repeat.monthly"}, {"FREQ=YEARLY", "tasks.repeat.yearly"},
+}
+
+// repeatLabel names the repetition of a rule; one the editor does not offer (it came
+// from a server) is shown as custom and kept until another is chosen.
+func (s *Screen) repeatLabel(rule string) string {
+	for _, r := range repeatRules {
+		if r.rule == rule {
+			return s.t("tasks.repeat") + ": " + s.t(r.key)
+		}
+	}
+	return s.t("tasks.repeat") + ": " + s.t("tasks.repeat.custom")
+}
+
+// repeatMenu picks how the task repeats. A repeating task needs a due date to repeat
+// from, so choosing a repetition on a task with none makes it due today.
+func (s *Screen) repeatMenu(e *editor) *widget.Dropdown {
+	var items []widget.MenuItem
+	for _, r := range repeatRules {
+		r := r
+		items = append(items, widget.MenuItem{Label: s.t(r.key), OnSelect: func() {
+			e.task.Recurrence = r.rule
+			if r.rule != "" && e.task.Due.IsZero() {
+				e.task.Due = e.today
+				s.showDue()
+			}
+			e.repeat.Text = s.repeatLabel(r.rule)
+		}})
+	}
+	d := widget.NewDropdown(s.repeatLabel(e.task.Recurrence), items...)
+	d.ID = "edit-repeat"
+	return d
+}
+
 // showDue writes the due date of the task being edited under its label.
 func (s *Screen) showDue() {
 	e := s.editor
@@ -155,6 +194,8 @@ func (s *Screen) dueButton(id, key string, days int) *widget.Button {
 		e := s.editor
 		if days < 0 {
 			e.task.Due = time.Time{}
+			e.task.Recurrence = "" // nothing to repeat from
+			e.repeat.Text = s.repeatLabel("")
 		} else {
 			e.task.Due = e.today.AddDate(0, 0, days)
 		}

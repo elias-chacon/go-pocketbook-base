@@ -349,3 +349,36 @@ func TestListsFilterAndReceiveNewTasks(t *testing.T) {
 		t.Errorf("naming %v notice %q", s.naming, s.notice)
 	}
 }
+
+func TestRepetitionNeedsADueDateAndClearingTheDateClearsIt(t *testing.T) {
+	s, st := newScreen("pagar")
+	s.Edit("t1")
+	rep := byID(t, s, "edit-repeat").(*widget.Dropdown)
+	rep.Items[2].OnSelect() // weekly, on a task with no due date
+	if s.editor.task.Due.IsZero() || !strings.Contains(rep.Text, "Toda semana") {
+		t.Fatalf("due %v label %q", s.editor.task.Due, rep.Text)
+	}
+	tap(t, s, "edit-save")
+	if st.tasks["t1"].Recurrence != "FREQ=WEEKLY" {
+		t.Fatalf("recurrence = %q", st.tasks["t1"].Recurrence)
+	}
+	s.Edit("t1")
+	tap(t, s, "due-clear")
+	if s.editor.task.Recurrence != "" || !strings.Contains(byID(t, s, "edit-repeat").(*widget.Dropdown).Text, "Não repete") {
+		t.Error("clearing the date must clear the repetition")
+	}
+	e := st.tasks["t1"]
+	e.Recurrence = "FREQ=WEEKLY;BYDAY=MO"
+	st.tasks["t1"] = e
+	s.Edit("t1")
+	if !strings.Contains(byID(t, s, "edit-repeat").(*widget.Dropdown).Text, "Personalizada") {
+		t.Error("custom rule not shown as custom")
+	}
+	// ticking a repeating task creates the next one
+	s.showList()
+	s.Show(domain.ViewAll)
+	s.Toggle("t1")
+	if len(st.tasks) != 2 {
+		t.Errorf("tasks = %d", len(st.tasks))
+	}
+}

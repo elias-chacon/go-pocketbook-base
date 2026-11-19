@@ -38,8 +38,8 @@ list "Tasks" is created on the first run). The `Checklist` use case answers what
 looking at My Day is for today, in Important it is starred, in Planned it is due today), **Toggle** (ticks, saving the next occurrence of a repeating
 task, or reopens), star, My Day, due date, save and delete. The screen has the five views as chips with counts, a field to add a task, **8 tasks a
 page** with a check box (the deepest touch target) and the title and due date (overdue ones say so); tapping the text opens the task to edit: title,
-notes, **steps** (add, tick, remove), important, My Day and the due date (today, tomorrow, next week, none). Nothing is saved until **Save**. **Not yet tried on the device.** **Lists:** the **Lists** menu next to the add field shows one list or all of them (new tasks go to the one shown), starts a new list (the add field then asks for its name) and deletes the one shown with its tasks (the last list cannot be deleted). Still to
-do (T63): reminders and repetition in the screen.
+notes, **steps** (add, tick, remove), important, My Day and the due date (today, tomorrow, next week, none). Nothing is saved until **Save**. **Not yet tried on the device.** **Lists:** the **Lists** menu next to the add field shows one list or all of them (new tasks go to the one shown), starts a new list (the add field then asks for its name) and deletes the one shown with its tasks (the last list cannot be deleted). **Repeat** (every day, week, month or year; choosing one on a task with no due date makes it due today, and clearing the date clears the repetition). Still to
+do (T63): reminders in the screen.
 
 ## The code
 

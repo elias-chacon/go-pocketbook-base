@@ -11,7 +11,7 @@ está o código. Os detalhes técnicos ficam nos capítulos [17](17-decisoes-app
 | App | Pasta | Precisa de conta? | O que já faz | O que falta |
 |---|---|---|---|---|
 | **E-mail** | `apps/mail` | Sim (IMAP com **senha de app**) | pastas, lista, leitura, responder, encaminhar, nova mensagem, apagar, busca, sincronizar, ler offline | abrir anexos, rascunhos, Cco no formulário, Outlook.com (OAuth) |
-| **Tarefas** | `apps/tasks` | Não (ficam no leitor) | visões Meu dia, Importante, Planejado, Atrasadas e Todas; adicionar, concluir, editar, apagar; tarefas que se repetem | lembretes e repetição na tela, sincronização |
+| **Tarefas** | `apps/tasks` | Não (ficam no leitor) | visões Meu dia, Importante, Planejado, Atrasadas e Todas; adicionar, concluir, editar, apagar; tarefas que se repetem | lembretes na tela, sincronização |
 | **Calendário** | `apps/calendar` | Não (ficam no leitor) | mês com pontos nos dias com eventos, agenda do dia, criar, editar e apagar eventos (dia inteiro ou com horário) | visões de dia e semana, tocar os lembretes, sincronização, importar `.ics` |
 
 ## Como instalar
@@ -39,6 +39,7 @@ Tudo é lido do **cache offline**: sem rede você continua lendo o que já veio.
 - Digite um título no campo e confirme para **adicionar**: em Meu dia a tarefa é para hoje, em Importante já vem marcada, em Planejado vence hoje.
 - A caixa à esquerda **conclui** a tarefa (uma tarefa que se repete cria a próxima sozinha). Tocar no texto abre o **editor**: título, notas, etapas, importante,
   Meu dia e prazo (hoje, amanhã, próxima semana, nenhum). Nada é salvo até **Salvar**.
+- **Repetir** (todo dia, semana, mês ou ano) fica no editor.
 - O menu **Listas** escolhe uma lista (ou todas), cria uma nova e apaga a mostrada.
 - **8 tarefas por página.**
 

@@ -31,5 +31,12 @@
   "tasks.list.all": "All lists",
   "tasks.list.new": "New list…",
   "tasks.list.delete": "Delete this list",
-  "tasks.list.name": "Name of the new list…"
+  "tasks.list.name": "Name of the new list…",
+  "tasks.repeat": "Repeat",
+  "tasks.repeat.none": "Does not repeat",
+  "tasks.repeat.daily": "Every day",
+  "tasks.repeat.weekly": "Every week",
+  "tasks.repeat.monthly": "Every month",
+  "tasks.repeat.yearly": "Every year",
+  "tasks.repeat.custom": "Custom"
 }
