@@ -48,6 +48,24 @@ func ParseAddress(s string) (Address, error) {
 	return Address{Name: a.Name, Email: a.Address}, nil
 }
 
+// ParseAddressList reads addresses separated by commas or semicolons (what a person
+// types in the To field). An empty text is an empty list; one bad address fails the lot,
+// naming it.
+func ParseAddressList(s string) ([]Address, error) {
+	var out []Address
+	for _, part := range strings.FieldsFunc(s, func(r rune) bool { return r == ',' || r == ';' }) {
+		if strings.TrimSpace(part) == "" {
+			continue
+		}
+		a, err := ParseAddress(part)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, a)
+	}
+	return out, nil
+}
+
 // Same reports whether two addresses are the same mailbox (case-insensitive).
 func (a Address) Same(b Address) bool { return strings.EqualFold(a.Email, b.Email) }
 

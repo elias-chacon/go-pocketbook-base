@@ -33,5 +33,20 @@
   "role.trash": "Lixeira",
   "role.junk": "Spam",
   "role.archive": "Arquivo",
-  "yesterday": "Ontem"
+  "yesterday": "Ontem",
+  "mail.new": "Nova",
+  "mail.reply": "Responder",
+  "mail.replyall": "Responder a todos",
+  "mail.forward": "Encaminhar",
+  "mail.compose": "Nova mensagem",
+  "mail.subject": "Assunto",
+  "mail.body": "Escreva sua mensagem…",
+  "mail.send": "Enviar",
+  "mail.cancel": "Cancelar",
+  "mail.sending": "Enviando…",
+  "mail.sent": "Mensagem enviada.",
+  "mail.send.failed": "Não foi possível enviar: %s",
+  "mail.badaddress": "%s",
+  "mail.wrote": "Em %s, %s escreveu:",
+  "mail.forwarded": "---------- Mensagem encaminhada ----------\nDe: %s\nData: %s\nAssunto: %s"
 }

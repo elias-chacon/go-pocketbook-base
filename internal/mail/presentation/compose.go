@@ -1,0 +1,146 @@
+package presentation
+
+import (
+	"strings"
+
+	"go-pocketbook-base/internal/kernel/geom"
+	"go-pocketbook-base/internal/mail/domain"
+	"go-pocketbook-base/internal/toolkit/widget"
+)
+
+// The day and time of a quote's attribution, and of a forward's header.
+const quoteDate = "02/01/2006 15:04"
+
+// composeRows is how many lines the body field shows.
+const composeRows = 14
+
+// composer is the "new message" form.
+type composer struct {
+	draft           domain.Draft
+	to, cc, subject *widget.Input
+	body            *widget.TextArea
+	note            *widget.Label
+}
+
+// Composing reports whether the new message form is showing.
+func (s *Screen) Composing() bool { return s.form != nil }
+
+// NewMessage opens an empty message.
+func (s *Screen) NewMessage() { s.Compose(s.cfg.Mailbox.New()) }
+
+// Reply opens the answer to the message that is open.
+func (s *Screen) Reply(all bool) {
+	if s.reading == nil {
+		return
+	}
+	m := *s.reading
+	d, err := s.cfg.Mailbox.Reply(m.ID, all, s.t("mail.wrote", m.Date.Local().Format(quoteDate), sender(s, m)))
+	if err != nil {
+		s.say(s.t(keyOpenFailed, err.Error()))
+		return
+	}
+	s.Compose(d)
+}
+
+// Forward opens a forward of the message that is open.
+func (s *Screen) Forward() {
+	if s.reading == nil {
+		return
+	}
+	m := *s.reading
+	d, err := s.cfg.Mailbox.Forward(m.ID, s.t("mail.forwarded", sender(s, m), m.Date.Local().Format(quoteDate), m.Subject))
+	if err != nil {
+		s.say(s.t(keyOpenFailed, err.Error()))
+		return
+	}
+	s.Compose(d)
+}
+
+func (s *Screen) field(id, placeholder, value string) *widget.Input {
+	in := widget.NewInput(placeholder)
+	in.ID, in.Value = id, value
+	in.Style.FlexGrow = 1
+	return in
+}
+
+func joinAddresses(list []domain.Address) string {
+	parts := make([]string, len(list))
+	for i, a := range list {
+		parts[i] = a.String()
+	}
+	return strings.Join(parts, ", ")
+}
+
+// Compose shows the form for a draft.
+func (s *Screen) Compose(d domain.Draft) {
+	f := &composer{draft: d}
+	s.form = f
+	f.to = s.field("mail-to", s.t("mail.to"), joinAddresses(d.To))
+	f.cc = s.field("mail-cc", s.t("mail.cc"), joinAddresses(d.Cc))
+	f.subject = s.field("mail-subject", s.t("mail.subject"), d.Subject)
+	f.body = widget.NewTextArea(s.t("mail.body"), composeRows)
+	f.body.ID, f.body.Value = "mail-body-text", d.Body
+	f.body.Style.Width = widget.Pct(100)
+	f.note = widget.NewLabel(s.cfg.Notice)
+	f.note.Style.FontSize, f.note.Style.Color = widget.FontSmall, widget.Muted
+
+	title := widget.NewLabel(s.t("mail.compose"))
+	title.Style.FontSize, title.Style.Bold, title.Style.FlexGrow = widget.FontTitle, true, 1
+	send := widget.NewButton(s.t("mail.send"))
+	send.ID = "mail-send"
+	send.OnClick = func(*widget.Event) { s.SendDraft() }
+	cancel := widget.NewButton(s.t("mail.cancel"))
+	cancel.ID = "mail-cancel"
+	cancel.OnClick = func(*widget.Event) { s.CancelCompose() }
+	bar := widget.NewRow(12, title, cancel, send)
+	bar.Style.Padding = geom.XY(28, 28)
+	bar.Style.AlignItems = widget.AlignCenter
+	paper(bar)
+
+	form := widget.NewColumn(16, f.to, f.cc, f.subject, f.body, f.note)
+	form.Style.Padding = geom.XY(28, 28)
+	form.Style.FlexGrow = 1
+	s.root = widget.NewColumn(0, bar, form)
+	s.root.Style.Background = widget.Paper
+	s.Doc.SetRoot(s.root)
+	s.Doc.ResetFrame()
+	s.Doc.Invalidate()
+}
+
+// CancelCompose throws the message away and goes back to the list.
+func (s *Screen) CancelCompose() {
+	s.form = nil
+	s.showList()
+}
+
+// SendDraft sends what was written. A message that does not go stays on the screen.
+func (s *Screen) SendDraft() {
+	f := s.form
+	if f == nil {
+		return
+	}
+	d := f.draft
+	var err error
+	if d.To, err = domain.ParseAddressList(f.to.Value); err == nil {
+		d.Cc, err = domain.ParseAddressList(f.cc.Value)
+	}
+	if err != nil {
+		f.note.Text = s.t("mail.badaddress", err.Error())
+		s.Doc.Invalidate()
+		return
+	}
+	d.Subject, d.Body = f.subject.Value, f.body.Value
+	f.note.Text = s.t("mail.sending")
+	s.Doc.Invalidate()
+	if s.cfg.Flush != nil {
+		s.cfg.Flush()
+	}
+	if err := s.cfg.Mailbox.Send(d); err != nil {
+		f.note.Text = s.t("mail.send.failed", err.Error())
+		s.Doc.Invalidate()
+		return
+	}
+	s.form = nil
+	s.cfg.Notice = s.t("mail.sent")
+	s.showList()
+}

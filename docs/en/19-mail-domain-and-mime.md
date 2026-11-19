@@ -86,14 +86,14 @@ cache (folders with counts, a page of a folder, search). The screen (`presentati
 **Folders** menu, **Sync**, a search field, **7 messages a page** (sender, date, subject and preview; unread in bold) and the page keys. Tapping a message opens
 it **page by page** (`TextPager`) and marks it read; there are **Mark unread** and **Delete** (server first: if it refuses, the message stays open).
 Everything is read from the cache, so it works offline; **Sync** brings the 50 newest of each folder. The account must use an **app password** for now
-(OAuth2 comes with the sign-in by code). Still to do (T62): writing, replying, forwarding, attachments and flags. **Not yet tried on the device.**
+(OAuth2 comes with the sign-in by code). **New**, **Reply**, **Reply all** and **Forward** open a form (To, Cc, Subject and the text, with the quote already in) and **Send** goes through the account's server: a bad address or a refused send keeps the form open with the reason. Bcc is not in the form yet. Still to do (T62): attachments, flags and drafts. **Not yet tried on the device.**
 
 ## The code
 
 | Layer | Package | Holds |
 |---|---|---|
 | domain | `internal/mail/domain` | `Message`, `Folder`, `Draft`, `Address`, `Reply`, `Forward`, `Quote`, the `MessageStore` and `Backend` ports, `Query` |
-| application | `internal/mail/application` | `Sync`: `Run`, `Open`, `MarkRead`, `Delete`; `Mailbox`: `Sync` plus reading the cache |
+| application | `internal/mail/application` | `Sync`: `Run`, `Open`, `MarkRead`, `Delete`; `Mailbox`: `Sync` plus reading the cache, `Reply`, `Forward`, `New` and `Send` |
 | presentation | `internal/mail/presentation` | the Mail screens: list, folders, reading |
 | infrastructure | `internal/mail/infrastructure/mime` | `Parse`, `Compose`, the HTML to text conversion |
 | | `internal/mail/infrastructure/sqlstore` | the `MessageStore` on SQLite: pages, search, folders, flags |

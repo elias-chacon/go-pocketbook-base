@@ -26,6 +26,8 @@ type fakeBox struct {
 	syncErr, openErr       error
 	markErr, deleteErr     error
 	syncResult             application.Result
+	replyErr, sendErr      error
+	sent                   []domain.Draft
 }
 
 func newBox(inbox int) *fakeBox {
@@ -360,4 +362,118 @@ func TestShortDate(t *testing.T) {
 			t.Errorf("shortDate(%v) = %q, want %q", c.when, got, c.want)
 		}
 	}
+}
+
+func (b *fakeBox) New() domain.Draft {
+	return domain.Draft{From: domain.Address{Email: "eu@example.org"}}
+}
+func (b *fakeBox) Reply(id string, all bool, attribution string) (domain.Draft, error) {
+	if b.replyErr != nil {
+		return domain.Draft{}, b.replyErr
+	}
+	m := b.byID[id]
+	return domain.Draft{
+		From: domain.Address{Email: "eu@example.org"}, To: []domain.Address{m.From},
+		Subject: "Re: " + m.Subject, Body: "\n\n" + attribution + "\n> " + m.Body,
+	}, nil
+}
+func (b *fakeBox) Forward(id, header string) (domain.Draft, error) {
+	return domain.Draft{Subject: "Fwd: " + b.byID[id].Subject, Body: header + "\n" + b.byID[id].Body}, nil
+}
+func (b *fakeBox) Send(d domain.Draft) error {
+	if b.sendErr != nil {
+		return b.sendErr
+	}
+	b.sent = append(b.sent, d)
+	return nil
+}
+
+func TestReplyFillsTheFormAndSendGoesThrough(t *testing.T) {
+	b := newBox(3)
+	s := newScreen(b)
+	tap(t, s, "msg-m00")
+	tap(t, s, "mail-reply")
+	if !s.Composing() {
+		t.Fatal("the form did not open")
+	}
+	if got := byID(t, s, "mail-to").(*widget.Input).Value; got != `"Ana" <ana@example.org>` {
+		t.Errorf("to = %q", got)
+	}
+	if got := byID(t, s, "mail-subject").(*widget.Input).Value; got != "Re: Assunto 0" {
+		t.Errorf("subject = %q", got)
+	}
+	if body := byID(t, s, "mail-body-text").(*widget.TextArea).Value; !strings.Contains(body, "escreveu:") || !strings.Contains(body, "> Corpo") {
+		t.Errorf("body = %q", body)
+	}
+	byID(t, s, "mail-body-text").(*widget.TextArea).Value = "Combinado!"
+	tap(t, s, "mail-send")
+	if len(b.sent) != 1 || b.sent[0].Body != "Combinado!" || b.sent[0].To[0].Email != "ana@example.org" {
+		t.Fatalf("sent = %+v", b.sent)
+	}
+	if s.Composing() || !strings.Contains(s.cfg.Notice, "enviada") {
+		t.Errorf("composing = %v notice = %q", s.Composing(), s.cfg.Notice)
+	}
+}
+
+func TestNewForwardAndCancel(t *testing.T) {
+	b := newBox(3)
+	s := newScreen(b)
+	tap(t, s, "mail-new")
+	if !s.Composing() || byID(t, s, "mail-to").(*widget.Input).Value != "" {
+		t.Error("an empty form was expected")
+	}
+	tap(t, s, "mail-cancel")
+	if s.Composing() || len(b.sent) != 0 {
+		t.Error("cancel did not go back")
+	}
+	tap(t, s, "msg-m00")
+	tap(t, s, "mail-forward")
+	if got := byID(t, s, "mail-subject").(*widget.Input).Value; got != "Fwd: Assunto 0" {
+		t.Errorf("subject = %q", got)
+	}
+	tap(t, s, "mail-cancel")
+	tap(t, s, "msg-m00")
+	tap(t, s, "mail-replyall")
+	if !s.Composing() {
+		t.Error("reply all did not open")
+	}
+}
+
+func TestASendThatFailsOrABadAddressKeepsTheFormOpen(t *testing.T) {
+	b := newBox(3)
+	s := newScreen(b)
+	s.NewMessage()
+	byID(t, s, "mail-to").(*widget.Input).Value = "isto não é um endereço"
+	s.SendDraft()
+	if !s.Composing() || len(b.sent) != 0 {
+		t.Error("a bad address was sent")
+	}
+	byID(t, s, "mail-to").(*widget.Input).Value = "bia@example.org"
+	b.sendErr = errors.New("servidor fora")
+	s.SendDraft()
+	if !s.Composing() || !strings.Contains(s.form.note.Text, "servidor fora") {
+		t.Errorf("composing = %v note = %q", s.Composing(), s.form.note.Text)
+	}
+	b.replyErr = errors.New("sem corpo")
+	s.CancelCompose()
+	tap(t, s, "msg-m00")
+	s.Reply(false)
+	if s.Composing() || !strings.Contains(s.cfg.Notice, "sem corpo") {
+		t.Errorf("composing = %v notice = %q", s.Composing(), s.cfg.Notice)
+	}
+	var none Screen
+	none.Reply(false)
+	none.Forward()
+	none.SendDraft()
+}
+
+func TestTheComposeFormFitsAndEverythingIsReachable(t *testing.T) {
+	s := newScreen(newBox(3))
+	s.NewMessage()
+	s.Doc.Layout()
+	h := s.Doc.Root.Elem().Bounds.H
+	s.Doc.Walk(func(w widget.Widget) bool {
+		checkElement(t, s, "compose", w, h)
+		return true
+	})
 }

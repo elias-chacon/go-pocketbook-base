@@ -39,6 +39,10 @@ type Mailbox interface {
 	Find(text string, limit int) ([]domain.Message, error)
 	Run() (application.Result, error)
 	Open(id string) (domain.Message, error)
+	New() domain.Draft
+	Reply(id string, all bool, attribution string) (domain.Draft, error)
+	Forward(id, header string) (domain.Draft, error)
+	Send(d domain.Draft) error
 	MarkRead(id string, read bool) error
 	Delete(id string) error
 }
@@ -82,6 +86,7 @@ type Screen struct {
 	total   int              // rows in all (for the pages)
 	found   []domain.Message // the results of a search, all of them
 	reading *domain.Message  // non-nil while a message is open
+	form    *composer        // non-nil while a message is being written
 
 	root            *widget.Panel
 	search          *widget.Input
@@ -191,7 +196,10 @@ func (s *Screen) showList() {
 	sync := widget.NewButton(s.t("mail.sync"))
 	sync.ID = "mail-sync"
 	sync.OnClick = func(*widget.Event) { s.Sync() }
-	head := widget.NewRow(12, title, folders, sync)
+	compose := widget.NewButton(s.t("mail.new"))
+	compose.ID = "mail-new"
+	compose.OnClick = func(*widget.Event) { s.NewMessage() }
+	head := widget.NewRow(12, title, folders, sync, compose)
 	head.Style.Padding = geom.XY(28, 28)
 	head.Style.AlignItems = widget.AlignCenter
 	paper(head)
@@ -422,6 +430,7 @@ func (s *Screen) showMessage(m domain.Message) {
 	bar := widget.NewRow(12, back, spacer, unread, del)
 	bar.Style.Padding = geom.XY(28, 28)
 	paper(bar)
+	answers := s.answerBar()
 
 	subject := widget.NewLabel(orElse(m.Subject, s.t("mail.nosubject")))
 	subject.Style.FontSize, subject.Style.Bold = widget.FontTitle, true
@@ -447,11 +456,28 @@ func (s *Screen) showMessage(m domain.Message) {
 	s.note = widget.NewLabel(s.cfg.Notice)
 	s.note.Style.FontSize, s.note.Style.Color = widget.FontSmall, widget.Muted
 	s.note.Style.Padding = geom.XY(8, 28)
-	s.root = widget.NewColumn(0, bar, head, text, s.note)
+	s.root = widget.NewColumn(0, bar, answers, head, text, s.note)
 	s.root.Style.Background = widget.Paper
 	s.Doc.SetRoot(s.root)
 	s.Doc.ResetFrame()
 	s.Doc.Invalidate()
+}
+
+// answerBar has the buttons that start a message about the one being read.
+func (s *Screen) answerBar() widget.Widget {
+	mk := func(id, key string, fn func()) *widget.Button {
+		b := widget.NewButton(s.t(key))
+		b.ID = id
+		b.OnClick = func(*widget.Event) { fn() }
+		return b
+	}
+	bar := widget.NewRow(12,
+		mk("mail-reply", "mail.reply", func() { s.Reply(false) }),
+		mk("mail-replyall", "mail.replyall", func() { s.Reply(true) }),
+		mk("mail-forward", "mail.forward", func() { s.Forward() }))
+	bar.Style.Padding = geom.XY(28, 0)
+	paper(bar)
+	return bar
 }
 
 func (s *Screen) meta(key, value string) widget.Widget {

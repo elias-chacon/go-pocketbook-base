@@ -164,3 +164,16 @@ func TestTheDefaultAttributionNamesTheSenderAndTheDate(t *testing.T) {
 		t.Error(got)
 	}
 }
+
+func TestParseAddressList(t *testing.T) {
+	list, err := ParseAddressList("Ana <ana@example.org>, bia@example.org; ,cris@example.org")
+	if err != nil || len(list) != 3 || list[0].Name != "Ana" || list[2].Email != "cris@example.org" {
+		t.Errorf("list = %+v, %v", list, err)
+	}
+	if list, err := ParseAddressList("  "); err != nil || len(list) != 0 {
+		t.Errorf("empty = %+v, %v", list, err)
+	}
+	if _, err := ParseAddressList("ok@example.org, não-é-endereço"); err == nil {
+		t.Error("a bad address was accepted")
+	}
+}

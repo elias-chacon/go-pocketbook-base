@@ -12,6 +12,7 @@ import (
 	accountsui "go-pocketbook-base/internal/accounts/presentation"
 	"go-pocketbook-base/internal/kernel/geom"
 	mailapp "go-pocketbook-base/internal/mail/application"
+	maildomain "go-pocketbook-base/internal/mail/domain"
 	"go-pocketbook-base/internal/mail/infrastructure/sqlstore"
 	"go-pocketbook-base/internal/mail/presentation"
 	"go-pocketbook-base/internal/platform"
@@ -118,7 +119,10 @@ func (m *mail) open(acc accounts.Account) {
 		m.fail(err)
 		return
 	}
-	box := mailapp.Mailbox{Sync: mailapp.Sync{AccountID: acc.ID, Backend: backend, Store: m.store}}
+	box := mailapp.Mailbox{
+		Sync: mailapp.Sync{AccountID: acc.ID, Backend: backend, Store: m.store},
+		Me:   maildomain.Address{Name: acc.Name, Email: acc.Email},
+	}
 	m.screen = presentation.NewScreen(presentation.Config{
 		Width: m.env.Width, Height: m.env.Height, Doc: m.doc, Tr: presentation.NewTranslator(m.env.Lang),
 		Mailbox: box, Flush: m.env.Flush,

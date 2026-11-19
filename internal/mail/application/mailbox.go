@@ -4,7 +4,12 @@ import "go-pocketbook-base/internal/mail/domain"
 
 // Mailbox is what the mail screens use: Sync (Run, Open, MarkRead, Delete) plus
 // reading the cache. The screens read only from the store.
-type Mailbox struct{ Sync }
+type Mailbox struct {
+	Sync
+	// Me is the account's own address: the sender of what is written, and never a
+	// recipient of a reply.
+	Me domain.Address
+}
 
 // Folders lists the folders of the account, with their unread and total counts.
 func (m Mailbox) Folders() ([]domain.Folder, error) { return m.Store.Folders(m.AccountID) }
@@ -30,4 +35,42 @@ func Inbox(folders []domain.Folder) (domain.Folder, bool) {
 		return folders[0], true
 	}
 	return domain.Folder{}, false
+}
+
+// Reply starts the answer to a message. attribution introduces the quote and is
+// already in the person's language.
+func (m Mailbox) Reply(id string, all bool, attribution string) (domain.Draft, error) {
+	orig, err := m.Open(id)
+	if err != nil {
+		return domain.Draft{}, err
+	}
+	d := domain.Reply(orig, m.Me, all, attribution)
+	d.AccountID = m.AccountID
+	return d, nil
+}
+
+// Forward starts the forward of a message; header introduces the original.
+func (m Mailbox) Forward(id, header string) (domain.Draft, error) {
+	orig, err := m.Open(id)
+	if err != nil {
+		return domain.Draft{}, err
+	}
+	d := domain.Forward(orig, m.Me, header)
+	d.AccountID = m.AccountID
+	return d, nil
+}
+
+// New starts an empty message from the account.
+func (m Mailbox) New() domain.Draft { return domain.Draft{AccountID: m.AccountID, From: m.Me} }
+
+// Send checks the draft and sends it through the account's server.
+func (m Mailbox) Send(d domain.Draft) error {
+	d.AccountID = m.AccountID
+	if d.From.Email == "" {
+		d.From = m.Me
+	}
+	if err := d.Validate(); err != nil {
+		return err
+	}
+	return m.Backend.Send(d)
 }

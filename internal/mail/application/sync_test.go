@@ -65,6 +65,8 @@ type fakeBackend struct {
 	fetchEr   error
 	readEr    error
 	deleteEr  error
+	sendEr    error
+	sent      []domain.Draft
 	limits    []int
 	reads     []string
 	deleted   []string
@@ -81,7 +83,10 @@ func (f *fakeBackend) Recent(folder string, limit int) ([]domain.Message, error)
 func (f *fakeBackend) Fetch(folder, remote string) (domain.Message, error) {
 	return f.fetched[folder+"/"+remote], f.fetchEr
 }
-func (f *fakeBackend) Send(domain.Draft) error { return nil }
+func (f *fakeBackend) Send(d domain.Draft) error {
+	f.sent = append(f.sent, d)
+	return f.sendEr
+}
 func (f *fakeBackend) SetRead(folder, remote string, read bool) error {
 	f.reads = append(f.reads, folder+"/"+remote)
 	return f.readEr
