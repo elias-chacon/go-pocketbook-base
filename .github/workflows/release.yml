@@ -2,7 +2,8 @@
 # It first runs the continuous integration (ci.yml), then builds every app of
 # apps/ for the reader and the installer for Windows, Linux and macOS, and
 # publishes one GitHub Release with:
-#   - <id>.app and <id>.json for every app (the Launcher's catalog reads these)
+#   - <id>.app.bin and <id>.json for every app (the Launcher's catalog reads these;
+#     GitHub refuses release files named *.app)
 #   - pbgo-installer_<os>_<arch>.zip|.tar.gz  the installer for people
 #   - SHA256SUMS
 #   - release notes with the install command for each system (tools/release)
@@ -62,5 +63,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           files=$(ls release/* | grep -v RELEASE_NOTES.md)
-          gh release create "$GITHUB_REF_NAME" $files \
+          # a draft first: if an upload fails nothing half-made is public
+          gh release create "$GITHUB_REF_NAME" $files --draft \
             --title "$GITHUB_REF_NAME" --notes-file release/RELEASE_NOTES.md --generate-notes
+          gh release edit "$GITHUB_REF_NAME" --draft=false

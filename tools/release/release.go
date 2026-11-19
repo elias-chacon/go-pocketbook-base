@@ -80,7 +80,7 @@ Ou baixe o arquivo do seu sistema abaixo e dê dois cliques. / Or download the f
 - macOS: se o sistema bloquear, clique com o botão direito no arquivo → **Abrir**.
 - Conferência / checksums: `+"`SHA256SUMS`"+`.
 
-Os arquivos `+"`<id>.app`"+` e `+"`<id>.json`"+` são os aplicativos para o leitor: o Launcher os lista e baixa por aqui.
+Os arquivos `+"`<id>.app.bin`"+` (o `+"`<id>.app`"+` com outro nome: o GitHub recusa `+"`.app`"+`) e `+"`<id>.json`"+` são os aplicativos para o leitor: o Launcher os lista e baixa por aqui.
 `,
 		archive("windows", "amd64"), archive("linux", "amd64"),
 		strings.Replace(archive("darwin", "amd64"), "darwin_amd64", "darwin_${arch}", 1))

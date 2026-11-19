@@ -1,7 +1,8 @@
 // Package github is the domain.Catalog of the ecosystem: the apps published on
 // the latest GitHub Release of the repository. The repository itself holds only
-// source; each release carries, for every app, the <id>.app built for the reader
-// and its <id>.json manifest (tools/release publishes both).
+// source; each release carries, for every app, the app built for the reader as
+// <id>.app.bin and its <id>.json manifest (tools/release publishes both). GitHub
+// refuses release files named *.app, hence the extra extension.
 package github
 
 import (
@@ -19,6 +20,10 @@ import (
 
 // DefaultBaseURL is GitHub's API.
 const DefaultBaseURL = "https://api.github.com"
+
+// AppAssetSuffix ends the name of the release file that holds an app: GitHub
+// rejects uploads named *.app, so <id>.app is published as <id>.app.bin.
+const AppAssetSuffix = ".app.bin"
 
 const (
 	userAgent    = "go-pocketbook-base-launcher"
@@ -74,7 +79,7 @@ func (c *Catalog) List(lang string) ([]domain.Listing, error) {
 	}
 	var out []domain.Listing
 	for _, a := range rel.Assets {
-		id := strings.TrimSuffix(a.Name, ".app")
+		id := strings.TrimSuffix(a.Name, AppAssetSuffix)
 		j, ok := byName[id+".json"]
 		if id == a.Name || !ok {
 			continue // not an app, or it has no manifest

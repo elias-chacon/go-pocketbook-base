@@ -24,11 +24,12 @@ func server(t *testing.T, hits *int32) *httptest.Server {
 			t.Error("GitHub requires a User-Agent")
 		}
 		fmt.Fprintf(w, `{"tag_name":"v1.2.3","assets":[
-			{"name":"hello.app","browser_download_url":"%[1]s/dl/hello.app","size":4096},
+			{"name":"hello.app.bin","browser_download_url":"%[1]s/dl/hello.app","size":4096},
 			{"name":"hello.json","browser_download_url":"%[1]s/dl/hello.json","size":10},
-			{"name":"books.app","browser_download_url":"%[1]s/dl/books.app","size":1},
+			{"name":"books.app.bin","browser_download_url":"%[1]s/dl/books.app","size":1},
 			{"name":"books.json","browser_download_url":"%[1]s/dl/books-wrong.json","size":10},
-			{"name":"notes.app","browser_download_url":"%[1]s/dl/notes.app","size":1},
+			{"name":"notes.app.bin","browser_download_url":"%[1]s/dl/notes.app","size":1},
+			{"name":"stray.app","browser_download_url":"%[1]s/dl/stray","size":1},
 			{"name":"SHA256SUMS","browser_download_url":"%[1]s/dl/sums","size":1}]}`, srv.URL)
 	})
 	mux.HandleFunc("/dl/hello.json", func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, helloManifest) })

@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"go-pocketbook-base/internal/launcher/infrastructure/github"
 	launcherui "go-pocketbook-base/internal/launcher/presentation"
 )
 
@@ -61,10 +62,11 @@ func run() error {
 	}
 	var files []string
 	for _, id := range ids { // the apps themselves, for the Launcher to download
-		if err := copyFile(filepath.Join(distApps, id+".app"), filepath.Join(outDir, id+".app")); err != nil {
+		asset := id + github.AppAssetSuffix // GitHub refuses release files named *.app
+		if err := copyFile(filepath.Join(distApps, id+".app"), filepath.Join(outDir, asset)); err != nil {
 			return err
 		}
-		files = append(files, id+".app")
+		files = append(files, asset)
 		// the manifest next to it: the Launcher lists the catalog from the pair
 		if err := copyFile(filepath.Join("apps", id, "app.json"), filepath.Join(outDir, id+".json")); err != nil {
 			return err
