@@ -54,6 +54,10 @@ type Config struct {
 	Tr       *i18n.Bundle
 	Agenda   Agenda
 	Notice   string
+	// Importer brings in .ics files and addresses (nil: no Import button).
+	Importer Importer
+	// Flush paints pending changes now, before a slow call (nil: no flush).
+	Flush func()
 }
 
 // View is how the schedule is shown.
@@ -237,8 +241,17 @@ func (s *Screen) show() {
 	}
 	s.note = widget.NewLabel(s.notice)
 	s.note.Style.FontSize, s.note.Style.Color = widget.FontSmall, widget.Muted
-	s.note.Style.Padding = geom.XY(8, 20)
-	root := widget.NewColumn(0, s.toolbar(), body, s.note)
+	s.note.Style.FlexGrow = 1
+	foot := widget.NewRow(12, s.note)
+	if s.cfg.Importer != nil {
+		imp := widget.NewButton(s.t("cal.import"))
+		imp.ID = "cal-import"
+		imp.OnClick = func(*widget.Event) { s.ShowImport() }
+		foot.AppendChild(imp)
+	}
+	foot.Style.AlignItems = widget.AlignCenter
+	foot.Style.Padding = geom.XY(8, 20)
+	root := widget.NewColumn(0, s.toolbar(), body, foot)
 	root.Style.Background = widget.Paper
 	s.Doc.SetRoot(s.cfg.Chrome.Wrap(s.Doc, root))
 	s.Doc.ResetFrame()
@@ -402,3 +415,6 @@ func gridEvent(o domain.Occurrence, loc *time.Location) widget.GridEvent {
 	}
 	return ev
 }
+
+// Importer is the importer the screen was given (nil when there is none).
+func (s *Screen) Importer() Importer { return s.cfg.Importer }

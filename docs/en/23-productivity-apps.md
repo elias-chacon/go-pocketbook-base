@@ -104,3 +104,12 @@ component goes to the **shared toolkit**, never inside an app: the toolkit's `Ca
 
 Opening attachments and OAuth sign-in for Outlook.com in mail; ringing the reminders of tasks and of the calendar; sync (Graph, CalDAV, Exchange); integrations between the apps (mail → task, invitation → event). The full list and the state of each item are in
 tasks **T51 to T70** of the [README](../../README.md#tasks).
+
+## Importing calendars (.ics and Google/Outlook links)
+
+The calendar has an **Import** button (bottom right). Two sources:
+
+- **An address**: any iCalendar link, including `webcal://`. For **Google Calendar** use *Settings of the calendar → Integrate calendar → Secret address in iCal format*; for **Outlook.com** use *Settings → Calendar → Shared calendars → Publish a calendar* (the ICS link). The events are copied to the reader (read once; import again to update).
+- **An .ics file** of the reader: the screen lists the ones found in the storage root and in `Download` (two levels deep).
+
+Importing again does not duplicate events (same UID replaces). This is a **one-way copy**, not a live sync: there is no two-way Google or Microsoft sync for the calendar or for Tasks yet (it needs the account's OAuth client id; see chapter 18).

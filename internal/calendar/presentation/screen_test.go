@@ -400,3 +400,53 @@ func TestEveryViewFitsTheScreenAndEveryElementGetsItsTouch(t *testing.T) {
 	s.Edit(firstID(st))
 	check("editor")
 }
+
+type fakeImporter struct {
+	files    []string
+	count    int
+	warnings []string
+	err      error
+	got      string
+}
+
+func (f *fakeImporter) Files() []string { return f.files }
+func (f *fakeImporter) Import(src string) (int, []string, error) {
+	f.got = src
+	return f.count, f.warnings, f.err
+}
+
+func TestImportScreenImportsFromAnAddressAndFiles(t *testing.T) {
+	imp := &fakeImporter{files: []string{"/a/one.ics"}, count: 3}
+	s := NewScreen(Config{Width: 1404, Height: 1872, Tr: NewTranslator("en"), Agenda: application.Agenda{AccountID: "local", Store: &memStore{events: map[string]domain.Event{}}, Now: func() time.Time { return now }}, Importer: imp})
+	s.Doc.Layout()
+	tap(t, s, "cal-import")
+	status := func() string { return byID(t, s, "import-status").(*widget.Label).Text }
+	tap(t, s, "import-fetch")
+	if !strings.Contains(status(), "Type an address") {
+		t.Fatalf("status = %q", status())
+	}
+	byID(t, s, "import-url").(*widget.Input).Value = " webcal://x/y.ics "
+	tap(t, s, "import-fetch")
+	if imp.got != "webcal://x/y.ics" || !strings.Contains(status(), "Imported 3") {
+		t.Fatalf("got %q status %q", imp.got, status())
+	}
+	imp.warnings = []string{"bad date"}
+	tap(t, s, "import-file-0")
+	if imp.got != "/a/one.ics" || !strings.Contains(status(), "bad date") {
+		t.Fatalf("got %q status %q", imp.got, status())
+	}
+	imp.err = errors.New("boom")
+	tap(t, s, "import-file-0")
+	if !strings.Contains(status(), "boom") {
+		t.Fatalf("status = %q", status())
+	}
+	tap(t, s, "import-back")
+	byID(t, s, "cal-import")
+}
+
+func TestImportScreenSaysWhenNoFileWasFound(t *testing.T) {
+	s := NewScreen(Config{Width: 1404, Height: 1872, Tr: NewTranslator("en"), Agenda: application.Agenda{AccountID: "local", Store: &memStore{events: map[string]domain.Event{}}, Now: func() time.Time { return now }}, Importer: &fakeImporter{}})
+	s.ShowImport()
+	s.Doc.Layout()
+	byID(t, s, "import-fetch")
+}

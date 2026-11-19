@@ -36,5 +36,18 @@
   "cal.view.workweek": "Semana útil",
   "cal.view.week": "Semana",
   "cal.view.month": "Mês",
-  "cal.field.description": "Descrição"
+  "cal.field.description": "Descrição",
+  "cal.import": "Importar",
+  "cal.import.title": "Importar eventos",
+  "cal.import.hint": "Cole o endereço de um link iCalendar (o endereço secreto no formato iCal de um calendário do Google, o link publicado de um calendário do Outlook, qualquer webcal) ou escolha um arquivo .ics do leitor. Importar de novo não duplica eventos.",
+  "cal.import.url": "Endereço do calendário (https:// ou webcal://)",
+  "cal.import.fetch": "Importar do endereço",
+  "cal.import.files": "Arquivos .ics no leitor",
+  "cal.import.nofiles": "Nenhum arquivo .ics encontrado nas pastas do leitor.",
+  "cal.import.back": "Voltar",
+  "cal.import.empty": "Digite um endereço ou escolha um arquivo.",
+  "cal.import.working": "Importando…",
+  "cal.import.failed": "Não foi possível importar: %s",
+  "cal.import.partial": "%d eventos importados; %d problemas (o primeiro: %s).",
+  "cal.import.done": "%d eventos importados."
 }

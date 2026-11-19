@@ -104,3 +104,12 @@ tela novo vai para o **toolkit compartilhado**, nunca para dentro de um app: o `
 
 Abrir anexos e o login OAuth do Outlook.com no e-mail; tocar os lembretes das tarefas e do calendário; sincronização (Graph, CalDAV, Exchange); integrações entre os apps (e-mail → tarefa, convite → evento). A lista completa e o
 estado de cada item estão nas tarefas **T51 a T70** do [README](../../README.md#tasks).
+
+## Importando calendários (.ics e links do Google/Outlook)
+
+O calendário tem um botão **Importar** (canto inferior direito). Duas fontes:
+
+- **Um endereço**: qualquer link iCalendar, inclusive `webcal://`. No **Google Agenda** use *Configurações da agenda → Integrar agenda → Endereço secreto no formato iCal*; no **Outlook.com** use *Configurações → Calendário → Calendários compartilhados → Publicar um calendário* (o link ICS). Os eventos são copiados para o leitor (lidos uma vez; importe de novo para atualizar).
+- **Um arquivo .ics** do leitor: a tela lista os encontrados na raiz do armazenamento e em `Download` (até dois níveis).
+
+Importar de novo não duplica eventos (mesmo UID substitui). É uma **cópia em um sentido**, não uma sincronização: ainda não existe sincronização nos dois sentidos com Google ou Microsoft, nem para o calendário nem para Tarefas (precisa do client id OAuth da conta; ver capítulo 18).

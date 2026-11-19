@@ -36,5 +36,18 @@
   "cal.view.workweek": "Work week",
   "cal.view.week": "Week",
   "cal.view.month": "Month",
-  "cal.field.description": "Description"
+  "cal.field.description": "Description",
+  "cal.import": "Import",
+  "cal.import.title": "Import events",
+  "cal.import.hint": "Paste the address of an iCalendar link (a Google calendar's secret address in iCal format, an Outlook published calendar link, any webcal) or pick an .ics file of the reader. Importing again does not duplicate events.",
+  "cal.import.url": "Calendar address (https:// or webcal://)",
+  "cal.import.fetch": "Import from the address",
+  "cal.import.files": ".ics files on the reader",
+  "cal.import.nofiles": "No .ics file found in the reader's folders.",
+  "cal.import.back": "Back",
+  "cal.import.empty": "Type an address or pick a file.",
+  "cal.import.working": "Importing…",
+  "cal.import.failed": "Could not import: %s",
+  "cal.import.partial": "Imported %d events; %d problems (first: %s).",
+  "cal.import.done": "Imported %d events."
 }

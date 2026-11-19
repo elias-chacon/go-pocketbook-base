@@ -217,3 +217,20 @@ func TestSpanGivesOneListPerDayFromASingleQuery(t *testing.T) {
 		t.Errorf("span = %+v", got)
 	}
 }
+
+func TestImportKeepsEventsInTheCalendar(t *testing.T) {
+	st := newMem()
+	a := Agenda{AccountID: "local", Store: st}
+	if n, err := a.Import(nil); n != 0 || err != nil {
+		t.Fatalf("empty import = %d, %v", n, err)
+	}
+	ev := domain.Event{UID: "u1", Title: "Lunch", Start: time.Date(2026, 5, 20, 12, 0, 0, 0, time.UTC), End: time.Date(2026, 5, 20, 13, 0, 0, 0, time.UTC)}
+	if n, err := a.Import([]domain.Event{ev}); n != 1 || err != nil {
+		t.Fatalf("import = %d, %v", n, err)
+	}
+	for _, e := range st.events {
+		if e.CalendarID == "" || e.Status != domain.Confirmed {
+			t.Fatalf("event = %+v", e)
+		}
+	}
+}

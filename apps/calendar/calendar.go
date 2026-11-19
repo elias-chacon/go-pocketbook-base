@@ -72,7 +72,8 @@ func newCalendarAt(env platform.Env, dir, zone string) *calendar {
 		return a
 	}
 	a.screen = presentation.NewScreen(presentation.Config{
-		Width: env.Width, Height: env.Height, Doc: a.doc, Chrome: platform.Chrome(env), Tr: tr, Agenda: agenda,
+		Width: env.Width, Height: env.Height, Doc: a.doc, Chrome: platform.Chrome(env), Tr: tr, Agenda: agenda, Flush: env.Flush,
+		Importer: icsImporter{agenda: agenda, web: env.HTTP, roots: []string{platform.DefaultRoot, filepath.Join(platform.DefaultRoot, "Download")}},
 	})
 	return a
 }

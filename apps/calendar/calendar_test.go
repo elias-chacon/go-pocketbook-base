@@ -1,9 +1,13 @@
 package main
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"go-pocketbook-base/internal/platform"
 	"go-pocketbook-base/internal/platform/infrastructure/jsonfiles"
@@ -78,5 +82,58 @@ func TestZoneNameReadsTheEnvironment(t *testing.T) {
 	t.Setenv("TZ", ":America/Sao_Paulo")
 	if got := zoneName(); got != "America/Sao_Paulo" {
 		t.Errorf("zone = %q", got)
+	}
+}
+
+const sampleICS = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//t//EN\r\nBEGIN:VEVENT\r\nUID:a1@t\r\nDTSTAMP:20260501T000000Z\r\nDTSTART:20260520T120000Z\r\nDTEND:20260520T130000Z\r\nSUMMARY:Lunch\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+
+func TestTheImporterReadsAFileAndAnAddressWithoutDuplicating(t *testing.T) {
+	dir := t.TempDir()
+	a := newCalendarAt(testEnv(t), dir, "")
+	t.Cleanup(a.close)
+	imp, ok := a.screen.Importer().(icsImporter)
+	if !ok {
+		t.Fatal("the app has no importer")
+	}
+	file := filepath.Join(dir, "sub", "plan.ics")
+	if err := os.MkdirAll(dir+"/sub", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(file, []byte(sampleICS), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	imp.roots = []string{dir}
+	if got := imp.Files(); len(got) != 1 || got[0] != file {
+		t.Fatalf("files = %v", got)
+	}
+	for i := 0; i < 2; i++ { // twice: no duplicate
+		if n, _, err := imp.Import(file); err != nil || n != 1 {
+			t.Fatalf("import = %d, %v", n, err)
+		}
+	}
+	from, to := time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC), time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
+	if got, _ := imp.agenda.Store.Between(from, to); len(got) != 1 {
+		t.Fatalf("%d events after importing the same file twice", len(got))
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/missing" {
+			http.NotFound(w, r)
+			return
+		}
+		_, _ = w.Write([]byte(sampleICS))
+	}))
+	defer srv.Close()
+	imp.web = srv.Client()
+	if n, _, err := imp.Import(srv.URL + "/cal.ics"); err != nil || n != 1 {
+		t.Fatalf("address import = %d, %v", n, err)
+	}
+	if _, _, err := imp.Import(srv.URL + "/missing"); err == nil {
+		t.Fatal("a 404 must be an error")
+	}
+	if _, _, err := imp.Import(dir + "/nope.ics"); err == nil {
+		t.Fatal("a missing file must be an error")
+	}
+	if _, _, err := imp.Import("webcal://127.0.0.1:1/x"); err == nil {
+		t.Fatal("an unreachable address must be an error")
 	}
 }

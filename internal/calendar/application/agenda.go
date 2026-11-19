@@ -206,6 +206,26 @@ func (a Agenda) Change(id string, in Entry) error {
 	return a.Store.Save(e)
 }
 
+// Import keeps events read from an .ics file or address in the account's calendar. An
+// event that is already there (same UID) is replaced, so importing a file again does
+// not duplicate it. It returns how many events were kept.
+func (a Agenda) Import(events []domain.Event) (int, error) {
+	if len(events) == 0 {
+		return 0, nil
+	}
+	cal, err := a.EnsureCalendar("")
+	if err != nil {
+		return 0, err
+	}
+	for i := range events {
+		events[i].CalendarID = cal.ID
+		if events[i].Status == "" {
+			events[i].Status = domain.Confirmed
+		}
+	}
+	return len(events), a.Store.Save(events...)
+}
+
 // Get returns one event.
 func (a Agenda) Get(id string) (domain.Event, error) { return a.Store.Get(id) }
 
