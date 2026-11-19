@@ -2,10 +2,38 @@ package main
 
 import (
 	"bytes"
+	"image/png"
 	"os"
 	"path/filepath"
 	"testing"
 )
+
+// samePicture compares two PNGs by their pixels: the bytes depend on the Go
+// version that compressed them, the picture does not.
+func samePicture(t *testing.T, a, b []byte) bool {
+	t.Helper()
+	ia, err := png.Decode(bytes.NewReader(a))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ib, err := png.Decode(bytes.NewReader(b))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ia.Bounds() != ib.Bounds() {
+		return false
+	}
+	for y := ia.Bounds().Min.Y; y < ia.Bounds().Max.Y; y++ {
+		for x := ia.Bounds().Min.X; x < ia.Bounds().Max.X; x++ {
+			ra, ga, ba, aa := ia.At(x, y).RGBA()
+			rb, gb, bb, ab := ib.At(x, y).RGBA()
+			if ra != rb || ga != gb || ba != bb || aa != ab {
+				return false
+			}
+		}
+	}
+	return true
+}
 
 func TestTheCommittedIconsAreTheOnesTheCodeDraws(t *testing.T) {
 	for id := range renderers {
@@ -17,7 +45,7 @@ func TestTheCommittedIconsAreTheOnesTheCodeDraws(t *testing.T) {
 		if err != nil {
 			t.Fatalf("apps/%s/icon.png is missing: run go run ./tools/appicons (%v)", id, err)
 		}
-		if !bytes.Equal(got, want) {
+		if !samePicture(t, got, want) {
 			t.Errorf("apps/%s/icon.png is out of date: run go run ./tools/appicons", id)
 		}
 	}
