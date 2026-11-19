@@ -52,7 +52,7 @@ Ou baixe o arquivo do seu sistema na página de [Releases](https://github.com/el
 | 🇬🇧 **English**   | [docs/en](docs/en/README.md): [getting started](docs/en/01-getting-started.md) · [installation](docs/en/02-installation.md) · [build](docs/en/03-build-and-versioning.md) · [components](docs/en/06-components.md) · [recipes](docs/en/08-recipes.md)                         |
 
 Guia passo a passo, referência de todos os componentes (com o desenho de cada um), receitas de telas completas, como criar
-componentes próprios, testes e solução de problemas. Todo código das páginas vem de [`examples/`](examples) (testado).
+componentes próprios, testes e solução de problemas. Checklist código das páginas vem de [`examples/`](examples) (testado).
 
 ## Sumário
 
@@ -190,7 +190,7 @@ Critério de pronto de **cada app** (herdado das regras do projeto): segue o con
 
 *App de tarefas (`apps/tasks`, contexto `internal/tasks`)*
 
-- [ ] T63 Tasks: domínio (listas, tarefas, passos, prazo, prioridade, repetição, lembretes) e interface no estilo do Microsoft To Do / tarefas do Outlook (Meu Dia, Importante, Planejado, listas). **Feito o domínio** ([capítulo 21](docs/pt-br/21-tarefas-dominio.md)): visões, concluir com repetição (a próxima conta a partir de hoje se foi com atraso), passos e contagens, testado. O cache de tarefas também está feito (`sqlstore`, testado com a conclusão de uma tarefa que se repete). **Falta:** a interface
+- [ ] T63 Tasks: domínio (listas, tarefas, passos, prazo, prioridade, repetição, lembretes) e interface no estilo do Microsoft To Do / tarefas do Outlook (Meu Dia, Importante, Planejado, listas). **Feito o domínio** ([capítulo 21](docs/pt-br/21-tarefas-dominio.md)): visões, concluir com repetição (a próxima conta a partir de hoje se foi com atraso), passos e contagens, testado. O cache de tarefas também está feito (`sqlstore`, testado com a conclusão de uma tarefa que se repete). **Primeira tela pronta:** `apps/tasks` (visões com contagem, adicionar, concluir, editar título/notas/importante/Meu dia/prazo, apagar; sem conta, guardado no leitor). **Falta:** listas, passos, lembretes e repetição na tela, e testar no aparelho. A interface
 - [ ] T64 Tasks: sincronização com o **Microsoft To Do** (Graph), **CalDAV** (VTODO) e Google Tasks
 - [ ] T65 Tasks ↔ e-mail: criar tarefa a partir de um e-mail, e-mail sinalizado vira tarefa, abrir o e-mail de origem da tarefa (intents da T55)
 
@@ -287,7 +287,7 @@ uma explicação, um exemplo e o comportamento ao toque.
 
 ### Conceitos comuns
 
-Todo elemento embute `Base`, que dá as propriedades de um elemento DOM:
+Checklist elemento embute `Base`, que dá as propriedades de um elemento DOM:
 
 | JavaScript                          | Go                              | Observação                                                                                   |
 | ----------------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------- |

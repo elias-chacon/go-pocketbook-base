@@ -31,11 +31,23 @@ by default (`IncludeDone` brings the completed ones), and **the views are applie
 tasks, not millions. Completing a repeating task saves the completed one and the next together (`Save(done, *next)`). A list that went away on the
 server takes its tasks, and removing the account clears everything.
 
+## The Tasks app
+
+`apps/tasks` is the composition root. It needs **no account**: the tasks live on the reader, in the shared database, under the account `local` (a
+list "Tasks" is created on the first run). The `Checklist` use case answers what the screens ask: the **views** with their counts, **Add** (a task added while
+looking at My Day is for today, in Important it is starred, in Planned it is due today), **Toggle** (ticks, saving the next occurrence of a repeating
+task, or reopens), star, My Day, due date, save and delete. The screen has the five views as chips with counts, a field to add a task, **8 tasks a
+page** with a check box (the deepest touch target) and the title and due date (overdue ones say so); tapping the text opens the task to edit: title,
+notes, important, My Day and the due date (today, tomorrow, next week, none). Nothing is saved until **Save**. **Not yet tried on the device.** Still to
+do (T63): lists, steps in the screen, reminders and repetition in the screen.
+
 ## The code
 
 | Layer | Package | Holds |
 |---|---|---|
 | domain | `internal/tasks/domain` | `Task`, `List`, `Step`, `View`, `Complete`, `Filter`, `Count`, the `TaskStore` port |
+| application | `internal/tasks/application` | `Checklist`: views, add, toggle, star, My Day, due, save, delete |
+| presentation | `internal/tasks/presentation` | the Tasks screens: the list with views and the editor |
 | infrastructure | `internal/tasks/infrastructure/sqlstore` | the `TaskStore` on SQLite |
 
 The domain uses `rrule-go` for repetition and depends only on the shared kernel; the architecture test (chapter 14) checks it.

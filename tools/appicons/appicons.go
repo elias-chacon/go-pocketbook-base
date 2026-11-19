@@ -30,6 +30,7 @@ var renderers = map[string]func(size int, focused bool) image.Image{
 	"hello":    func(size int, focused bool) image.Image { return showcase.RenderIcon(size, focused) },
 	"launcher": presentation.RenderIcon,
 	"mail":     platform.DefaultIcon("E-mail"),
+	"tasks":    platform.DefaultIcon("Tarefas"),
 }
 
 // iconPNG is the encoded icon of an app, or false when it has no renderer.

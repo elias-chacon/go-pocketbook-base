@@ -31,11 +31,23 @@ com as abertas por padrão (`IncludeDone` traz as concluídas), e **as visões s
 centenas de tarefas abertas, não milhões. Concluir uma tarefa que se repete grava a concluída e a próxima juntas (`Save(done, *next)`). Uma lista que
 sumiu do servidor leva as suas tarefas, e remover a conta apaga tudo.
 
+## O app Tarefas
+
+O `apps/tasks` é a raiz de composição. Ele **não precisa de conta**: as tarefas ficam no leitor, no banco compartilhado, sob a conta `local` (uma lista
+"Tarefas" é criada na primeira execução). O caso de uso `Checklist` responde ao que as telas pedem: as **visões** com suas contagens, **Add** (uma tarefa criada
+olhando o Meu dia é para hoje, em Importante vem marcada, em Planejado vence hoje), **Toggle** (conclui, guardando a próxima ocorrência de uma tarefa que se
+repete, ou reabre), estrela, Meu dia, prazo, salvar e apagar. A tela tem as cinco visões como chips com contagem, um campo para adicionar, **8 tarefas por
+página** com uma caixa de marcar (o alvo de toque mais profundo) e o título e o prazo (as atrasadas dizem isso); tocar no texto abre a tarefa para editar:
+título, notas, importante, Meu dia e o prazo (hoje, amanhã, próxima semana, nenhum). Nada é salvo até **Salvar**. **Ainda não testado no aparelho.** Falta
+(T63): listas, passos, lembretes e repetição na tela.
+
 ## O código
 
 | Camada | Pacote | Guarda |
 |---|---|---|
 | domain | `internal/tasks/domain` | `Task`, `List`, `Step`, `View`, `Complete`, `Filter`, `Count`, a porta `TaskStore` |
+| application | `internal/tasks/application` | `Checklist`: visões, adicionar, concluir, estrela, Meu dia, prazo, salvar, apagar |
+| presentation | `internal/tasks/presentation` | as telas das Tarefas: a lista com visões e o editor |
 | infrastructure | `internal/tasks/infrastructure/sqlstore` | o `TaskStore` no SQLite |
 
 O domínio usa o `rrule-go` para a repetição e só depende do núcleo compartilhado; o teste de arquitetura (capítulo 14) confere.
