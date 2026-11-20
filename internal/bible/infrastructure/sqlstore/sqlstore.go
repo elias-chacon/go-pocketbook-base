@@ -214,6 +214,16 @@ func (s *Store) MarkDownloaded(version string) error {
 
 // DeleteVersion implements domain.Library: frees the space of the text, keeps the catalog row.
 func (s *Store) DeleteVersion(version string) error {
+	if err := s.deleteText(version); err != nil {
+		return err
+	}
+	// Deleting only frees pages inside the file: VACUUM gives the space back to the reader. It is
+	// a courtesy (the text is already gone), so a failure of it is not one of the delete.
+	_, _ = s.db.Exec(`VACUUM`)
+	return nil
+}
+
+func (s *Store) deleteText(version string) error {
 	return s.tx(func(tx *sql.Tx) error {
 		if _, err := tx.Exec(`DELETE FROM bible_verses WHERE version = ?`, version); err != nil {
 			return err

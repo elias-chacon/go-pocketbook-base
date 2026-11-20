@@ -16,8 +16,10 @@ em 69 idiomas), são **baixadas uma vez** para o banco SQLite do leitor e depois
 **Primeira vez.** Sem nenhuma versão no leitor, o Início oferece "Baixar a Bíblia": um toque busca a lista de versões, baixa a do
 idioma do aparelho (Almeida Livre em português, King James em inglês) e começa. Depois, na aba **Bíblia**, escolha outro idioma e
 outra versão; uma versão que ainda não está no leitor pergunta antes de baixar (são alguns megabytes, em cerca de 60 pedidos).
-O idioma e a versão são **combo-boxes com busca** (`SearchComboBox`, [capítulo 6](06-componentes.md)): a janela abre na página da opção
+O idioma e a versão são **combo-boxes** (`ComboBox`, [capítulo 6](06-componentes.md)): sendo listas longas, o popup tem busca e páginas e abre na página da opção
 atual e digitar filtra a lista, sem diferenciar acentos.
+
+**Versões baixadas (menu Mais).** *Mais > Versões baixadas* abre uma janela com uma `Table` (versão, idioma, versículos, completa ou parcial). Selecione uma linha e **Excluir a versão selecionada**: após uma confirmação o texto dela é removido do leitor por completo (as linhas e, com um `VACUUM`, o espaço no arquivo); o que foi lido continua contado, porque o progresso é guardado por lugar e não por versão. Se era a versão em uso, o app volta a oferecer o download; uma versão sendo baixada nunca é excluída.
 
 **O download não trava a tela.** Enquanto ele roda, uma faixa acima do rodapé (em todas as abas) mostra a versão, uma barra de progresso
 e o botão **Cancelar**; dá para navegar e ler nesse meio tempo. O trabalho é feito em passos pequenos (um pedido cada) agendados com o

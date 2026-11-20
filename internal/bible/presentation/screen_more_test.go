@@ -233,29 +233,29 @@ func TestADownloadThatEndsWhileReadingDoesNotPullTheChapterAway(t *testing.T) {
 	}
 }
 
-func TestThePickersOfLanguageAndVersionSearchTheirOptions(t *testing.T) {
+func TestThePickersOfLanguageAndVersionAreComboBoxesThatOpenAPopupNotAWindow(t *testing.T) {
 	w := newWorld(t)
 	w.ready()
 	s := w.screen("pt-BR")
-	s.Doc.Keyboard = &widget.FakeKeyboard{Reply: "WORLD"}
 	s.Show(1)
 	tap(t, s, "combo-language")
-	tap(t, s, "combo-language-search")
-	if findID(s, "combo-language-opt-0") != nil || findID(s, "combo-language-opt-1") != nil {
-		t.Error("nothing matches WORLD in a language list")
+	if s.Doc.HasModal() || !s.Doc.HasPopup() {
+		t.Error("the language list is the combo box's popup under the field, not a window")
 	}
-	byID(t, s, "combo-language-picker").(*widget.Modal).Close()
+	s.Doc.ClosePopups()
 	s.pickLanguage("en")
 	tap(t, s, "combo-version")
-	tap(t, s, "combo-version-search")
-	if findID(s, "combo-version-opt-1") == nil || findID(s, "combo-version-opt-0") != nil {
-		t.Fatal("only World English Bible matches")
+	if s.Doc.HasModal() || !s.Doc.HasPopup() {
+		t.Error("the version list is a popup too")
 	}
-	tap(t, s, "combo-version-opt-1")
-	if findID(s, "combo-version-picker") != nil {
-		t.Error("choosing closes the picker")
-	}
+	s.Doc.ClosePopups()
+	box := byID(t, s, "combo-version").(*widget.ComboBox)
+	box.Index = 1 // what a tap on the second row does
+	box.OnChange(&widget.Event{})
 	if findID(s, "modal-download") == nil {
 		t.Error("the version is not on the reader: it asks first")
+	}
+	if box.SearchPlaceholder != "Buscar" || box.NoMatchText == "" {
+		t.Errorf("the search texts of a long list are the app's: %q %q", box.SearchPlaceholder, box.NoMatchText)
 	}
 }

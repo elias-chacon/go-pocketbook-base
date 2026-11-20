@@ -39,6 +39,7 @@ type Service interface {
 	Books() ([]domain.Book, error)
 	Versions() ([]domain.Version, error)
 	Refresh() error
+	Remove(slug string) error
 	StartDownload(slug string) (*application.Download, error)
 	Preferences(deviceLang string) (domain.Preferences, error)
 	SavePreferences(p domain.Preferences) error
@@ -255,6 +256,7 @@ func (s *Screen) build() {
 func (s *Screen) moreMenu() *widget.Menu {
 	items := []widget.MenuItem{
 		{Label: s.t("bible.menu.settings"), Icon: gfx.IconMenu, OnSelect: s.OpenSettings},
+		{Label: s.t("bible.menu.versions"), OnSelect: s.OpenVersions},
 		{Label: s.t("bible.menu.status"), OnSelect: s.OpenStatus},
 	}
 	if chrome := s.cfg.Chrome; chrome.Enabled() {

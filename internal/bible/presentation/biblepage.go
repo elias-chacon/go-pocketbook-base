@@ -73,9 +73,9 @@ func (s *Screen) versionBar() widget.Widget {
 	title.Style.Bold = true
 
 	lang := s.activeLanguage()
-	langBox := widget.NewSearchComboBox(s.t("bible.lang"))
+	langBox := widget.NewComboBox(s.t("bible.lang"))
 	langBox.ID = "combo-language"
-	s.searchable(langBox, s.t("bible.lang"))
+	s.searchable(langBox)
 	for _, l := range domain.LanguagesOf(s.versions) {
 		langBox.Options = append(langBox.Options, widget.Option{Label: languageName(l.Tag), Value: l.Tag})
 	}
@@ -83,9 +83,9 @@ func (s *Screen) versionBar() widget.Widget {
 	langBox.Style.FlexGrow = 1
 	langBox.OnChange = func(*widget.Event) { s.pickLanguage(langBox.Value()) }
 
-	versionBox := widget.NewSearchComboBox(s.t("bible.version.pick"))
+	versionBox := widget.NewComboBox(s.t("bible.version.pick"))
 	versionBox.ID = "combo-version"
-	s.searchable(versionBox, s.t("bible.version.pick"))
+	s.searchable(versionBox)
 	for _, v := range domain.VersionsIn(s.versions, lang) {
 		state := s.t("bible.version.remote")
 		if v.Downloaded {
@@ -107,11 +107,9 @@ func (s *Screen) versionBar() widget.Widget {
 	return widget.NewColumn(12, title, row, search)
 }
 
-// searchable gives a search combo box the texts of the app.
-func (s *Screen) searchable(box *widget.SearchComboBox, title string) {
-	box.Title = title
+// searchable gives a combo box the texts of its search field (it shows one when the list is long).
+func (s *Screen) searchable(box *widget.ComboBox) {
 	box.SearchPlaceholder = s.t("bible.combo.search")
-	box.CancelText = s.t("bible.combo.close")
 	box.NoMatchText = s.t("bible.combo.none")
 }
 

@@ -16,8 +16,10 @@ app contract (`apps/hello` is the blueprint) and has the same three tabs as Hell
 **First run.** With no version on the reader, Home offers "Download the Bible": one tap fetches the list of versions, downloads the
 one of the reader's language (Almeida Livre in Portuguese, King James in English) and starts. Later, on the **Bible** tab, pick
 another language and version; a version that is not on the reader yet asks before downloading (a few megabytes, in about 60 requests).
-The language and the version are **searchable combo boxes** (`SearchComboBox`, [chapter 6](06-components.md)): the window opens on the
-page of the current option and typing filters the list, ignoring accents.
+The language and the version are **combo boxes** (`ComboBox`, [chapter 6](06-components.md)): being long lists, their popup has a search field and pages, and opens on the
+page of the current option; typing filters the list, ignoring accents.
+
+**Downloaded versions (More menu).** *More > Downloaded versions* opens a window with a `Table` (version, language, verses, complete or partial). Select a row and **Delete the selected version**: after a confirmation the text of that version is removed from the reader completely (the rows and, with a `VACUUM`, the space in the file); what was read stays counted, because progress is kept by place and not by version. If it was the version in use the app goes back to offering the download; a version being downloaded is never deleted.
 
 **The download does not block the screen.** While it runs, a strip above the footer (on every tab) shows the version, a progress bar
 and a **Cancel** button; the person can browse and read meanwhile. The work is done in small steps (one request each) scheduled with

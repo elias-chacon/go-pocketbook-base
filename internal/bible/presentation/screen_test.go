@@ -424,12 +424,12 @@ func TestPickingALanguageAndANotDownloadedVersionDownloadsItAfterAsking(t *testi
 	s := w.screen("pt-BR")
 	s.Show(1)
 	snap(t, s, "08-bar")
-	lang := byID(t, s, "combo-language").(*widget.SearchComboBox)
+	lang := byID(t, s, "combo-language").(*widget.ComboBox)
 	if len(lang.Options) != 2 || lang.Value() != "pt-br" {
 		t.Fatalf("languages: %+v value=%q", lang.Options, lang.Value())
 	}
 	s.pickLanguage("en")
-	versions := byID(t, s, "combo-version").(*widget.SearchComboBox)
+	versions := byID(t, s, "combo-version").(*widget.ComboBox)
 	if len(versions.Options) != 2 || versions.Value() != "" || !strings.Contains(versions.Options[0].Label, "baixar") {
 		t.Fatalf("English versions, none chosen, not downloaded: %+v value=%q", versions.Options, versions.Value())
 	}
@@ -566,10 +566,10 @@ func TestTheMoreMenuKeepsSettingsAboutAndExit(t *testing.T) {
 	for _, it := range items {
 		labels = append(labels, it.Label)
 	}
-	if strings.Join(labels, "|") != "Configurações|Status||Sobre||Sair" {
+	if strings.Join(labels, "|") != "Configurações|Versões baixadas|Status||Sobre||Sair" {
 		t.Errorf("the More menu: %q", labels)
 	}
-	items[3].OnSelect() // About
+	items[4].OnSelect() // About
 	if !s.Doc.HasModal() {
 		t.Error("About opens a modal")
 	}
@@ -739,12 +739,10 @@ func TestEveryPageFitsTheScreenAndEveryElementGetsItsTouch(t *testing.T) {
 	s.Show(0)
 	check("home with the last verse")
 	s.Show(1)
-	tap(t, s, "combo-language")
-	check("language picker")
-	byID(t, s, "combo-language-picker").(*widget.Modal).Close()
+	tap(t, s, "combo-language") // a popup covers part of the page: its own tests check it
+	s.Doc.ClosePopups()
 	tap(t, s, "combo-version")
-	check("version picker")
-	byID(t, s, "combo-version-picker").(*widget.Modal).Close()
+	s.Doc.ClosePopups()
 	s.OpenSettings()
 	check("settings")
 	byID(t, s, "modal-settings").(*widget.Modal).Cancel()

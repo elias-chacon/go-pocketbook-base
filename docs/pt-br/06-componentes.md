@@ -141,34 +141,34 @@ func ComboBoxExample() widget.Widget {
 }
 ```
 
-## SearchComboBox
+## ComboBox com lista longa
 
-![searchcombobox](../components/searchcombobox.png)
+![longcombobox](../components/longcombobox.png)
 
-O combo-box para uma lista **longa demais para olhar** (os idiomas ou as versões da Bíblia, por exemplo). Ao tocar, abre
-uma janela com um **campo de busca** e as opções **uma página de cada vez** (não há rolagem na tela de tinta): ela abre na
-página em que está a opção atual, digitar filtra as opções por qualquer parte do texto, sem diferenciar maiúsculas nem
-acentos, e tocar numa opção a escolhe e fecha a janela. Fechar com Voltar, ou com o botão, não muda nada.
+O próprio `ComboBox` cuida de uma lista **longa demais para a tela** (os idiomas ou as versões da Bíblia, por exemplo); nada precisa ser configurado.
+Quando as opções não cabem, o mesmo popup sob o campo ganha um **campo de busca** no topo (qualquer parte do texto, sem diferenciar maiúsculas nem
+acentos) e mostra as opções **uma página por vez**, com botões anterior e próximo e o indicador "página / páginas" (não há rolagem na tinta
+eletrônica). Ele abre na página da opção atual, seu tamanho fica fixo ao abrir (filtrar nunca o faz pular), a página de baixo continua visível e um
+toque fora o fecha. Uma lista curta continua sendo o menu simples.
 
 | | |
 |---|---|
-| Criar | `widget.NewSearchComboBox(placeholder, opções...)`; é um `ComboBox`, serve onde um serve |
-| Propriedades | as do `ComboBox`, mais `Title` (título da janela), `SearchPlaceholder`, `CancelText`, `NoMatchText` |
-| Eventos | `OnChange` (a janela já está fechada quando ele roda, então pode abrir outra) |
+| Criar | `widget.NewComboBox(placeholder, opções...)`, o mesmo |
+| Propriedades | as do `ComboBox`, mais `SearchPlaceholder` e `NoMatchText` (os textos da lista longa) |
+| Eventos | `OnChange` |
 
 ```go
-// examples/components/combobox.go#SearchComboBoxExample
-// SearchComboBoxExample is a combo box for a long list: it opens a window with a search field and
-// the options a page at a time, on the page of the option chosen.
-func SearchComboBoxExample() widget.Widget {
+// examples/components/combobox.go#LongComboBoxExample
+// LongComboBoxExample is a combo box for a long list: no change is needed, it opens the same popup
+// with a search field and the options a page at a time, on the page of the option chosen.
+func LongComboBoxExample() widget.Widget {
 	var options []widget.Option
-	for _, name := range []string{"Afrikaans", "Alemão", "Árabe", "Búlgaro", "Chinês", "Coreano", "Dinamarquês", "Espanhol", "Finlandês",
-		"Francês", "Grego", "Hebraico", "Inglês", "Italiano", "Japonês", "Latim", "Polonês", "Português", "Russo", "Sueco"} {
+	for _, name := range []string{"Afrikaans", "Alemão", "Árabe", "Armênio", "Basco", "Búlgaro", "Catalão", "Chinês", "Coreano", "Croata", "Dinamarquês", "Eslovaco", "Esloveno", "Espanhol", "Estoniano", "Finlandês", "Francês", "Galego", "Georgiano", "Grego", "Hebraico", "Hindi", "Holandês", "Húngaro", "Indonésio", "Inglês", "Irlandês", "Islandês", "Italiano", "Japonês", "Latim", "Letão", "Lituano", "Norueguês", "Persa", "Polonês", "Português", "Romeno", "Russo", "Sérvio", "Sueco", "Tailandês", "Tcheco", "Turco", "Ucraniano", "Vietnamita"} {
 		options = append(options, widget.Option{Label: name, Value: name})
 	}
-	language := widget.NewSearchComboBox("Language", options...)
-	language.Title, language.SearchPlaceholder, language.CancelText = "Pick a language", "Search", "Close"
-	language.SetValue("Português") // the window opens on the page that has it
+	language := widget.NewComboBox("Language", options...)
+	language.SearchPlaceholder, language.NoMatchText = "Search", "Nothing found"
+	language.SetValue("Português") // the popup opens on the page that has it
 	language.OnChange = func(e *widget.Event) { fmt.Println("language:", language.Value()) }
 	return language
 }
