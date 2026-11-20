@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"testing"
 	"time"
+
+	"go-pocketbook-base/internal/toolkit/gfx"
 )
 
 func TestCheckboxAndSwitchToggle(t *testing.T) {
@@ -332,5 +334,40 @@ func TestSlideButtonSnapsToLeftCenterRight(t *testing.T) {
 	s.SetValue(50)
 	if s.fraction() != 0.5 {
 		t.Errorf("center fraction = %v", s.fraction())
+	}
+}
+
+func TestAButtonLabelIsCenteredUnlessTextAlignSaysOtherwise(t *testing.T) {
+	ink := func(align gfx.TextAlign) (left, right float64) {
+		b := NewButton("Hi")
+		b.Style.TextAlign = align
+		b.Style.Width = Px(600)
+		d := testDoc(b)
+		img := d.Render()
+		first, last := -1, -1
+		r := b.Bounds
+		for x := int(r.X) + 8; x < int(r.Right())-8; x++ {
+			for y := int(r.Y) + 20; y < int(r.Bottom())-20; y++ {
+				if img.GrayAt(x, y).Y < 128 {
+					if first < 0 {
+						first = x
+					}
+					last = x
+				}
+			}
+		}
+		return float64(first) - r.X, r.Right() - float64(last)
+	}
+	l, r := ink(gfx.AlignCenter)
+	if d := l - r; d > 30 || d < -30 {
+		t.Errorf("centered: %.0f from the left, %.0f from the right", l, r)
+	}
+	l, r = ink(gfx.AlignStart)
+	if l > 40 || r < 400 {
+		t.Errorf("start: %.0f from the left, %.0f from the right", l, r)
+	}
+	l, r = ink(gfx.AlignEnd)
+	if r > 40 || l < 400 {
+		t.Errorf("end: %.0f from the left, %.0f from the right", l, r)
 	}
 }

@@ -30,6 +30,7 @@ func NewButton(text string) *Button {
 	b.Style.MinHeight = ControlHeight
 	b.Style.Padding = geom.XY(0, 32)
 	b.Style.Bold = true
+	b.Style.TextAlign = gfx.AlignCenter // Style.TextAlign places the label: AlignStart for the rows of a list
 	b.SetVariant(VariantSecondary)
 	return b
 }
@@ -78,7 +79,8 @@ func (b *Button) Measure(float64) geom.Size {
 	return geom.Size{W: w, H: lineHeight(ts.Size)}
 }
 
-// Paint implements Widget: icon and label centered in the content box.
+// Paint implements Widget: icon and label in the content box, centered unless Style.TextAlign says
+// AlignStart (left) or AlignEnd (right).
 func (b *Button) Paint(c *gfx.Canvas) {
 	r := b.ContentRect()
 	ts := b.Style.text(FontBody)
@@ -88,6 +90,12 @@ func (b *Button) Paint(c *gfx.Canvas) {
 	}
 	total := b.Measure(r.W).W
 	x := r.X + (r.W-total)/2
+	switch b.Style.TextAlign {
+	case gfx.AlignStart:
+		x = r.X
+	case gfx.AlignEnd:
+		x = r.X + r.W - total
+	}
 	if b.Icon != gfx.IconNone {
 		c.Icon(b.Icon, geom.R(x, r.Y+(r.H-iconSize)/2, iconSize, iconSize), iconStroke, ts.Color)
 		x += iconSize + iconGap

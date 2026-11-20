@@ -52,7 +52,7 @@ A tappable button. Three visual weights: **primary** (filled), **secondary** (ou
 | | |
 |---|---|
 | Create | `widget.NewButton(text)`, `widget.NewIconButton(icon)` |
-| Properties | `Text`, `Icon` (`gfx.IconSearch`, `IconPlus`, `IconClose`, `IconCheck`, `IconMenu`, `IconCalendar`, chevrons…), `SetVariant(VariantPrimary / VariantSecondary / VariantGhost)`, `Disabled` |
+| Properties | `Text`, `Icon` (`gfx.IconSearch`, `IconPlus`, `IconClose`, `IconCheck`, `IconMenu`, `IconCalendar`, chevrons…), `SetVariant(VariantPrimary / VariantSecondary / VariantGhost)`, `Disabled`, `Style.TextAlign` (`gfx.AlignCenter` by default; `AlignStart` puts the label on the left, as in the rows of a list, and `AlignEnd` on the right) |
 | Events | `OnClick` |
 | Touch | a tap runs `OnClick` |
 

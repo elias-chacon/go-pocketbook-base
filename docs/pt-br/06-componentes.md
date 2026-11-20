@@ -52,7 +52,7 @@ Um botão que se toca. Três pesos visuais: **primário** (preenchido), **secund
 | | |
 |---|---|
 | Criar | `widget.NewButton(texto)`, `widget.NewIconButton(ícone)` |
-| Propriedades | `Text`, `Icon` (`gfx.IconSearch`, `IconPlus`, `IconClose`, `IconCheck`, `IconMenu`, `IconCalendar`, setas…), `SetVariant(VariantPrimary / VariantSecondary / VariantGhost)`, `Disabled` |
+| Propriedades | `Text`, `Icon` (`gfx.IconSearch`, `IconPlus`, `IconClose`, `IconCheck`, `IconMenu`, `IconCalendar`, setas…), `SetVariant(VariantPrimary / VariantSecondary / VariantGhost)`, `Disabled`, `Style.TextAlign` (`gfx.AlignCenter` por padrão; `AlignStart` põe o rótulo à esquerda, como nas linhas de uma lista, e `AlignEnd` à direita) |
 | Eventos | `OnClick` |
 | Toque | o toque executa o `OnClick` |
 
