@@ -88,8 +88,8 @@ type world struct {
 	catalog *fakeCatalog
 	speaker *fakeSpeaker
 	flushes int
-	async   bool        // the screen gets a timer: a task runs a step at a time
-	later   []func()    // what the screen asked to run later
+	async   bool     // the screen gets a timer: a task runs a step at a time
+	later   []func() // what the screen asked to run later
 }
 
 // after is the Config.After of an async world: it only queues.

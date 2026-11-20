@@ -39,13 +39,16 @@ type Index struct {
 
 // IndexEntry describes one app of the release.
 type IndexEntry struct {
-	ID       string          `json:"id"`
-	Version  string          `json:"version"`
-	Asset    string          `json:"asset"`          // the zip's name in the release
-	Icon     string          `json:"icon,omitempty"` // the icon's name in the release ("" when the app has none)
-	Size     int64           `json:"size"`           // of the zip
-	SHA256   string          `json:"sha256"`         // of the zip, hex
-	Manifest json.RawMessage `json:"manifest"`
+	ID      string `json:"id"`
+	Version string `json:"version"`
+	Asset   string `json:"asset"`          // the zip's name in the release
+	Icon    string `json:"icon,omitempty"` // the icon's name in the release ("" when the app has none)
+	Size    int64  `json:"size"`           // of the zip
+	SHA256  string `json:"sha256"`         // of the zip, hex
+	// AppSHA256 is the SHA-256 of the <id>.app inside the zip: what tells an installed app apart
+	// from this build, whatever the version says (the apps update themselves by it).
+	AppSHA256 string          `json:"app_sha256,omitempty"`
+	Manifest  json.RawMessage `json:"manifest"`
 }
 
 const (

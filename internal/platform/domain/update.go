@@ -13,6 +13,9 @@ type Update struct {
 	URL     string // of the zip with <id>.app and app.json
 	Size    int64  // of the zip (0 when unknown)
 	SHA256  string // of the zip, hex ("" when unknown)
+	// AppSHA256 is the SHA-256 of the <id>.app of that build. It, not the version, says whether
+	// the installed app is the published one: a release may change one app and not another.
+	AppSHA256 string
 }
 
 // UpdateSource tells which build of an app is the latest one published.
@@ -32,7 +35,7 @@ type UpdateInstaller interface {
 type UpdateState struct {
 	CheckedAt time.Time `json:"checkedAt"`
 	Available Update    `json:"available"`           // the newest build the last check found (Version "" when none)
-	Dismissed string    `json:"dismissed,omitempty"` // the version the person said "later" to
+	Dismissed string    `json:"dismissed,omitempty"` // the AppSHA256 of the build the person said "later" to
 }
 
 // UpdateStateStore keeps the UpdateState.
@@ -46,25 +49,4 @@ type UpdateStateStore interface {
 func IsRelease(v string) bool {
 	_, err := version.Parse(strings.TrimPrefix(v, "v"))
 	return err == nil
-}
-
-// IsNewer reports whether candidate is a later version than current. A build that is not
-// a release ("dev") or a text that is not a version never counts as newer or older:
-// nothing is offered, so a developer's build is never replaced.
-func IsNewer(current, candidate string) bool {
-	cur, err := version.Parse(strings.TrimPrefix(current, "v"))
-	if err != nil {
-		return false
-	}
-	next, err := version.Parse(strings.TrimPrefix(candidate, "v"))
-	if err != nil {
-		return false
-	}
-	switch {
-	case next.Major != cur.Major:
-		return next.Major > cur.Major
-	case next.Minor != cur.Minor:
-		return next.Minor > cur.Minor
-	}
-	return next.Build > cur.Build
 }

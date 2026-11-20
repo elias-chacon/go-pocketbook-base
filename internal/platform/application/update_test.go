@@ -33,20 +33,22 @@ func newUpdater(current string, src *fakeSource) (Updater, *fakeInstaller, *memS
 	inst, st, restarts := &fakeInstaller{}, &memState{}, new(int)
 	return Updater{
 		ID: "hello", Current: current, Source: src, Install: inst, State: st,
-		Restart: func() error { *restarts++; return nil },
-		Now:     func() time.Time { return time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC) },
+		Installed: func() (string, error) { return "aaa", nil },
+		Restart:   func() error { *restarts++; return nil },
+		Now:       func() time.Time { return time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC) },
 	}, inst, st, restarts
 }
 
 func TestCheckOffersOnlyANewerReleaseAndNeverToADevBuild(t *testing.T) {
-	src := &fakeSource{update: domain.Update{Version: "1.50.0", URL: "u"}}
+	src := &fakeSource{update: domain.Update{Version: "1.50.0", URL: "u", AppSHA256: "bbb"}}
 	u, _, _, _ := newUpdater("1.49.3", src)
 	if up, ok := u.Check(); !ok || up.Version != "1.50.0" {
 		t.Fatalf("a newer release must be offered: %+v %v", up, ok)
 	}
-	same, _, _, _ := newUpdater("1.50.0", src)
+	src2 := &fakeSource{update: domain.Update{Version: "9.9.9", AppSHA256: "AAA"}}
+	same, _, _, _ := newUpdater("1.50.0", src2)
 	if _, ok := same.Check(); ok {
-		t.Error("the same version is not an update")
+		t.Error("the installed checksum is not an update, whatever the version says")
 	}
 	dev, _, _, _ := newUpdater("dev", src)
 	asked := src.asked
@@ -67,7 +69,7 @@ func TestCheckOfflineAnswersNoAndTriesAgainNextTime(t *testing.T) {
 }
 
 func TestACheckKeepsTheNetworkQuietForAWhileButStillOffersWhatItFound(t *testing.T) {
-	src := &fakeSource{update: domain.Update{Version: "2.0.0"}}
+	src := &fakeSource{update: domain.Update{Version: "2.0.0", AppSHA256: "ccc"}}
 	u, _, _, _ := newUpdater("1.0.0", src)
 	u.Check()
 	if up, ok := u.Check(); !ok || up.Version != "2.0.0" || src.asked != 1 {
@@ -76,7 +78,7 @@ func TestACheckKeepsTheNetworkQuietForAWhileButStillOffersWhatItFound(t *testing
 }
 
 func TestPostponingAVersionSilencesItButNotTheNextOne(t *testing.T) {
-	src := &fakeSource{update: domain.Update{Version: "1.1.0"}}
+	src := &fakeSource{update: domain.Update{Version: "1.1.0", AppSHA256: "d1"}}
 	u, _, st, _ := newUpdater("1.0.0", src)
 	up, _ := u.Check()
 	u.Postpone(up)
@@ -84,7 +86,7 @@ func TestPostponingAVersionSilencesItButNotTheNextOne(t *testing.T) {
 		t.Error("a postponed version is not offered again")
 	}
 	st.st.CheckedAt = time.Time{} // time passes
-	src.update.Version = "1.2.0"
+	src.update = domain.Update{Version: "1.2.0", AppSHA256: "d2"}
 	if up, ok := u.Check(); !ok || up.Version != "1.2.0" {
 		t.Errorf("a newer one is offered: %+v %v", up, ok)
 	}
@@ -130,7 +132,7 @@ func settle(t *testing.T, rec *recorder, app *fakeApp) {
 }
 
 func TestTheRuntimeOffersAnUpdateInTheBackgroundAndInstallsItOnOK(t *testing.T) {
-	src := &fakeSource{update: domain.Update{Version: "1.1.0", URL: "u"}}
+	src := &fakeSource{update: domain.Update{Version: "1.1.0", URL: "u", AppSHA256: "e1"}}
 	_, rec, inst, restarts, app := startWithUpdates(t, src, "en")
 	settle(t, rec, app)
 	m := app.doc.Modal()
@@ -147,11 +149,11 @@ func TestTheRuntimeOffersAnUpdateInTheBackgroundAndInstallsItOnOK(t *testing.T) 
 }
 
 func TestLaterPostponesAndAFailureIsShownWithoutRestarting(t *testing.T) {
-	src := &fakeSource{update: domain.Update{Version: "1.1.0"}}
+	src := &fakeSource{update: domain.Update{Version: "1.1.0", AppSHA256: "e2"}}
 	rt, rec, inst, restarts, app := startWithUpdates(t, src, "pt-BR")
 	settle(t, rec, app)
 	app.doc.Modal().Cancel()
-	if rt.updates.State.Load().Dismissed != "1.1.0" {
+	if rt.updates.State.Load().Dismissed != "e2" {
 		t.Error("Depois must postpone this version")
 	}
 	inst.err = errors.New("disk full")
@@ -162,7 +164,7 @@ func TestLaterPostponesAndAFailureIsShownWithoutRestarting(t *testing.T) {
 }
 
 func TestTheOfferWaitsForADialogThatIsAlreadyOpen(t *testing.T) {
-	src := &fakeSource{update: domain.Update{Version: "1.1.0"}}
+	src := &fakeSource{update: domain.Update{Version: "1.1.0", AppSHA256: "e3"}}
 	_, rec, _, _, app := startWithUpdates(t, src, "en")
 	mine := widget.NewModal("Mine")
 	mine.Open(app.doc)
@@ -184,5 +186,13 @@ func TestTheOfferWaitsForADialogThatIsAlreadyOpen(t *testing.T) {
 	settle(t, rec, app)
 	if m := app.doc.Modal(); m == nil || m.Title != "Update available" {
 		t.Error("once the dialog is closed the offer appears")
+	}
+}
+
+func TestAReleaseWithoutTheAppChecksumOffersNothing(t *testing.T) {
+	src := &fakeSource{update: domain.Update{Version: "9.0.0"}}
+	u, _, _, _ := newUpdater("1.0.0", src)
+	if _, ok := u.Check(); ok {
+		t.Error("without the checksum nothing says the app changed")
 	}
 }

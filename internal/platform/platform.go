@@ -167,7 +167,11 @@ func Run(cfg Config, factory Factory) error {
 		ID: m.ID, Current: version.Value,
 		Source:  selfupdate.Source{Client: &quick, Owner: RepoOwner, Repo: RepoName},
 		Install: selfupdate.Installer{Client: client, Exe: exe},
-		State:   jsonfiles.NewUpdateState(root),
+		Installed: func() (string, error) {
+			data, err := os.ReadFile(exe)
+			return selfupdate.Sum(data), err
+		},
+		State: jsonfiles.NewUpdateState(root),
 		// The new build starts the way this one was started (same intent, same way back).
 		Restart: func() error { return process.Exec(exe, os.Environ()) },
 	}

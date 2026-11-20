@@ -164,6 +164,9 @@ func TestPackageAppZipsTheBinaryWithItsManifestAndDescribesIt(t *testing.T) {
 	if entry.ID != "hello" || entry.Asset != "hello.zip" || entry.Version != "1.2.3" || string(entry.Manifest) != manifest {
 		t.Errorf("%+v", entry)
 	}
+	if len(entry.AppSHA256) != 64 || entry.AppSHA256 == entry.SHA256 {
+		t.Errorf("the catalog must carry the SHA-256 of the .app itself, apart from the zip's: %q", entry.AppSHA256)
+	}
 
 	data, err := os.ReadFile(filepath.Join(out, "hello.zip"))
 	if err != nil || int64(len(data)) != entry.Size {

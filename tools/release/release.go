@@ -132,9 +132,10 @@ func packageApp(distApps, appsDir, outDir, id, version string) (github.IndexEntr
 		return github.IndexEntry{}, err
 	}
 	sum := sha256.Sum256(buf.Bytes())
+	appSum := sha256.Sum256(binary)
 	entry := github.IndexEntry{
 		ID: id, Version: version, Asset: asset, Size: int64(buf.Len()),
-		SHA256: hex.EncodeToString(sum[:]), Manifest: json.RawMessage(manifest),
+		SHA256: hex.EncodeToString(sum[:]), AppSHA256: hex.EncodeToString(appSum[:]), Manifest: json.RawMessage(manifest),
 	}
 	if icon, ok := iconOf(appsDir, id); ok { // published next to the zip, for the Launcher to show
 		entry.Icon = github.IconAsset(id)

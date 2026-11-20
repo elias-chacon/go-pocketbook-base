@@ -66,6 +66,7 @@ type index struct {
 		Asset   string `json:"asset"`
 		Size    int64  `json:"size"`
 		SHA256  string `json:"sha256"`
+		AppSHA  string `json:"app_sha256"`
 	} `json:"apps"`
 }
 
@@ -107,7 +108,7 @@ func (s Source) Latest(appID string) (domain.Update, error) {
 		if !ok {
 			return domain.Update{}, fmt.Errorf("selfupdate: release %s has no %s", rel.Tag, e.Asset)
 		}
-		return domain.Update{Version: strings.TrimPrefix(e.Version, "v"), URL: url, Size: e.Size, SHA256: e.SHA256}, nil
+		return domain.Update{Version: strings.TrimPrefix(e.Version, "v"), URL: url, Size: e.Size, SHA256: e.SHA256, AppSHA256: e.AppSHA}, nil
 	}
 	return domain.Update{}, fmt.Errorf("selfupdate: %s is not in release %s", appID, rel.Tag)
 }
@@ -137,6 +138,9 @@ func (i Installer) Install(appID string, u domain.Update) error {
 	if err != nil {
 		return err
 	}
+	if u.AppSHA256 != "" && !strings.EqualFold(Sum(binary), u.AppSHA256) {
+		return errors.New("the app in the zip is not the one the release announced")
+	}
 	tmp := i.Exe + ".new"
 	if err := os.MkdirAll(filepath.Dir(i.Exe), 0o755); err != nil {
 		return err
@@ -149,6 +153,12 @@ func (i Installer) Install(appID string, u domain.Update) error {
 		return err
 	}
 	return nil
+}
+
+// Sum is the SHA-256 of data, in hex.
+func Sum(data []byte) string {
+	s := sha256.Sum256(data)
+	return hex.EncodeToString(s[:])
 }
 
 func verify(data []byte, u domain.Update) error {

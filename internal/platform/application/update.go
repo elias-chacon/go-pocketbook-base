@@ -1,6 +1,7 @@
 package application
 
 import (
+	"strings"
 	"time"
 
 	"go-pocketbook-base/internal/platform/domain"
@@ -19,7 +20,9 @@ type Updater struct {
 	Current string // the version running
 	Source  domain.UpdateSource
 	Install domain.UpdateInstaller
-	State   domain.UpdateStateStore
+	// Installed is the SHA-256 of the app's file as it is now.
+	Installed func() (string, error)
+	State     domain.UpdateStateStore
 	// Restart starts the new build in place of the running one; it returns only on failure.
 	Restart func() error
 
@@ -49,6 +52,10 @@ func (u Updater) Check() (domain.Update, bool) {
 		return domain.Update{}, false // a developer's build is never replaced
 	}
 	st := u.State.Load()
+	mine, err := u.Installed()
+	if err != nil {
+		return domain.Update{}, false
+	}
 	latest := st.Available
 	if st.CheckedAt.IsZero() || u.now().Sub(st.CheckedAt) >= u.every() {
 		found, err := u.Source.Latest(u.ID)
@@ -59,7 +66,9 @@ func (u Updater) Check() (domain.Update, bool) {
 		st.CheckedAt, st.Available = u.now(), found
 		_ = u.State.Save(st) // the memory is only a courtesy to the network
 	}
-	if !domain.IsNewer(u.Current, latest.Version) || latest.Version == st.Dismissed {
+	// The checksum of the published build decides, not the version: a release may change one
+	// app and leave another as it was. A release that does not publish it offers nothing.
+	if latest.AppSHA256 == "" || strings.EqualFold(latest.AppSHA256, mine) || latest.AppSHA256 == st.Dismissed {
 		return domain.Update{}, false
 	}
 	return latest, true
@@ -69,7 +78,7 @@ func (u Updater) Check() (domain.Update, bool) {
 // (a still newer one will be).
 func (u Updater) Postpone(up domain.Update) {
 	st := u.State.Load()
-	st.Dismissed = up.Version
+	st.Dismissed = up.AppSHA256
 	_ = u.State.Save(st)
 }
 

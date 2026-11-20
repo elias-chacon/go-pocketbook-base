@@ -47,7 +47,7 @@ func fakeRelease(t *testing.T, z []byte) route {
 			{"name":"catalog.json","browser_download_url":"https://x/catalog.json"},
 			{"name":"hello.zip","browser_download_url":"https://x/hello.zip"}]}`),
 		"https://x/catalog.json": []byte(`{"apps":[{"id":"hello","version":"v1.2.3","asset":"hello.zip","size":` +
-			strconv.Itoa(len(z)) + `,"sha256":"` + sum(z) + `"},{"id":"gone","version":"1.0.0","asset":"gone.zip"}]}`),
+			strconv.Itoa(len(z)) + `,"sha256":"` + sum(z) + `","app_sha256":"` + sum([]byte("ELFbinary")) + `"},{"id":"gone","version":"1.0.0","asset":"gone.zip"}]}`),
 		"https://x/hello.zip": z,
 	}
 }
@@ -56,7 +56,7 @@ func TestLatestFindsTheAppInTheCatalogOfTheLatestRelease(t *testing.T) {
 	z := zipOf(t, map[string]string{"hello.app": "\x7fELFbinary"})
 	r := fakeRelease(t, z)
 	up, err := Source{Client: r, Owner: "o", Repo: "r"}.Latest("hello")
-	if err != nil || up.Version != "1.2.3" || up.URL != "https://x/hello.zip" || up.SHA256 != sum(z) {
+	if err != nil || up.Version != "1.2.3" || up.URL != "https://x/hello.zip" || up.SHA256 != sum(z) || up.AppSHA256 != sum([]byte("ELFbinary")) {
 		t.Fatalf("update = %+v, %v", up, err)
 	}
 	if _, err := (Source{Client: r, Owner: "o", Repo: "r"}).Latest("nope"); err == nil {
@@ -97,12 +97,13 @@ func TestInstallRefusesWhatIsCorruptIncompleteOrNotAProgramAndKeepsTheOldApp(t *
 		zip []byte
 		up  domain.Update
 	}{
-		"wrong sum":    {good, domain.Update{URL: "https://x/hello.zip", SHA256: sum([]byte("other"))}},
-		"wrong size":   {good, domain.Update{URL: "https://x/hello.zip", Size: 1}},
-		"not elf":      {bad, domain.Update{URL: "https://x/hello.zip"}},
-		"no app":       {empty, domain.Update{URL: "https://x/hello.zip"}},
-		"not a zip":    {[]byte("junk"), domain.Update{URL: "https://x/hello.zip"}},
-		"missing file": {good, domain.Update{URL: "https://x/none.zip"}},
+		"wrong sum":     {good, domain.Update{URL: "https://x/hello.zip", SHA256: sum([]byte("other"))}},
+		"wrong size":    {good, domain.Update{URL: "https://x/hello.zip", Size: 1}},
+		"not elf":       {bad, domain.Update{URL: "https://x/hello.zip"}},
+		"no app":        {empty, domain.Update{URL: "https://x/hello.zip"}},
+		"not a zip":     {[]byte("junk"), domain.Update{URL: "https://x/hello.zip"}},
+		"wrong app sum": {good, domain.Update{URL: "https://x/hello.zip", AppSHA256: sum([]byte("other"))}},
+		"missing file":  {good, domain.Update{URL: "https://x/none.zip"}},
 	}
 	for name, c := range cases {
 		exe := filepath.Join(t.TempDir(), "hello.app")
