@@ -145,3 +145,21 @@ func TestFilesRemoveTheAppItsRecordItsLogAndItsDataButNeverOutsideTheFolder(t *t
 		}
 	}
 }
+
+func TestFilesRemoveWhatIsNamedAfterTheAppEvenWhenTheRecordListsNothing(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "applications", ".pbgo")
+	os.MkdirAll(dir, 0o755)
+	for _, n := range []string{"bible.db", "bible.db-journal", "bible-x_y.json", "bibleX.json", "accounts.json", "biblical.db"} {
+		os.WriteFile(filepath.Join(dir, n), []byte("x"), 0o644)
+	}
+	if err := NewFiles(root).Remove("bible", nil); err != nil {
+		t.Fatal(err)
+	}
+	for n, gone := range map[string]bool{"bible.db": true, "bible.db-journal": true, "bible-x_y.json": true, "bibleX.json": false, "accounts.json": false, "biblical.db": false} {
+		_, err := os.Stat(filepath.Join(dir, n))
+		if gone != (err != nil) {
+			t.Errorf("%s: gone=%v, want %v", n, err != nil, gone)
+		}
+	}
+}

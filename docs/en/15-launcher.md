@@ -20,7 +20,7 @@ other (it follows the [contract](13-apps-and-the-contract.md)) and the compositi
 - A **long press (2 seconds)** on a tile opens the window of the app: **Update** (offered only when the app is installed and the **SHA-256 of its
   file differs from the `app_sha256` of the release**: the checksum decides, never the version), **Install** (when it is missing), **Hide from the home screen**
   (installed or not) and **Remove from the reader**, which after a confirmation deletes the app and everything it left: its entry in `view.json` and its
-  icons, the program, its record and log, the files its manifest lists as `data` (its database), its tables in the shared database (the file goes when no
+  icons, the program, its record and log, the files its manifest lists as `data` and, for apps installed by older versions whose record lists nothing, every file of `applications/.pbgo` named after the app (`<id>.…`, `<id>-…`, `<id>_…`, e.g. its database), its tables in the shared database (the file goes when no
   other app has tables in it) and the files it `shares` with other apps (the accounts) only when no other installed app shares them.
 - When the app asks to exit (the *Exit* menu, a Back key) the reader **comes back to the Launcher**; Home always goes to the
   system's home screen.

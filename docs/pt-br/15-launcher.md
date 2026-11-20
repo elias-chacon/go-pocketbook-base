@@ -20,7 +20,7 @@ O `apps/launcher` é o App Launcher do ecossistema: a tela inicial dos apps feit
 - Um **toque longo (2 segundos)** num bloco abre a janela do app: **Atualizar** (só aparece quando o app está instalado e o **SHA-256 do arquivo dele é
   diferente do `app_sha256` da release**: quem decide é o checksum, nunca a versão), **Instalar** (quando falta), **Esconder da tela inicial** (instalado ou não) e
   **Remover do leitor**, que após uma confirmação apaga o app e tudo que ele deixou: a entrada no `view.json` e os ícones, o programa, o registro e o log, os
-  arquivos que o manifesto lista em `data` (o banco dele), as tabelas dele no banco compartilhado (o arquivo some quando nenhum outro app tem tabelas nele) e os
+  arquivos que o manifesto lista em `data` e, nos apps instalados por versões antigas cujo registro não lista nada, todo arquivo de `applications/.pbgo` com o nome do app (`<id>.…`, `<id>-…`, `<id>_…`, ex.: o banco dele), as tabelas dele no banco compartilhado (o arquivo some quando nenhum outro app tem tabelas nele) e os
   arquivos que ele `shares` com outros apps (as contas) só quando nenhum outro app instalado os compartilha.
 - Quando o app pede para sair (o menu *Sair*, uma tecla Voltar) o leitor **volta ao Launcher**; o Home sempre vai para a tela
   inicial do sistema.
