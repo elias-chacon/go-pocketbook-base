@@ -68,6 +68,18 @@
 //	                domain          Task, List, Step, View, Complete, Filter, Count
 //	                infrastructure  sqlstore (the tasks in the shared database)
 //	              It depends on the kernel and, for the store, on storage.
+//	bible         the Bible app: books, versions (translations), the place of a verse, the
+//	              reading progress, the verse of the day and the preferences of the text.
+//	              Layers:
+//	                domain          Book, Version, Ref, ChapterText, Preferences, the
+//	                                built-in Canon, FestiveVerse, and the Catalog, Library
+//	                                and Speaker ports
+//	                application     Bible: refresh the catalog, download a version, read a
+//	                                chapter, count what was read, resume, verse of the day
+//	                presentation    the Bible app screens: Home, Bible, reader, settings
+//	                infrastructure  midvash (the Midvash API over HTTP+JSON) and sqlstore
+//	                                (the text and the progress in the database)
+//	              It depends on the kernel and, for the store, on storage.
 //	storage       the shared local database (SQLite, pure Go) of the productivity apps:
 //	              open, migrate per module, erase an account. A single package, depending
 //	              on nothing but the kernel; each context keeps its own tables in it.
@@ -136,6 +148,11 @@ const (
 	calendarApp       = calendarDir + applicationLayer
 	calendarUI        = calendarDir + presentationLayer
 	calendarInfra     = calendarDir + infrastructureLayer
+	bibleDir          = "internal/bible"
+	bibleDomain       = bibleDir + domainLayer
+	bibleApp          = bibleDir + applicationLayer
+	bibleUI           = bibleDir + presentationLayer
+	bibleInfra        = bibleDir + infrastructureLayer
 	tasksDir          = "internal/tasks"
 	storageDir        = "internal/storage"
 	tasksDomain       = tasksDir + domainLayer
@@ -204,6 +221,11 @@ var Rules = []Rule{
 	{tasksApp, []string{kernelDir, tasksDomain, tasksApp}},
 	{tasksUI, []string{kernelDir, localizationDir, toolkitDir, tasksDomain, tasksApp, tasksUI}},
 	{tasksInfra, []string{kernelDir, tasksDomain, tasksInfra, storageDir}}, // sqlstore keeps the tasks in the shared database
+	// The Bible: its own vocabulary only.
+	{bibleDomain, []string{kernelDir, bibleDomain}},
+	{bibleApp, []string{kernelDir, bibleDomain, bibleApp}},
+	{bibleUI, []string{kernelDir, localizationDir, toolkitDir, bibleDomain, bibleApp, bibleUI}},
+	{bibleInfra, []string{kernelDir, bibleDomain, bibleInfra, storageDir}}, // sqlstore keeps the text in the database; midvash uses the kernel's webjson
 	{storageDir, []string{kernelDir}},
 	{architectureDir, nil},
 	{examplesDir, []string{kernelDir, localizationDir, toolkitDir, showcaseDir, examplesDir}},
@@ -211,7 +233,7 @@ var Rules = []Rule{
 
 // Contexts are the folders allowed directly under internal/. A new one must be
 // added here (and to the documentation above) on purpose.
-var Contexts = []string{"architecture", "accounts", "calendar", "device", "installer", "kernel", "launcher", "localization", "mail", "platform", "showcase", "storage", "tasks", "toolkit"}
+var Contexts = []string{"architecture", "accounts", "bible", "calendar", "device", "installer", "kernel", "launcher", "localization", "mail", "platform", "showcase", "storage", "tasks", "toolkit"}
 
 // within reports whether dir is base or a folder below it.
 func within(dir, base string) bool { return dir == base || strings.HasPrefix(dir, base+"/") }

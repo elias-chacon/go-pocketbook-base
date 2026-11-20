@@ -43,6 +43,7 @@ Ele traz:
 | 21 | [Tarefas: domínio](21-tarefas-dominio.md) | tarefas, passos, prazos, repetição e as visões inteligentes |
 | 22 | [Armazenamento local](22-armazenamento-local.md) | o banco SQLite compartilhado: migrações por módulo e apagar uma conta |
 | 23 | [Os apps de produtividade](23-apps-de-produtividade.md) | **comece por aqui para E-mail, Tarefas e Calendário**: o que cada um faz, como usar, o que falta |
+| 24 | [O app Bíblia](24-biblia.md) | versões baixadas da API Midvash, leitura offline, progresso unificado, versículo do dia, configurações, memória e o que falta |
 
 ## Uma olhada rápida
 

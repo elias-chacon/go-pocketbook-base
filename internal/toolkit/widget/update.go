@@ -210,6 +210,7 @@ func (d *Document) paintFull() *image.Gray {
 		d.canvas = gfx.NewCanvas(d.DeviceW, d.DeviceH, d.Scale)
 	}
 	c := d.canvas
+	c.Invert = d.Invert
 	c.Clear(Paper)
 	if d.Root != nil {
 		paintTree(c, d.Root)
@@ -234,6 +235,7 @@ const windowPad = 24
 func (d *Document) paintRegion(r image.Rectangle) {
 	w := r.Inset(-windowPad).Intersect(d.frame.Bounds()) // the screen's own edges are real edges
 	c := gfx.NewCanvasAt(w.Dx(), w.Dy(), d.Scale, w.Min.X, w.Min.Y)
+	c.Invert = d.Invert
 	c.Clear(Paper)
 	area := geom.R(float64(w.Min.X)/d.Scale, float64(w.Min.Y)/d.Scale, float64(w.Dx())/d.Scale, float64(w.Dy())/d.Scale)
 	if d.Root != nil {

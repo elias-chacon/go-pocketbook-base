@@ -44,6 +44,9 @@ type Canvas struct {
 	scale  float64
 	ox, oy float64 // device position of the canvas's top-left corner (see NewCanvasAt)
 
+	// Invert makes Image return the negative of what was drawn (white on black).
+	Invert bool
+
 	// clip state (see Clip): the mask buffer and rasterizer are allocated on
 	// first use and reused, so clipping costs only the clipped area.
 	mask *image.Alpha
@@ -88,6 +91,9 @@ func (c *Canvas) Image() *image.Gray {
 			p := in[x*4 : x*4+4 : x*4+4]
 			// Rec. 601 luma in integers: (299 R + 587 G + 114 B) / 1000.
 			out[x] = uint8((299*uint32(p[0]) + 587*uint32(p[1]) + 114*uint32(p[2]) + 500) / 1000)
+			if c.Invert {
+				out[x] = 255 - out[x]
+			}
 		}
 	}
 	return g

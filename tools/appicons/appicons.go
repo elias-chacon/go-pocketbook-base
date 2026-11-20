@@ -32,6 +32,7 @@ var renderers = map[string]func(size int, focused bool) image.Image{
 	"mail":     platform.DefaultIcon("E-mail"),
 	"tasks":    platform.DefaultIcon("Tarefas"),
 	"calendar": platform.DefaultIcon("Calendário"),
+	"bible":    platform.DefaultIcon("Bíblia"),
 }
 
 // iconPNG is the encoded icon of an app, or false when it has no renderer.

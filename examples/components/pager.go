@@ -27,3 +27,22 @@ func TextPagerExample() widget.Widget {
 	article.OnPage = func(e *widget.Event) { fmt.Println("page", article.Page+1) }
 	return article
 }
+
+// ParagraphPagerExample is a chapter of numbered verses read by turning pages; the app asks which
+// verses are on the screen to count them as read.
+func ParagraphPagerExample() widget.Widget {
+	verses := []string{
+		"In the beginning God created the heaven and the earth.",
+		"And the earth was without form, and void; and darkness was upon the face of the deep.",
+		"And God said, Let there be light: and there was light.",
+	}
+	numbers := []string{"1", "2", "3"}
+	chapter := widget.NewParagraphPager(verses, numbers)
+	chapter.Lines = 12 // lines per page (20 by default)
+	chapter.OnPage = func(e *widget.Event) {
+		first, last, _ := chapter.Visible() // paragraphs with a line on this page
+		fmt.Println("verses on the screen:", first+1, "to", last+1)
+	}
+	chapter.GoToParagraph(2) // open on the page where verse 3 starts
+	return chapter
+}

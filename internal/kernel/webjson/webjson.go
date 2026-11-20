@@ -36,16 +36,19 @@ func (e *StatusError) Error() string {
 // Client sends JSON requests to one service.
 type Client struct {
 	HTTP  Doer
-	Token func() (string, error)
-	Base  string // put before a path; a path that is already an address is used as it is
+	Token func() (string, error) // nil for a public service: no Authorization header is sent
+	Base  string                 // put before a path; a path that is already an address is used as it is
 }
 
 // Do sends a request. in (a value, or nil) is the JSON body; out (a pointer, or nil)
 // receives the JSON answer.
 func (c Client) Do(method, path string, in, out interface{}) error {
-	token, err := c.Token()
-	if err != nil {
-		return err
+	token := ""
+	if c.Token != nil { // a public service needs none
+		var err error
+		if token, err = c.Token(); err != nil {
+			return err
+		}
 	}
 	var body io.Reader
 	if in != nil {
@@ -63,7 +66,9 @@ func (c Client) Do(method, path string, in, out interface{}) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", "Bearer "+token)
+	if c.Token != nil {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 	req.Header.Set("Accept", "application/json")
 	if in != nil {
 		req.Header.Set("Content-Type", "application/json")

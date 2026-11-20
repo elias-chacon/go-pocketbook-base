@@ -176,3 +176,37 @@ func TestCanvasWindowMatchesTheSameAreaOfAFullCanvas(t *testing.T) {
 		}
 	}
 }
+
+func TestFamiliesChangeTheMeasureAndAnUnknownOneIsIgnored(t *testing.T) {
+	defer SetFamily(FamilyGo)
+	text := "iiii WWWW"
+	SetFamily(FamilyGo)
+	sans := TextWidth(text, 40, false)
+	SetFamily(FamilyMono)
+	if CurrentFamily() != FamilyMono || TextWidth(text, 40, false) == sans {
+		t.Errorf("the mono family should measure differently: family=%s", CurrentFamily())
+	}
+	SetFamily(FamilyMedium)
+	if TextWidth(text, 40, true) <= 0 {
+		t.Error("the medium family has a bold face too")
+	}
+	SetFamily("nope")
+	if CurrentFamily() != FamilyMedium {
+		t.Errorf("an unknown family must keep the current one, got %s", CurrentFamily())
+	}
+	if len(Families()) != 3 || Families()[0] != FamilyGo {
+		t.Errorf("families = %v", Families())
+	}
+}
+
+func TestInvertGivesTheNegative(t *testing.T) {
+	c := NewCanvas(8, 8, 1)
+	c.Clear(Gray(255))
+	if got := c.Image().Pix[0]; got != 255 {
+		t.Fatalf("white page = %d", got)
+	}
+	c.Invert = true
+	if got := c.Image().Pix[0]; got != 0 {
+		t.Errorf("inverted page = %d, want 0", got)
+	}
+}

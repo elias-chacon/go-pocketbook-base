@@ -136,3 +136,27 @@ func TestRenderProducesAnImageOfTheScreenSize(t *testing.T) {
 		t.Error("nothing was drawn")
 	}
 }
+
+func TestSetInvertShowsTheNegativeAndRepaintsEverything(t *testing.T) {
+	doc := NewDocument(351, 468)
+	doc.SetRoot(NewColumn(0, NewLabel("x")))
+	invalidated := 0
+	doc.OnInvalidate = func() { invalidated++ }
+	doc.Update()
+	doc.SetInvert(true)
+	if invalidated != 1 {
+		t.Errorf("turning it on must ask for a repaint, got %d", invalidated)
+	}
+	f := doc.Update()
+	if !f.Full || f.Image.Pix[0] != 0 {
+		t.Errorf("full=%v corner=%d: the negative of the paper is black", f.Full, f.Image.Pix[0])
+	}
+	doc.SetInvert(true)
+	if invalidated != 1 {
+		t.Error("setting the same value again changes nothing")
+	}
+	doc.SetInvert(false)
+	if f := doc.Update(); f.Image.Pix[0] != 255 {
+		t.Errorf("back to paper: %d", f.Image.Pix[0])
+	}
+}

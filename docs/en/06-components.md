@@ -707,6 +707,49 @@ func TextPagerExample() widget.Widget {
 }
 ```
 
+## ParagraphPager
+
+![paragraphpager](../components/paragraphpager.png)
+
+The **ParagraphPager** is the TextPager for a text made of *numbered paragraphs*, like the verses of a chapter: it wraps each
+paragraph to the width, writes the small number in the margin of its first line and turns pages of `Lines` lines. The difference
+is that it **knows where each paragraph is**: the app asks which ones are on the screen (`Visible`) and opens the page of one of
+them (`GoToParagraph`).
+
+| | |
+|---|---|
+| Create | `widget.NewParagraphPager(paragraphs, numbers)` (`numbers` may be `nil`) |
+| Properties | `Paragraphs`, `Numbers`, `Lines` (per page, 20 by default), `Page`, `Pages()`; `SetParagraphs` replaces the content and goes back to the first page; the size follows `Style.FontSize` and the typeface follows `gfx.SetFamily` |
+| Navigation | `GoTo(n)`, `Prev()`, `Next()`, `GoToParagraph(i)` |
+| Visible | `Visible()` returns the first and last paragraph with a line on the page (and `false` when there is no text); call it after `Layout`, because where a paragraph falls depends on the width |
+| Events | `OnPage` |
+
+```go
+// examples/components/pager.go#ParagraphPagerExample
+// ParagraphPagerExample is a chapter of numbered verses read by turning pages; the app asks which
+// verses are on the screen to count them as read.
+func ParagraphPagerExample() widget.Widget {
+	verses := []string{
+		"In the beginning God created the heaven and the earth.",
+		"And the earth was without form, and void; and darkness was upon the face of the deep.",
+		"And God said, Let there be light: and there was light.",
+	}
+	numbers := []string{"1", "2", "3"}
+	chapter := widget.NewParagraphPager(verses, numbers)
+	chapter.Lines = 12 // lines per page (20 by default)
+	chapter.OnPage = func(e *widget.Event) {
+		first, last, _ := chapter.Visible() // paragraphs with a line on this page
+		fmt.Println("verses on the screen:", first+1, "to", last+1)
+	}
+	chapter.GoToParagraph(2) // open on the page where verse 3 starts
+	return chapter
+}
+```
+
+Two theme settings a reading app uses: `gfx.SetFamily(gfx.FamilyMedium)` changes the typeface of all the text (`FamilyGo`,
+`FamilyMedium`, `FamilyMono`; rebuild the screen afterwards) and `doc.SetInvert(true)` shows the screen in negative (light text on
+a dark page) and repaints it all.
+
 ## Image
 
 ![image](../components/image.png)

@@ -18,6 +18,9 @@ type Document struct {
 	DeviceW, DeviceH int
 	Root             Widget
 	Keyboard         Keyboard
+	// Invert shows the screen in negative (light text on a dark page), for dim light
+	// or a reader who finds it easier. Change it with SetInvert, which repaints it all.
+	Invert bool
 	// OnInvalidate is called when the screen needs repainting (the device
 	// hooks it to InkView's Repaint).
 	OnInvalidate func()
@@ -43,6 +46,15 @@ func NewDocument(deviceW, deviceH int) *Document {
 		W: RefWidth, H: float64(deviceH) / scale, Scale: scale,
 		DeviceW: deviceW, DeviceH: deviceH,
 	}
+}
+
+// SetInvert turns the negative on or off and repaints the whole screen.
+func (d *Document) SetInvert(on bool) {
+	if d.Invert == on {
+		return
+	}
+	d.Invert, d.forceFull = on, true
+	d.Invalidate()
 }
 
 // SetRoot makes w the root element.

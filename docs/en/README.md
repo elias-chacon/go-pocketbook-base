@@ -41,6 +41,7 @@
 | 21 | [Tasks: domain](21-tasks-domain.md) | tasks, steps, due dates, repetition and the smart views |
 | 22 | [Local storage](22-local-storage.md) | the shared SQLite database: migrations per module and erasing an account |
 | 23 | [The productivity apps](23-productivity-apps.md) | **start here for Mail, Tasks and Calendar**: what each does, how to use it, what is missing |
+| 24 | [The Bible app](24-bible.md) | versions downloaded from the Midvash API, offline reading, unified progress, verse of the day, settings, memory and what is missing |
 
 ## Quick look
 

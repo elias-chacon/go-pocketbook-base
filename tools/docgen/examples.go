@@ -79,6 +79,7 @@ func examples() []example {
 		{"timegrid", 1000, 0, timeGridExample, nil},
 		{"pager", 760, 0, pagerExample, nil},
 		{"textpager", 760, 0, textPagerExample, nil},
+		{"paragraphpager", 760, 0, paragraphPagerExample, nil},
 		{"image", 760, 0, imageExample, nil},
 		{"modal", 760, 0, modalExample, nil},
 		{"custom", 640, 0, customRecipe, nil},
@@ -272,6 +273,17 @@ func pagerExample() widget.Widget {
 		rows = append(rows, row)
 	}
 	return widget.NewPager(4, rows...).Root
+}
+
+func paragraphPagerExample() widget.Widget {
+	verses := []string{
+		"No princípio, Deus criou os céus e a terra.",
+		"A terra era sem forma e vazia; havia trevas sobre a face do abismo, e o Espírito de Deus pairava sobre as águas.",
+		"Disse Deus: Haja luz. E houve luz.",
+	}
+	p := widget.NewParagraphPager(verses, []string{"1", "2", "3"})
+	p.Lines = 7
+	return p
 }
 
 func textPagerExample() widget.Widget {

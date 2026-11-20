@@ -53,8 +53,9 @@ Ou baixe o arquivo do seu sistema na página de [Releases](https://github.com/el
 | **E-mail** (`apps/mail`) | pastas, leitura página a página, responder, encaminhar, escrever, apagar, busca, leitura offline (IMAP com senha de app, ou Outlook.com por código OAuth2 quando o client id está configurado) | compila e passa nos testes; **não testado no aparelho** |
 | **Tarefas** (`apps/tasks`) | Meu dia, Importante, Planejado, Atrasadas; adicionar, concluir, editar; sem conta | compila e passa nos testes; **não testado no aparelho** |
 | **Calendário** (`apps/calendar`) | visões Mês, Semana, Semana útil e Dia no estilo Outlook, criar e editar eventos; sem conta | compila e passa nos testes; **não testado no aparelho** |
+| **Bíblia** (`apps/bible`) | várias versões e idiomas da API Midvash baixadas para o banco do leitor e lidas offline, progresso de leitura, versículo do dia, retomada, configurações do texto | compila, passa nos testes e roda no emulador ARM; **não testado no aparelho** |
 
-Guia de uso, o que falta e o que foi verificado: [capítulo 23](docs/pt-br/23-apps-de-produtividade.md). Todos estão na Release e aparecem no catálogo do Launcher.
+Guia de uso, o que falta e o que foi verificado: [capítulo 23](docs/pt-br/23-apps-de-produtividade.md) (E-mail, Tarefas, Calendário) e [capítulo 24](docs/pt-br/24-biblia.md) (Bíblia). Todos estão na Release e aparecem no catálogo do Launcher.
 
 ## Documentação completa
 
@@ -213,6 +214,14 @@ Critério de pronto de **cada app** (herdado das regras do projeto): segue o con
 - [ ] T68 Calendar: sincronização por **CalDAV/WebDAV** (iCloud, Nextcloud, Fastmail…), **Google Calendar** e **Microsoft Graph** (OAuth2), e **Exchange local** (EWS)
 - [ ] T69 Calendar ↔ e-mail: convites e respostas (iTIP/iMIP: aceitar, recusar, talvez), criar evento a partir de um e-mail, e abrir o e-mail de um convite
 - [ ] T70 Calendar: importar `.ics` de um anexo de e-mail, da pasta do leitor ou de uma assinatura por endereço (`webcal`), sem duplicar eventos
+
+*App da Bíblia (`apps/bible`, contexto `internal/bible`; guia no [capítulo 24](docs/pt-br/24-biblia.md))*
+
+- [x] T71 Toolkit para leitura: `ParagraphPager` (parágrafos numerados por página que sabe quais estão na tela e abre o de um número), tipo de letra escolhido (`gfx.SetFamily`: Go, Go Medium, Go Mono) e tela em negativo (`Document.SetInvert`), com testes, exemplo em `examples/components` e documentação
+- [x] T72 Contexto `bible`: domínio (livros, versões, lugar do versículo, `Canon` embutido, versículos de datas especiais com a Páscoa calculada, preferências), banco SQLite com o texto **um versículo por linha** e o progresso **por lugar, sem a versão** (denominador = versículos da versão em uso), cliente da API **Midvash** (20 capítulos por pedido) e casos de uso (baixar retomável, ler um capítulo, contar o lido, retomar, versículo do dia, busca sem acento linha a linha). Testado, inclusive em ARMv7 (qemu)
+- [x] T73 App `apps/bible` com as abas **Início** (porcentagem geral, versículo do dia com "Já li", continuar leitura), **Bíblia** (versão atual, idioma, versão com download, busca, livros em ordem original ou alfabética, capítulos com prévia, grade de versículos, leitor que conta os versículos vistos) e **Mais** (Configurações, Sobre, Sair); idioma do aparelho como padrão (pt-BR/en). Persistência validada: fechar e reabrir mantém texto, progresso, posição e configurações
+- [ ] T74 Bíblia, validação **no aparelho**: velocidade do download e do SQLite no PB741, memória medida com a Bíblia inteira, idioma do aparelho (`global.cfg`), e a **leitura em voz alta**, que o SDK 6.3 não expõe a apps (hoje usa `flite`/`espeak` se existirem; senão avisa)
+- [ ] T75 Bíblia, melhorias: remover o texto de uma versão baixada pela tela (a função existe), capítulos além do cânon de 66 livros (ex.: `cpdv` tem 1197), nota de direitos autorais da versão, e marcar na lista os capítulos já lidos
 
 Ordem sugerida: T51 → T52/T53/T54 → T57 → T55 → T58/T59/T62 (primeiro e-mail ponta a ponta, com IMAP) → T66/T67 (calendário local com `.ics`) → T63 (tarefas locais) → sincronizações (T60, T64, T68) → integrações entre apps (T65, T69, T70) → Exchange local (T61). Cada fase termina com validação no aparelho.
 
