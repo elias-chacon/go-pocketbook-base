@@ -19,7 +19,8 @@ import (
 	platform "go-pocketbook-base/internal/platform/domain"
 )
 
-// Tile is what the home screen shows for an installed app, in one language.
+// Tile is what the home screen shows for an app, in one language: an installed one, or one that
+// only the catalog has (Installed is false and a tap installs it).
 type Tile struct {
 	ID          string
 	Title       string
@@ -27,6 +28,9 @@ type Tile struct {
 	Version     string
 	Exe         string // absolute path of <id>.app
 	IconPath    string // absolute path of the BMP icon ("" when none)
+	Installed   bool
+	// Listing is what the catalog says of the app (nil when it does not know it).
+	Listing *Listing
 }
 
 // TilesFrom makes the tiles of the installed apps in lang, sorted by title

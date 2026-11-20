@@ -19,6 +19,7 @@ func (e *Event) StopPropagation()
 | Callback | Elementos | Quando |
 |---|---|---|
 | `OnClick` | todos os elementos | o elemento foi tocado (**sobe** para os ancestrais) |
+| `OnLongPress` | todos os elementos | o dedo ficou apoiado por `Document.LongPress` (2 s por padrão) e foi solto sobre o elemento: roda **no lugar do** `OnClick` e sobe até o primeiro ancestral que tem um (um elemento sem `OnLongPress` no seu ramo apenas recebe o clique) |
 | `OnChange` | check-box/radio/switch, combo-box, campos, text-area, slider, chip, tabela (`OnSelect`), calendário | o valor mudou pelo usuário |
 | `OnInput` | slider | enquanto arrasta |
 | `OnSubmit` | campo de busca | a lupa foi tocada ou OK no teclado |

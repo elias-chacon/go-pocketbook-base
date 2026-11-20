@@ -41,6 +41,12 @@ type Manifest struct {
 	// Intents are the actions this app handles when another app opens it (see
 	// Intent), each "<app>.<verb>".
 	Intents []string `json:"intents,omitempty"`
+	// Data are the files of the app in applications/.pbgo (its own database, its settings): they
+	// are deleted when the app is removed. Plain file names, never paths.
+	Data []string `json:"data,omitempty"`
+	// Shares are the files in applications/.pbgo that this app uses together with others (the
+	// accounts): they are deleted only when no other installed app shares them.
+	Shares []string `json:"shares,omitempty"`
 }
 
 // ParseManifest decodes and validates an app.json.
@@ -67,6 +73,11 @@ func (m Manifest) Validate() error {
 	}{{"title", m.Title}, {"description", m.Description}} {
 		if strings.TrimSpace(field.m[i18n.Primary]) == "" {
 			problems = append(problems, fmt.Sprintf("%s needs a %s text (the primary language)", field.name, i18n.Primary))
+		}
+	}
+	for _, name := range append(append([]string{}, m.Data...), m.Shares...) {
+		if !plainFileName(name) {
+			problems = append(problems, fmt.Sprintf("data file %q must be a plain file name", name))
 		}
 	}
 	for _, action := range m.Intents {
@@ -145,4 +156,9 @@ type InstalledApp struct {
 	Version string `json:"version"`
 	Exe     string `json:"exe"`  // absolute path of <id>.app
 	Icon    string `json:"icon"` // absolute path of the BMP icon ("" when none)
+}
+
+// plainFileName reports whether name is a file name and not a path (it never leaves the folder it is in).
+func plainFileName(name string) bool {
+	return name != "" && name != "." && name != ".." && !strings.ContainsAny(name, "/\\")
 }

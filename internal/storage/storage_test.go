@@ -203,3 +203,40 @@ func TestMemoryDatabasesWorkForTests(t *testing.T) {
 		t.Errorf("foreign keys are on: %q", journal)
 	}
 }
+
+func TestEraseModuleDropsOnlyThatModulesTablesAndDeletesTheFileWhenNoneIsLeft(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "productivity.db")
+	s, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, m := range []string{"tasks", "mail"} {
+		if err := s.Migrate(m, []Migration{{Version: 1, SQL: "CREATE TABLE " + m + "_items (id TEXT)"}, {Version: 2, SQL: "CREATE TABLE " + m + "_more (id TEXT)"}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	s.Close()
+
+	if err := EraseModule(path, "tasks"); err != nil {
+		t.Fatal(err)
+	}
+	s, _ = Open(path)
+	tables, _ := s.Tables()
+	if strings.Join(tables, ",") != "mail_items,mail_more,schema_versions" {
+		t.Errorf("only the tasks tables go: %v", tables)
+	}
+	if v, _ := s.Version("tasks"); v != 0 {
+		t.Errorf("the schema version of tasks is forgotten: %d", v)
+	}
+	s.Close()
+
+	if err := EraseModule(path, "mail"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(path); err == nil {
+		t.Error("with no module left the file is deleted")
+	}
+	if err := EraseModule(path, "mail"); err != nil {
+		t.Errorf("a file that is not there is not a failure: %v", err)
+	}
+}

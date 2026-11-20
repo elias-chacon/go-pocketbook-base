@@ -1,6 +1,9 @@
 package domain
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 func TestPreferencesAreNormalizedIntoTheirBounds(t *testing.T) {
 	cases := []struct {
@@ -19,7 +22,7 @@ func TestPreferencesAreNormalizedIntoTheirBounds(t *testing.T) {
 		{"nor a parent", Preferences{Image: ".."}, DefaultPreferences()},
 	}
 	for _, c := range cases {
-		if got := c.in.Normalized(); got != c.want {
+		if got := c.in.Normalized(); !reflect.DeepEqual(got, c.want) {
 			t.Errorf("%s: %+v, want %+v", c.name, got, c.want)
 		}
 	}

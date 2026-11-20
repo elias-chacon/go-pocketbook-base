@@ -105,6 +105,10 @@ func (h *Home) buildSettings() widget.Widget {
 	}
 	bgCard := widget.NewCard(tr.T("settings.background"), "", background...)
 
+	manage := h.button("settings-apps", tr.T("settings.apps.manage"), h.OpenManager)
+	hidden := h.button("settings-hidden", tr.T("settings.apps.hidden"), h.OpenHidden)
+	appsCard := widget.NewCard(tr.T("settings.apps"), "", widget.NewRow(12, manage, hidden))
+
 	f.problem = widget.NewLabel("")
 	f.problem.ID = "settings-problem"
 	f.problem.Style.Color = widget.Muted
@@ -118,7 +122,7 @@ func (h *Home) buildSettings() widget.Widget {
 	title.Style.FontSize, title.Style.Bold = widget.FontTitle, true
 	title.Style.Padding = geom.XY(28, 28)
 
-	body := widget.NewColumn(20, grid, icons, language, bgCard, f.problem)
+	body := widget.NewColumn(20, grid, icons, language, bgCard, appsCard, f.problem)
 	body.Style.Padding = geom.XY(0, 28)
 	body.Style.FlexGrow = 1
 	buttons.Style.Padding = geom.XY(20, 28)
@@ -177,6 +181,7 @@ func (h *Home) saveSettings() {
 	}
 	prefs := domain.Preferences{
 		Grid: domain.Grid{Columns: cols, Rows: rows}, IconSize: int(f.size.Value), Image: f.bg.Value(),
+		HiddenApps: h.cfg.Prefs.HiddenApps, // kept: the settings form does not edit them
 	}.Normalized()
 	lang := f.lang.Value()
 	if lang == "" {

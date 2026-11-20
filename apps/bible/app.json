@@ -8,5 +8,9 @@
     "pt-BR": "Leia a Bíblia em várias versões e idiomas, baixe para ler sem internet, acompanhe seu progresso e receba o versículo do dia.",
     "en": "Read the Bible in many versions and languages, download it to read offline, follow your progress and get the verse of the day."
   },
-  "group": "@General"
+  "group": "@General",
+  "data": [
+    "bible.db",
+    "bible.db-journal"
+  ]
 }

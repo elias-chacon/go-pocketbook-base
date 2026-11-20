@@ -6,6 +6,8 @@ import (
 	"embed"
 	"image"
 	"strings"
+	"sync"
+	"time"
 
 	"go-pocketbook-base/internal/kernel/geom"
 	"go-pocketbook-base/internal/launcher/application"
@@ -45,10 +47,22 @@ type Config struct {
 	// LoadBackground opens one by name (nil: there are no backgrounds).
 	Backgrounds    func() []string
 	LoadBackground func(name string) (image.Image, error)
-	// Catalog lists the apps that can be installed (nil: the search only knows the installed ones).
+	// Catalog lists the apps of the release (nil: the home shows only the installed ones). It is
+	// asked in the background when the screen opens; a failure is silent (the apps already shown stay).
 	Catalog domain.Catalog
-	// Installer installs an app of the catalog when its row is tapped (nil: the rows only show).
+	// CachedCatalog is the last catalog kept, in lang, to show the apps that are not installed at
+	// once and offline (nil: they show after the first answer of Catalog).
+	CachedCatalog func(lang string) []domain.Listing
+	// After runs f on the event loop later (platform Env.After); the catalog is fetched in the
+	// background and polled with it. Nil (tests) fetches in one go.
+	After func(d time.Duration, f func())
+	// Installer installs (or updates) an app of the catalog (nil: it cannot be done).
 	Installer domain.Installer
+	// Uninstaller removes an app and all its data (nil: the Remove action is not offered).
+	Uninstaller domain.Uninstaller
+	// InstalledSum is the SHA-256 of the installed file of an app ("" when unknown): an app whose
+	// sum differs from the catalog AppSHA256 can be updated.
+	InstalledSum func(appID string) string
 	// Flush paints pending changes now; it is called before a download blocks the
 	// screen so the message is seen (nil: no flush).
 	Flush func()
@@ -61,25 +75,24 @@ type Config struct {
 	Notice  string
 }
 
-// While searching, the installed results use fewer rows so the "Available" section fits the same page.
+// How the screen waits for the catalog fetched in the background (see Config.After).
 const (
-	searchRows   = 3
-	availableMax = 4
-	// listingIconSize is the edge of the icon in a row of the catalog, in design pixels.
-	listingIconSize = 72
+	catalogPoll  = 2 * time.Second
+	catalogPolls = 90
 )
 
-// Home is the main screen: a paged grid of the installed apps and a search field
-// that splits the answer into "Installed" and "Available"; the settings screen
-// takes its place when it is opened.
+// Home is the main screen: a paged grid of every app of the ecosystem (the installed ones and the
+// ones of the catalog that are not installed, a tap on those installs them), a search field and a
+// long press that manages an app; the settings screen takes its place when it is opened.
 type Home struct {
 	Doc *widget.Document
 
-	cfg    Config
-	tiles  []domain.Tile // what the grid pages through (the installed apps, filtered by the query)
-	result domain.SearchResult
-	query  string
-	page   int
+	cfg      Config
+	listings []domain.Listing // what the catalog said last
+	all      []domain.Tile    // every app, hidden ones too
+	tiles    []domain.Tile    // what the grid pages through: the visible apps that match the query
+	query    string
+	page     int
 
 	root            *widget.Panel
 	settings        *settingsForm // non-nil while the settings screen is showing
@@ -98,7 +111,11 @@ func NewHome(cfg Config) *Home {
 	h := &Home{cfg: cfg}
 	h.Doc = widget.NewDocument(cfg.Width, cfg.Height)
 	h.Doc.Keyboard = cfg.Keyboard
+	if cfg.CachedCatalog != nil {
+		h.listings = cfg.CachedCatalog(cfg.Tr.Lang())
+	}
 	h.build()
+	h.fetchCatalog()
 	return h
 }
 
@@ -106,14 +123,21 @@ func NewHome(cfg Config) *Home {
 // size, the background and the texts are rebuilt, and the search is cleared.
 func (h *Home) Apply(prefs domain.Preferences, lang string) {
 	h.cfg.Prefs = prefs.Normalized()
-	if lang != "" && lang != h.cfg.Tr.Lang() {
+	changed := lang != "" && lang != h.cfg.Tr.Lang()
+	if changed {
 		h.cfg.Tr = NewTranslator(lang)
+		if h.cfg.CachedCatalog != nil {
+			h.listings = h.cfg.CachedCatalog(lang) // the titles of the apps are in the new language
+		}
 	}
 	h.cfg.Notice = ""
 	h.page, h.query, h.settings = 0, "", nil
 	h.build()
 	h.Doc.ResetFrame()
 	h.Doc.Invalidate()
+	if changed {
+		h.fetchCatalog()
+	}
 }
 
 // paper gives a widget the page color, so it stays readable over a background picture.
@@ -185,17 +209,71 @@ func (h *Home) build() {
 	h.Refresh()
 }
 
-// Refresh reloads the tiles from the registry and shows the current page.
+// Refresh rebuilds the list of apps (the installed ones, the ones of the catalog, minus the hidden)
+// and shows the current page.
 func (h *Home) Refresh() {
-	if h.query == "" {
-		h.tiles, h.result = h.cfg.Home.Tiles(h.cfg.Tr.Lang()), domain.SearchResult{}
-	} else {
-		h.result = application.Search{
-			Apps: h.cfg.Home.Apps, Catalog: h.cfg.Catalog, SelfID: h.cfg.Home.SelfID,
-		}.Run(h.query, h.cfg.Tr.Lang())
-		h.tiles = h.result.Installed
-	}
+	h.all = h.cfg.Home.All(h.listings, h.cfg.Tr.Lang())
+	h.tiles = domain.FilterTiles(domain.Visible(h.all, h.cfg.Prefs.HiddenApps), h.query)
 	h.show()
+}
+
+// catalogResult is the answer of the background fetch, handed to the event loop.
+type catalogResult struct {
+	mu   sync.Mutex
+	done bool
+	list []domain.Listing
+	err  error
+}
+
+func (c *catalogResult) set(list []domain.Listing, err error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.list, c.err, c.done = list, err, true
+}
+
+func (c *catalogResult) get() ([]domain.Listing, bool, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.list, c.done, c.err
+}
+
+// fetchCatalog asks the catalog in the background (a goroutine does the network, the event loop
+// polls and draws: no widget is touched off the loop).
+func (h *Home) fetchCatalog() {
+	if h.cfg.Catalog == nil {
+		return
+	}
+	lang := h.cfg.Tr.Lang()
+	if h.cfg.After == nil {
+		list, err := h.cfg.Catalog.List(lang)
+		h.catalogDone(list, err)
+		return
+	}
+	res := &catalogResult{}
+	go func() { res.set(h.cfg.Catalog.List(lang)) }()
+	h.pollCatalog(res, lang, 0)
+}
+
+func (h *Home) pollCatalog(res *catalogResult, lang string, n int) {
+	list, done, err := res.get()
+	switch {
+	case done && lang == h.cfg.Tr.Lang():
+		h.catalogDone(list, err)
+	case !done && n < catalogPolls:
+		h.cfg.After(catalogPoll, func() { h.pollCatalog(res, lang, n+1) })
+	}
+}
+
+// catalogDone takes the answer of the catalog: a failure leaves what is shown as it is, and
+// while the settings screen is open the list is kept and drawn when the home comes back.
+func (h *Home) catalogDone(list []domain.Listing, err error) {
+	if err != nil {
+		return
+	}
+	h.listings = list
+	if h.settings == nil {
+		h.Refresh()
+	}
 }
 
 // Search filters the screen by query (an empty one shows the whole home again).
@@ -211,14 +289,8 @@ func (h *Home) Search(query string) {
 // Query is what the screen is filtered by ("" when it is not searching).
 func (h *Home) Query() string { return h.query }
 
-// grid is the layout of the current page: searching leaves room for "Available".
-func (h *Home) grid() domain.Grid {
-	g := h.cfg.Prefs.Grid
-	if h.query != "" && g.Rows > searchRows {
-		g.Rows = searchRows
-	}
-	return g
-}
+// grid is the layout of the current page.
+func (h *Home) grid() domain.Grid { return h.cfg.Prefs.Grid }
 
 // Page is the current page (0-based) and Pages how many there are.
 func (h *Home) Page() int  { return h.page }
@@ -242,10 +314,6 @@ func (h *Home) show() {
 	h.page = domain.ClampPage(h.page, h.Pages())
 	h.body.ClearChildren()
 
-	searching := h.query != ""
-	if searching {
-		h.body.AppendChild(h.section("search.installed"))
-	}
 	tiles := h.grid().Page(h.tiles, h.page)
 	if len(tiles) == 0 {
 		h.body.AppendChild(h.muted("home-empty", h.emptyText()))
@@ -262,10 +330,6 @@ func (h *Home) show() {
 		grid.ID = "home-grid"
 		h.body.AppendChild(grid)
 	}
-	if searching {
-		h.showAvailable()
-	}
-
 	pages := h.Pages()
 	h.indicator.Text = h.cfg.Tr.T("home.page", h.page+1, pages)
 	h.prev.Disabled, h.next.Disabled = h.page == 0, h.page >= pages-1
@@ -275,7 +339,10 @@ func (h *Home) show() {
 // tile is the cell of one app: its icon and title, tappable as a whole.
 func (h *Home) tile(t domain.Tile) widget.Widget {
 	var icon image.Image
-	if h.cfg.IconFor != nil {
+	if !t.Installed && t.Listing != nil && h.cfg.ListingIcon != nil {
+		icon = h.cfg.ListingIcon(*t.Listing)
+	}
+	if icon == nil && h.cfg.IconFor != nil {
 		icon = h.cfg.IconFor(t)
 	}
 	img := widget.NewImage(icon)
@@ -285,12 +352,29 @@ func (h *Home) tile(t domain.Tile) widget.Widget {
 	title.Style.FontSize, title.Style.TextAlign = widget.FontSmall, gfx.AlignCenter
 
 	cell := widget.NewColumn(8, img, title)
+	if !t.Installed {
+		hint := widget.NewLabel(h.cfg.Tr.T("home.tile.install"))
+		hint.Style.FontSize, hint.Style.Color, hint.Style.TextAlign = widget.FontSmall, widget.Muted, gfx.AlignCenter
+		cell.AppendChild(hint)
+	}
 	cell.ID = "app-" + t.ID
 	cell.Style.Padding = geom.All(12)
 	cell.Style.BorderColor, cell.Style.BorderWidth, cell.Style.BorderRadius = widget.Mid, 2, widget.Radius
 	paper(cell)
-	cell.OnClick = func(*widget.Event) { h.open(t) }
+	cell.OnClick = func(*widget.Event) { h.activate(t) }
+	cell.OnLongPress = func(*widget.Event) { h.Manage(t, nil) }
 	return cell
+}
+
+// activate is a tap on a tile: an installed app starts, one that is not installed is installed.
+func (h *Home) activate(t domain.Tile) {
+	if t.Installed {
+		h.open(t)
+		return
+	}
+	if t.Listing != nil && h.cfg.Installer != nil {
+		h.install(*t.Listing, false)
+	}
 }
 
 // open starts the app; the message tells why when it could not be started.
@@ -319,65 +403,14 @@ func (h *Home) muted(id, text string) widget.Widget {
 	return paper(l)
 }
 
-// section is the heading of a group of results ("-- Installed --").
-func (h *Home) section(key string) widget.Widget {
-	l := widget.NewLabel(h.cfg.Tr.T(key))
-	l.ID = key
-	l.Style.FontSize, l.Style.Bold, l.Style.Padding = widget.FontSmall, true, geom.XY(8, 12)
-	return paper(l)
-}
-
-// showAvailable lists the apps of the catalog that match and are not installed.
-func (h *Home) showAvailable() {
-	h.body.AppendChild(h.section("search.available"))
-	switch {
-	case h.result.CatalogErr == domain.ErrNoCatalog:
-		h.body.AppendChild(h.muted("search-nocatalog", h.cfg.Tr.T("search.nocatalog")))
-	case h.result.CatalogErr != nil:
-		h.body.AppendChild(h.muted("search-offline", h.cfg.Tr.T("search.offline", h.result.CatalogErr.Error())))
-	case len(h.result.Available) == 0:
-		h.body.AppendChild(h.muted("search-none-available", h.cfg.Tr.T("search.none", h.query)))
-	default:
-		for i, l := range h.result.Available {
-			if i == availableMax {
-				h.body.AppendChild(h.muted("search-more", h.cfg.Tr.T("search.more", len(h.result.Available)-availableMax)))
-				break
-			}
-			h.body.AppendChild(h.listing(l))
-		}
+// install downloads and installs (or updates) an app of the catalog. The download blocks, so the
+// screen says so first; afterwards the list is rebuilt and the app is installed.
+func (h *Home) install(l domain.Listing, update bool) {
+	downloading, done := "install.downloading", "install.done"
+	if update {
+		downloading, done = "update.downloading", "update.done"
 	}
-}
-
-// listing is the row of one app of the catalog.
-func (h *Home) listing(l domain.Listing) widget.Widget {
-	title := widget.NewLabel(l.Title)
-	title.Style.FlexGrow = 1
-	version := widget.NewLabel("v" + l.Version)
-	version.Style.FontSize, version.Style.Color = widget.FontSmall, widget.Muted
-	children := []widget.Widget{title, version}
-	if h.cfg.ListingIcon != nil {
-		if img := h.cfg.ListingIcon(l); img != nil {
-			icon := widget.NewImage(img)
-			icon.Style.Width, icon.Style.Height = widget.Px(listingIconSize), widget.Px(listingIconSize)
-			children = append([]widget.Widget{icon}, children...)
-		}
-	}
-	row := widget.NewRow(12, children...)
-	row.ID = "avail-" + l.ID
-	row.Style.Padding = geom.XY(14, 20)
-	row.Style.BorderColor, row.Style.BorderWidth, row.Style.BorderRadius = widget.Mid, 2, widget.Radius
-	paper(row)
-	if h.cfg.Installer != nil {
-		row.OnClick = func(*widget.Event) { h.install(l) }
-	}
-	return row
-}
-
-// install downloads and installs an app of the catalog. The download blocks, so
-// the screen says so first; afterwards the lists are rebuilt and the app moves
-// from Available to Installed.
-func (h *Home) install(l domain.Listing) {
-	h.say(h.cfg.Tr.T("install.downloading", l.Title))
+	h.say(h.cfg.Tr.T(downloading, l.Title))
 	if h.cfg.Flush != nil {
 		h.cfg.Flush()
 	}
@@ -386,5 +419,5 @@ func (h *Home) install(l domain.Listing) {
 		return
 	}
 	h.Refresh()
-	h.say(h.cfg.Tr.T("install.done", l.Title))
+	h.say(h.cfg.Tr.T(done, l.Title))
 }

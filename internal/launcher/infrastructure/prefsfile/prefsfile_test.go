@@ -3,6 +3,7 @@ package prefsfile
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"go-pocketbook-base/internal/launcher/domain"
@@ -10,14 +11,14 @@ import (
 
 func TestPreferencesRoundTripAndAreNormalizedOnTheWay(t *testing.T) {
 	s := New(t.TempDir())
-	if got := s.Load(); got != domain.DefaultPreferences() {
+	if got := s.Load(); !reflect.DeepEqual(got, domain.DefaultPreferences()) {
 		t.Errorf("nothing saved: %+v", got)
 	}
 	want := domain.Preferences{Grid: domain.Grid{Columns: 3, Rows: 4}, IconSize: 180, Image: "sea.png"}
 	if err := s.Save(want); err != nil {
 		t.Fatal(err)
 	}
-	if got := s.Load(); got != want {
+	if got := s.Load(); !reflect.DeepEqual(got, want) {
 		t.Errorf("%+v, want %+v", got, want)
 	}
 	if err := s.Save(domain.Preferences{IconSize: 5000}); err != nil {
@@ -35,7 +36,7 @@ func TestABrokenFileGivesTheDefaults(t *testing.T) {
 	s := New(t.TempDir())
 	os.MkdirAll(filepath.Dir(s.Path), 0o755)
 	os.WriteFile(s.Path, []byte("{not json"), 0o644)
-	if got := s.Load(); got != domain.DefaultPreferences() {
+	if got := s.Load(); !reflect.DeepEqual(got, domain.DefaultPreferences()) {
 		t.Errorf("%+v", got)
 	}
 }

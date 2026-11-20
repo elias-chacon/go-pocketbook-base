@@ -37,6 +37,8 @@ type Env struct {
 	Manifest      domain.Manifest
 	Lang          string // language from the shared settings (set in the Launcher)
 	Version       string // MAJOR.MINOR.BUILD of this build
+	// Root is the storage root of the reader (DefaultRoot; a temporary folder in tests).
+	Root string
 	// Settings is the store of the preferences shared by every app: save the
 	// language here when the user changes it.
 	Settings domain.SettingsStore

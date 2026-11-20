@@ -45,6 +45,8 @@ Todo app do repositório é um **plugin do Launcher que também se instala sem e
 
 ## O manifesto (`app.json`)
 
+Além de id, títulos, descrição, grupo e `intents`, um manifesto pode listar **`data`** (arquivos do app em `applications/.pbgo`, ex.: o banco próprio dele: são apagados quando o Launcher remove o app) e **`shares`** (arquivos que ele usa junto com outros apps, ex.: as contas: só são apagados quando nenhum outro app instalado os compartilha). Só nomes de arquivo; as tabelas que um app guarda no `productivity.db` compartilhado são as chamadas `<id>_...` e também são removidas.
+
 ```json
 {
   "id": "hello",

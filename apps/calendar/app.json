@@ -8,5 +8,10 @@
     "pt-BR": "Seu calendário: o mês com os dias que têm eventos, a agenda do dia e eventos de dia inteiro ou com horário.",
     "en": "Your calendar: the month with the days that have events, the day's agenda, all-day and timed events."
   },
-  "group": "@General"
+  "group": "@General",
+  "shares": [
+    "accounts.json",
+    "secrets.bin",
+    "device.key"
+  ]
 }

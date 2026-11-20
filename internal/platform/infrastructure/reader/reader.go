@@ -137,6 +137,11 @@ func (d DesktopRegistrar) Register(r domain.Registration) (bool, error) {
 	return res.Changed, err
 }
 
+// Unregister implements domain.DesktopRemover: the view.json entry and the icons.
+func (d DesktopRegistrar) Unregister(appID string) (bool, error) {
+	return desktop.Unregister(d.Root, appID)
+}
+
 // IconPath is where Register writes the normal icon of app id under root.
 func IconPath(root, id string) string {
 	return filepath.Join(root, "applications", "icons", id+".bmp")

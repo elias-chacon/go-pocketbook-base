@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"image"
 	"net/http"
 	"os"
@@ -11,12 +13,14 @@ import (
 	"go-pocketbook-base/internal/launcher/domain"
 	"go-pocketbook-base/internal/launcher/infrastructure/appinstaller"
 	"go-pocketbook-base/internal/launcher/infrastructure/backgrounds"
+	"go-pocketbook-base/internal/launcher/infrastructure/catalogcache"
 	"go-pocketbook-base/internal/launcher/infrastructure/github"
 	"go-pocketbook-base/internal/launcher/infrastructure/iconcache"
 	"go-pocketbook-base/internal/launcher/infrastructure/prefsfile"
 	"go-pocketbook-base/internal/launcher/infrastructure/processlauncher"
 	"go-pocketbook-base/internal/launcher/presentation"
 	"go-pocketbook-base/internal/platform"
+	"go-pocketbook-base/internal/storage"
 	"go-pocketbook-base/internal/toolkit/gfx"
 	"go-pocketbook-base/internal/toolkit/widget"
 )
@@ -45,11 +49,21 @@ func newLauncher(env platform.Env) platform.App {
 	if client == nil {
 		client = &http.Client{Timeout: httpTimeout}
 	}
-	icons := iconcache.Cache{Client: client, Dir: filepath.Join(platform.DefaultRoot, "applications", ".pbgo", "cache", "icons")}
+	root := env.Root // the reader's storage (a temporary folder in tests)
+	if root == "" {
+		root = platform.DefaultRoot
+	}
+	icons := iconcache.Cache{Client: client, Dir: filepath.Join(root, "applications", ".pbgo", "cache", "icons")}
 	registrar := iconRegistrar{icons: icons}
-	prefs := prefsfile.New(platform.DefaultRoot)
-	backgroundsDir := backgrounds.Dir(platform.DefaultRoot)
-	catalog := &loggedCatalog{inner: &github.Catalog{Client: client, Owner: repoOwner, Repo: repoName}}
+	prefs := prefsfile.New(root)
+	backgroundsDir := backgrounds.Dir(root)
+	// The catalog: GitHub, with the icons fetched along (so they are in the cache when the grid is
+	// drawn) and the last answer kept on the reader (so the apps that are not installed show at
+	// once, and offline).
+	catalog := &catalogcache.Catalog{
+		Inner: iconPrefetch{inner: &loggedCatalog{inner: &github.Catalog{Client: client, Owner: repoOwner, Repo: repoName}}, icons: icons},
+		Path:  filepath.Join(root, "applications", ".pbgo", "cache", "catalog.json"),
+	}
 	return &launcher{home: presentation.NewHome(presentation.Config{
 		Width: env.Width, Height: env.Height, Keyboard: env.Keyboard,
 		Tr:    presentation.NewTranslator(env.Lang),
@@ -63,18 +77,67 @@ func newLauncher(env platform.Env) platform.App {
 		},
 		IconFor: iconFor,
 		Notice:  env.Notice,
-		Catalog: catalog, Installer: loggedInstaller{inner: appinstaller.Installer{
-			Client: client, Root: platform.DefaultRoot, Register: registrar.register,
+		Catalog: catalog, After: env.After,
+		CachedCatalog: func(lang string) []domain.Listing {
+			list, _ := catalog.Cached(lang)
+			return list
+		},
+		Installer: loggedInstaller{inner: appinstaller.Installer{
+			Client: client, Root: root, Register: registrar.register,
 		}},
-		Flush: env.Flush,
+		Uninstaller:  uninstaller{root: root},
+		InstalledSum: func(id string) string { return fileSum(filepath.Join(root, "applications", id+".app")) },
+		Flush:        env.Flush,
+		// Only what is already in the cache: drawing the grid never waits for the network.
 		ListingIcon: func(l domain.Listing) image.Image {
-			img, err := icons.Image(l)
-			if err != nil && err != iconcache.ErrNoIcon {
-				platform.Errorf("icon %s: %v", l.ID, err)
-			}
+			img, _ := icons.Cached(l)
 			return img
 		},
 	})}
+}
+
+// iconPrefetch fetches the icon of every listing after the catalog answers, so the grid finds
+// them in the cache. It runs in the background fetch of the home screen, never on the event loop.
+type iconPrefetch struct {
+	inner domain.Catalog
+	icons iconcache.Cache
+}
+
+func (c iconPrefetch) List(lang string) ([]domain.Listing, error) {
+	list, err := c.inner.List(lang)
+	for _, l := range list {
+		if _, ok := c.icons.Cached(l); !ok {
+			if _, ierr := c.icons.Image(l); ierr != nil && ierr != iconcache.ErrNoIcon {
+				platform.Errorf("icon %s: %v", l.ID, ierr)
+			}
+		}
+	}
+	return list, err
+}
+
+// uninstaller removes an app from the reader with everything it kept: the platform removes the
+// home screen entry, the files and the data its manifest lists, and this adds the tables the app
+// had in the shared database (the file goes when no other app has tables left in it).
+type uninstaller struct{ root string }
+
+func (u uninstaller) Uninstall(id string) error {
+	db := filepath.Join(u.root, "applications", ".pbgo", "productivity.db")
+	err := platform.Uninstall(u.root, id, func(appID string) error { return storage.EraseModule(db, appID) })
+	if err != nil {
+		platform.Errorf("uninstall %s: %v", id, err)
+	}
+	return err
+}
+
+// fileSum is the SHA-256 of a file in hex ("" when it cannot be read): what tells an installed app
+// apart from the published build.
+func fileSum(path string) string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
 }
 
 // loggedCatalog and loggedInstaller write what goes wrong on the network to the

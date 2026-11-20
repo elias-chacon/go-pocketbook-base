@@ -19,6 +19,7 @@ func (e *Event) StopPropagation()
 | Callback | Elements | When |
 |---|---|---|
 | `OnClick` | every element | the element was tapped (**bubbles** to the ancestors) |
+| `OnLongPress` | every element | the finger stayed down for `Document.LongPress` (2 s by default) and was released over the element: it runs **instead of** `OnClick`, and bubbles to the first ancestor that has one (an element with no `OnLongPress` in its branch is just clicked) |
 | `OnChange` | check-box/radio/switch, combo-box, inputs, text area, slider, chip, table (`OnSelect`), calendar | the value changed by the user |
 | `OnInput` | slider | while dragging |
 | `OnSubmit` | search input | magnifier tapped or OK on the keyboard |

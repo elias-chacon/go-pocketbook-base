@@ -119,3 +119,29 @@ func TestUpdateStateIsRememberedAndABrokenFileIsForgotten(t *testing.T) {
 		t.Errorf("the update file is not an installed app: %+v", apps)
 	}
 }
+
+func TestFilesRemoveTheAppItsRecordItsLogAndItsDataButNeverOutsideTheFolder(t *testing.T) {
+	root := t.TempDir()
+	write := func(rel string) string {
+		p := filepath.Join(root, filepath.FromSlash(rel))
+		os.MkdirAll(filepath.Dir(p), 0o755)
+		os.WriteFile(p, []byte("x"), 0o644)
+		return p
+	}
+	app, log, rec := write("applications/bible.app"), write("applications/bible.log"), write("applications/.pbgo/bible.json")
+	db, other := write("applications/.pbgo/bible.db"), write("applications/.pbgo/tasks.json")
+	outside := write("applications/keep.txt")
+	if err := NewFiles(root).Remove("bible", []string{"bible.db", "missing.db", "../keep.txt"}); err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range []string{app, log, rec, db} {
+		if _, err := os.Stat(p); err == nil {
+			t.Errorf("%s must be gone", p)
+		}
+	}
+	for _, p := range []string{other, outside} {
+		if _, err := os.Stat(p); err != nil {
+			t.Errorf("%s must stay", p)
+		}
+	}
+}

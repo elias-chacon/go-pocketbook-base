@@ -26,6 +26,10 @@ type Base struct {
 	Hidden    bool
 	Disabled  bool
 	OnClick   Handler
+	// OnLongPress runs instead of OnClick when the finger stayed down for Document.LongPress or
+	// more (2 seconds unless changed) and was released over the element; it bubbles up the tree
+	// like OnClick. An element whose branch has none is simply clicked, however long the touch.
+	OnLongPress Handler
 
 	// Bounds is the border box in design pixels, set by the layout.
 	Bounds geom.Rect

@@ -3,6 +3,7 @@ package presentation
 import (
 	"errors"
 	"image"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -90,7 +91,7 @@ func TestSavingAppliesTheGridTheIconSizeAndKeepsThePreferences(t *testing.T) {
 		t.Fatalf("saved and back home: in=%v saved=%v", h.InSettings(), env.savedPrefs)
 	}
 	want := domain.Preferences{Grid: domain.Grid{Columns: 3, Rows: 2}, IconSize: 180}
-	if env.savedPrefs[0] != want {
+	if !reflect.DeepEqual(env.savedPrefs[0], want) {
 		t.Errorf("saved %+v, want %+v", env.savedPrefs[0], want)
 	}
 	if len(tiles(h)) != 6 || h.Pages() != 5 {

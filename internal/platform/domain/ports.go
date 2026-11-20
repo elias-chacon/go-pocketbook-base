@@ -40,3 +40,15 @@ type DesktopRegistrar interface {
 	// Register reports whether the home screen configuration was modified.
 	Register(r Registration) (changed bool, err error)
 }
+
+// DesktopRemover takes an app off the reader's home screen: its entry and its icons.
+type DesktopRemover interface {
+	// Unregister reports whether the home screen configuration was modified.
+	Unregister(appID string) (changed bool, err error)
+}
+
+// AppFiles deletes the files of an app: its program, its record, its log and the given files of
+// the apps' data folder (a file that does not exist is not a failure).
+type AppFiles interface {
+	Remove(appID string, dataFiles []string) error
+}

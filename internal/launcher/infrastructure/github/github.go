@@ -124,7 +124,7 @@ func (c *Catalog) List(lang string) ([]domain.Listing, error) {
 		out = append(out, domain.Listing{
 			ID: e.ID, Title: m.TitleIn(lang), Description: m.DescriptionIn(lang),
 			Version: strings.TrimPrefix(e.Version, "v"), URL: url, Size: e.Size, SHA256: e.SHA256,
-			Manifest: e.Manifest, IconURL: urls[e.Icon],
+			Manifest: e.Manifest, IconURL: urls[e.Icon], AppSHA256: e.AppSHA256,
 		})
 	}
 	c.list, c.langs, c.at = out, lang, now

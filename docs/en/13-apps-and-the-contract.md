@@ -46,6 +46,8 @@ the first run (so the Launcher lists it, and the home screen shows its icon). He
 
 ## The manifest (`app.json`)
 
+Besides the id, titles, description, group and `intents`, a manifest may list **`data`** (files of the app in `applications/.pbgo`, e.g. its own database: they are deleted when the Launcher removes the app) and **`shares`** (files it uses together with other apps, e.g. the accounts: deleted only when no other installed app shares them). Plain file names only; the tables an app keeps in the shared `productivity.db` are the ones named `<id>_...` and are dropped too.
+
 ```json
 {
   "id": "hello",

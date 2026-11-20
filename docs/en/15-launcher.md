@@ -5,27 +5,28 @@
 `apps/launcher` is the App Launcher of the ecosystem: the home screen of the apps built on this base. It is an app like any
 other (it follows the [contract](13-apps-and-the-contract.md)) and the composition root of the `internal/launcher` context.
 
-> **Status.** The home screen, running an app, the search and the GitHub catalog with one-tap install are done in code (the
-> catalog, the download and the settings are not verified on the reader yet).
+> **Status.** The home screen with every app of the catalog, running an app, install by tap, update by checksum, hide and remove are done in code (the
+> catalog, the download, the update, the removal and the long press are not verified on the reader yet).
 
 ## What it does today
 
-- Lists the apps **installed** on the reader as a paged grid of **icon + title** (4 × 5 tiles per page). The apps are the ones
-  that left a record in `applications/.pbgo` the first time they ran (see the contract); the Launcher does not list itself.
-- Tapping a tile **runs the app**. The left and right keys turn the page (the arrows at the bottom do too).
+- Lists **every app of the ecosystem** as a paged grid of **icon + title** (4 × 5 tiles per page): the apps **installed** on the reader (the ones
+  that left a record in `applications/.pbgo` the first time they ran) **and the apps that only the catalog has**, taken from the **latest GitHub
+  Release** (`catalog.json`, kept on the reader in `applications/.pbgo/cache/catalog.json`, so they show at once and offline; the Launcher asks
+  GitHub in the background when it opens and redraws when the answer comes). The Launcher does not list itself.
+- A tap on an installed tile **runs the app**; a tap on one that is **not installed** (it says *Tap to install*) **installs it**: *Downloading…*,
+  the zip, the size and SHA-256 check, `<id>.app` extracted into `applications/` through a temporary file and registered on the home screen (with the
+  icon the app published as `icon.png`, or the default one). The left and right keys turn the page (the arrows at the bottom do too).
+- A **long press (2 seconds)** on a tile opens the window of the app: **Update** (offered only when the app is installed and the **SHA-256 of its
+  file differs from the `app_sha256` of the release**: the checksum decides, never the version), **Install** (when it is missing), **Hide from the home screen**
+  (installed or not) and **Remove from the reader**, which after a confirmation deletes the app and everything it left: its entry in `view.json` and its
+  icons, the program, its record and log, the files its manifest lists as `data` (its database), its tables in the shared database (the file goes when no
+  other app has tables in it) and the files it `shares` with other apps (the accounts) only when no other installed app shares them.
 - When the app asks to exit (the *Exit* menu, a Back key) the reader **comes back to the Launcher**; Home always goes to the
   system's home screen.
-- A **search field** filters in real time (as the text changes) by title, description and id, ignoring case and accents. While
-  searching, the answer has two sections: `-- Installed --` (the matching tiles, 3 rows per page) and `-- Available --` (the
-  apps of the catalog that match and are not installed, up to 4 rows and "… and N more"). Without a catalog (or without
-  network) the second section says why and the installed ones still answer.
-- **Install with one tap.** The *Available* rows come from the **latest GitHub Release** of the repository (`elias-chacon/go-pocketbook-base`):
-  every app is a `<id>.zip` (the `<id>.app` and its `app.json`) and a `catalog.json` lists them with manifest, size and SHA-256, so the list
-  costs one small download. Tapping a row shows *Downloading…*, downloads the zip, checks its size and SHA-256, extracts the `<id>.app` into
-  `applications/`, registers it on the home screen (with the
-  icon the app published as `icon.png`, or the default one) and moves it to *Installed*. Each *Available* row shows that icon (downloaded once, kept in
-  `applications/.pbgo/cache/icons`).
-  The list is kept for 5 minutes. It needs Wi-Fi on; without it (or without a release) the section shows the error.
+- A **search field** filters the whole grid in real time (as the text changes) by title, description and id, ignoring case and accents.
+- **Settings** also lists the apps: **Manage apps** (a `Table` of the visible apps, installed or not; select one and open its window, as the long press does)
+  and **Hidden apps** (a `Table` of the hidden ones, with **Show the selected app again**). The hidden ids are kept in `launcher.json`.
 - **Settings** (the *Settings* button in the footer, or the Menu key; left leaves without saving): the **grid** (columns and rows, 1 to 8), the **icon size**
   (96 to 240), the **language** (shared by every app: the others read it when they start) and a **background image**, chosen among the pictures
   (PNG, JPG, GIF, BMP) the person copied to `applications/backgrounds` on the reader. The preferences are kept in `applications/.pbgo/launcher.json`; a
@@ -51,13 +52,14 @@ Launcher ──exec──► app          (PBGO_LAUNCHER=/…/launcher.app)
 
 | Layer | Package | Holds |
 |---|---|---|
-| domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (translated, sorted ignoring case and accents), `Grid` and paging, `Matches`/`FilterTiles`/`FilterListings`, `Listing`, `SearchResult`, `Preferences` (grid, icon size and background, always inside their bounds), the `AppLauncher`, `Catalog`, `Installer` and `PreferencesStore` ports |
-| application | `internal/launcher/application` | `Home`: the tiles of the installed apps, and opening one; `Search`: installed and available apps for a query |
+| domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (translated, sorted ignoring case and accents), `Grid` and paging, `AppsOf` (installed + catalog, sorted), `Visible`/`Hidden`, `Matches`/`FilterTiles`, `Listing` (with `AppSHA256`), `Preferences` (grid, icon size, background and hidden apps, always inside their bounds), the `AppLauncher`, `Catalog`, `Installer`, `Uninstaller` and `PreferencesStore` ports |
+| application | `internal/launcher/application` | `Home`: every app as a tile (`All`), and opening one |
 | infrastructure | `internal/launcher/infrastructure/processlauncher` | starts an app by replacing the process |
 | | `…/infrastructure/github` | the `Catalog`: the latest release's `catalog.json` and the apps it lists (cached 5 min) |
 | | `…/infrastructure/prefsfile` | the `PreferencesStore`: `applications/.pbgo/launcher.json` |
 | | `…/infrastructure/backgrounds` | lists the pictures of `applications/backgrounds` |
-| | `…/infrastructure/iconcache` | downloads the catalog's icons (PNG) and keeps them on the reader |
+| | `…/infrastructure/iconcache` | downloads the catalog's icons (PNG) and keeps them on the reader (`Cached` never uses the network) |
+| | `…/infrastructure/catalogcache` | keeps the last catalog on the reader and gives it back when the network fails |
 | | `…/infrastructure/appinstaller` | the `Installer`: download the zip, check size and SHA-256, extract `<id>.app` through a temporary file, register |
 | presentation | `internal/launcher/presentation` | the home screen, from the toolkit's widgets (`Image`, `Grid`, `Label`…) |
 | composition root | `apps/launcher` | wires the platform to the context; loads the BMP icons |

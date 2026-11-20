@@ -15,6 +15,12 @@ type Home struct {
 	SelfID   string               // the Launcher's own id: it does not list itself
 }
 
+// Apps is every app of the ecosystem as a tile, in lang: the installed ones and the ones of the
+// catalog (listings) that are not installed yet.
+func (h Home) All(listings []domain.Listing, lang string) []domain.Tile {
+	return domain.AppsOf(h.Apps.List(), listings, lang, h.SelfID)
+}
+
 // Tiles are the installed apps as tiles, in lang.
 func (h Home) Tiles(lang string) []domain.Tile {
 	return domain.TilesFrom(h.Apps.List(), lang, h.SelfID)

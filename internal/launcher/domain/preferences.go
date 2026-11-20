@@ -1,6 +1,9 @@
 package domain
 
-import "strings"
+import (
+	"sort"
+	"strings"
+)
 
 // The bounds and the default of the size of an app icon, in design pixels.
 const (
@@ -15,6 +18,8 @@ type Preferences struct {
 	Grid     Grid   `json:"grid"`
 	IconSize int    `json:"iconSize"`   // edge of an app icon, in design pixels
 	Image    string `json:"background"` // file name in the backgrounds folder ("" = none)
+	// HiddenApps are the ids of the apps kept off the home screen (installed or not).
+	HiddenApps []string `json:"hidden,omitempty"`
 }
 
 // DefaultPreferences are the preferences of a Launcher where nothing was chosen.
@@ -38,6 +43,36 @@ func (p Preferences) Normalized() Preferences {
 	if strings.ContainsAny(p.Image, "/\\") || p.Image == ".." { // a file name, never a path
 		p.Image = ""
 	}
+	p.HiddenApps = cleanIDs(p.HiddenApps)
+	return p
+}
+
+// cleanIDs drops blanks and repeats and sorts the ids.
+func cleanIDs(ids []string) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, id := range ids {
+		if id = strings.TrimSpace(id); id != "" && !seen[id] {
+			seen[id] = true
+			out = append(out, id)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+// WithHidden returns the preferences with app id hidden (or shown again).
+func (p Preferences) WithHidden(id string, hidden bool) Preferences {
+	var ids []string
+	for _, h := range p.HiddenApps {
+		if h != id {
+			ids = append(ids, h)
+		}
+	}
+	if hidden {
+		ids = append(ids, id)
+	}
+	p.HiddenApps = cleanIDs(ids)
 	return p
 }
 

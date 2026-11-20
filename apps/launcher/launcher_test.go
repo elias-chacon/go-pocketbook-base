@@ -32,6 +32,11 @@ func installed(id, title string) platform.InstalledApp {
 	}
 }
 
+// offline is a network that never answers: the tests must not reach GitHub (nor write to a reader path).
+type offline struct{}
+
+func (offline) RoundTrip(*http.Request) (*http.Response, error) { return nil, errors.New("offline") }
+
 func testEnv(t *testing.T, apps ...platform.InstalledApp) platform.Env {
 	t.Helper()
 	m, err := platform.ParseManifest(manifest)
@@ -39,8 +44,8 @@ func testEnv(t *testing.T, apps ...platform.InstalledApp) platform.Env {
 		t.Fatal(err)
 	}
 	return platform.Env{
-		Width: 1404, Height: 1872, Manifest: m, Lang: "pt-BR", Version: "1.2.3",
-		Apps: registry{apps: apps}, Keyboard: &widget.FakeKeyboard{},
+		Root: t.TempDir(), Width: 1404, Height: 1872, Manifest: m, Lang: "pt-BR", Version: "1.2.3",
+		Apps: registry{apps: apps}, Keyboard: &widget.FakeKeyboard{}, HTTP: &http.Client{Transport: offline{}},
 	}
 }
 

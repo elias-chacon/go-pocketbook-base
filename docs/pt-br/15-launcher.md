@@ -5,25 +5,28 @@
 O `apps/launcher` é o App Launcher do ecossistema: a tela inicial dos apps feitos sobre esta base. É um app como os outros
 (segue o [contrato](13-apps-e-o-contrato.md)) e a raiz de composição do contexto `internal/launcher`.
 
-> **Estado.** A tela inicial, a execução de um app, a busca e o catálogo do GitHub com instalação por toque estão prontos no
-> código (o catálogo, o download e as configurações ainda não foram verificados no leitor).
+> **Estado.** A tela inicial com todos os apps do catálogo, a execução de um app, a instalação por toque, a atualização por checksum, esconder e remover estão prontos no
+> código (o catálogo, o download, a atualização, a remoção e o toque longo ainda não foram verificados no leitor).
 
 ## O que faz hoje
 
-- Lista os apps **instalados** no leitor numa grade paginada de **ícone + título** (4 × 5 blocos por página). Os apps são os que
-  deixaram um registro em `applications/.pbgo` na primeira vez que rodaram (veja o contrato); o Launcher não lista a si mesmo.
-- Tocar num bloco **executa o app**. As teclas esquerda e direita viram a página (as setas de baixo também).
+- Lista **todos os apps do ecossistema** numa grade paginada de **ícone + título** (4 × 5 blocos por página): os apps **instalados** no leitor (os que
+  deixaram um registro em `applications/.pbgo` na primeira vez que rodaram) **e os apps que só o catálogo tem**, tirados da **última Release do GitHub**
+  (`catalog.json`, guardado no leitor em `applications/.pbgo/cache/catalog.json`, então aparecem na hora e offline; o Launcher consulta o GitHub em segundo
+  plano ao abrir e redesenha quando a resposta chega). O Launcher não lista a si mesmo.
+- Tocar num bloco de app instalado **executa o app**; tocar num **não instalado** (diz *Toque para instalar*) **instala**: *Baixando…*, o zip, a
+  conferência de tamanho e SHA-256, o `<id>.app` extraído para `applications/` por um arquivo temporário e registrado na tela inicial (com o ícone que o app
+  publicou como `icon.png`, ou o padrão). As teclas esquerda e direita viram a página (as setas de baixo também).
+- Um **toque longo (2 segundos)** num bloco abre a janela do app: **Atualizar** (só aparece quando o app está instalado e o **SHA-256 do arquivo dele é
+  diferente do `app_sha256` da release**: quem decide é o checksum, nunca a versão), **Instalar** (quando falta), **Esconder da tela inicial** (instalado ou não) e
+  **Remover do leitor**, que após uma confirmação apaga o app e tudo que ele deixou: a entrada no `view.json` e os ícones, o programa, o registro e o log, os
+  arquivos que o manifesto lista em `data` (o banco dele), as tabelas dele no banco compartilhado (o arquivo some quando nenhum outro app tem tabelas nele) e os
+  arquivos que ele `shares` com outros apps (as contas) só quando nenhum outro app instalado os compartilha.
 - Quando o app pede para sair (o menu *Sair*, uma tecla Voltar) o leitor **volta ao Launcher**; o Home sempre vai para a tela
   inicial do sistema.
-- Um **campo de busca** filtra em tempo real (a cada mudança do texto) por título, descrição e id, sem ligar para maiúsculas e
-  acentos. Ao buscar, a resposta tem duas seções: `-- Instalados --` (os blocos que combinam, 3 linhas por página) e
-  `-- Disponíveis --` (os apps do catálogo que combinam e ainda não estão instalados, até 4 linhas e "… e mais N"). Sem catálogo
-  (ou sem rede) a segunda seção diz o motivo e os instalados continuam respondendo.
-- **Instalação com um toque.** As linhas de *Disponíveis* vêm da **última Release do GitHub** do repositório
-  (`elias-chacon/go-pocketbook-base`): cada app é um `<id>.zip` (o `<id>.app` e o seu `app.json`) e um `catalog.json` os lista com manifesto, tamanho e SHA-256, então a lista custa um download pequeno.
-  Tocar numa linha mostra *Baixando…*, baixa o zip, confere o tamanho e o SHA-256, extrai o `<id>.app` para `applications/`, registra na tela
-  inicial (com o ícone que o app publicou como `icon.png`, ou o padrão) e o move
-  para *Instalados*. Cada linha de *Disponíveis* mostra esse ícone (baixado uma vez e guardado em `applications/.pbgo/cache/icons`). A lista fica guardada por 5 minutos. Precisa do Wi-Fi ligado; sem ele (ou sem release) a seção mostra o erro.
+- Um **campo de busca** filtra a grade inteira em tempo real (a cada mudança do texto) por título, descrição e id, sem ligar para maiúsculas e acentos.
+- As **Configurações** também listam os apps: **Gerenciar apps** (uma `Table` dos apps visíveis, instalados ou não; selecione um e abra a janela dele, como o toque
+  longo faz) e **Apps escondidos** (uma `Table` dos escondidos, com **Mostrar de novo o app selecionado**). Os ids escondidos ficam em `launcher.json`.
 - **Configurações** (o botão *Configurações* no rodapé, ou a tecla Menu; a tecla esquerda sai sem salvar): a **grade** (colunas e linhas, de 1 a 8), o **tamanho dos ícones**
   (96 a 240), o **idioma** (compartilhado por todos os apps: os outros o leem ao abrir) e uma **imagem de fundo**, escolhida entre as imagens
   (PNG, JPG, GIF, BMP) que a pessoa copiou para `applications/backgrounds` no leitor. As preferências ficam em `applications/.pbgo/launcher.json`; a imagem
@@ -48,7 +51,7 @@ Launcher ──exec──► app          (PBGO_LAUNCHER=/…/launcher.app)
 
 | Camada | Pacote | Guarda |
 |---|---|---|
-| domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (traduzido, ordenado sem ligar para maiúsculas e acentos), `Grid` e paginação, `Matches`/`FilterTiles`/`FilterListings`, `Listing`, `SearchResult`, `Preferences` (grade, tamanho do ícone e fundo, sempre dentro dos limites), as portas `AppLauncher`, `Catalog`, `Installer` e `PreferencesStore` |
+| domain | `internal/launcher/domain` | `Tile`, `TilesFrom` (traduzido, ordenado sem ligar para maiúsculas e acentos), `Grid` e paginação, `AppsOf` (instalados + catálogo, ordenados), `Visible`/`Hidden`, `Matches`/`FilterTiles`, `Listing` (com `AppSHA256`), `Preferences` (grade, tamanho do ícone, fundo e apps escondidos, sempre dentro dos limites), as portas `AppLauncher`, `Catalog`, `Installer`, `Uninstaller` e `PreferencesStore` |
 | application | `internal/launcher/application` | `Home`: os blocos dos apps instalados e a abertura de um; `Search`: apps instalados e disponíveis para uma busca |
 | infrastructure | `internal/launcher/infrastructure/processlauncher` | inicia um app substituindo o processo |
 | | `…/infrastructure/github` | o `Catalog`: o `catalog.json` da última release e os apps que ele lista (guardados por 5 min) |

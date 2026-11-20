@@ -2,6 +2,7 @@ package widget
 
 import (
 	"image"
+	"time"
 
 	"go-pocketbook-base/internal/kernel/geom"
 	"go-pocketbook-base/internal/toolkit/gfx"
@@ -24,6 +25,10 @@ type Document struct {
 	// OnInvalidate is called when the screen needs repainting (the device
 	// hooks it to InkView's Repaint).
 	OnInvalidate func()
+	// LongPress is how long a touch must last to count as a long press (DefaultLongPress when 0).
+	LongPress time.Duration
+	// Now is the clock of the touches (time.Now when nil; tests move it).
+	Now func() time.Time
 
 	modal      *Modal // the open modal, below the popups
 	popups     []Widget
@@ -31,6 +36,7 @@ type Document struct {
 	focus      Widget
 	capture    Widget
 	swallow    bool        // the current touch only dismissed a popup
+	pressedAt  time.Time   // when the current touch went down
 	canvas     *gfx.Canvas // reused between frames: a screen-size RGBA is 10 MB
 
 	// partial repaint (see Update)

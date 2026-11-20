@@ -6,6 +6,7 @@ import (
 	"image"
 	"strings"
 	"testing"
+	"time"
 
 	"go-pocketbook-base/internal/launcher/application"
 	"go-pocketbook-base/internal/launcher/domain"
@@ -40,132 +41,91 @@ func find(h *Home, id string) widget.Widget {
 
 func texts(h *Home) string {
 	var sb strings.Builder
-	h.Doc.Walk(func(w widget.Widget) bool {
+	collect := func(w widget.Widget) bool {
 		if l, ok := w.(*widget.Label); ok {
 			sb.WriteString(l.Text + "|")
 		}
 		return true
-	})
+	}
+	h.Doc.Walk(collect)
 	return sb.String()
 }
 
 func listings(n int) []domain.Listing {
 	out := make([]domain.Listing, n)
 	for i := range out {
-		out[i] = domain.Listing{ID: fmt.Sprintf("web%02d", i), Title: fmt.Sprintf("Web %02d", i), Version: "1.0.0"}
+		out[i] = domain.Listing{ID: fmt.Sprintf("web%02d", i), Title: fmt.Sprintf("Web %02d", i), Version: "1.0.0", AppSHA256: "new"}
 	}
 	return out
 }
 
-func TestWithoutAQueryThereAreNoSections(t *testing.T) {
+func TestTheHomeShowsTheAppsOfTheCatalogThatAreNotInstalledToo(t *testing.T) {
 	h := searchHome(3, catalog{list: listings(2)})
 	h.Doc.Layout()
-	if find(h, "search.installed") != nil || find(h, "search.available") != nil || len(tiles(h)) != 3 {
-		t.Error("the plain home is the grid of installed apps only")
+	if len(tiles(h)) != 5 || find(h, "app-web00") == nil || find(h, "app-app01") == nil {
+		t.Fatalf("installed and missing apps share the grid: %d tiles", len(tiles(h)))
 	}
-	if h.Query() != "" {
-		t.Error("no query")
+	if !strings.Contains(texts(h), "Toque para instalar") {
+		t.Error("a missing app says that a tap installs it")
 	}
 }
 
-func TestSearchingShowsInstalledAndAvailableSections(t *testing.T) {
-	h := searchHome(5, catalog{list: append(listings(2), domain.Listing{ID: "app01", Title: "App app01"})})
-	h.Search("  app0  ")
+func TestTheCatalogFailingOrMissingLeavesTheInstalledApps(t *testing.T) {
+	for name, cat := range map[string]domain.Catalog{"offline": catalog{err: errors.New("sem rede")}, "none": nil} {
+		h := searchHome(2, cat)
+		h.Doc.Layout()
+		if len(tiles(h)) != 2 {
+			t.Errorf("%s: %d tiles", name, len(tiles(h)))
+		}
+	}
+}
+
+func TestSearchFiltersTheWholeGridInstalledAndMissing(t *testing.T) {
+	h := searchHome(5, catalog{list: listings(2)})
+	h.Search("  web  ")
 	h.Doc.Layout()
-	if h.Query() != "app0" || len(tiles(h)) != 5 {
+	if h.Query() != "web" || len(tiles(h)) != 2 {
 		t.Fatalf("query %q, %d tiles", h.Query(), len(tiles(h)))
 	}
-	if find(h, "search.installed") == nil || find(h, "search.available") == nil {
-		t.Fatal("both sections are shown")
-	}
-	if find(h, "avail-web00") != nil {
-		t.Error("web00 does not match the query")
-	}
-
-	h.Search("web")
-	h.Doc.Layout()
-	if len(tiles(h)) != 0 || find(h, "avail-web00") == nil || find(h, "avail-web01") == nil {
-		t.Error("only the catalog matches: no installed tiles, two rows")
-	}
-	if !strings.Contains(texts(h), "Nenhum resultado para “web”") {
-		t.Errorf("an empty installed section says so: %s", texts(h))
-	}
-	if find(h, "avail-app01") != nil {
-		t.Error("an installed app is not listed as available")
-	}
-
 	h.Search("")
 	h.Doc.Layout()
-	if find(h, "search.available") != nil || len(tiles(h)) != 5 {
-		t.Error("clearing the query brings the plain home back")
+	if len(tiles(h)) != 7 {
+		t.Errorf("clearing the query brings every app back: %d", len(tiles(h)))
 	}
-}
-
-func TestTheSearchFieldFiltersWhenItsTextChanges(t *testing.T) {
-	h := searchHome(5, nil)
-	h.Doc.Layout()
 	in := find(h, "home-search").(*widget.Input)
 	in.Value = "app03"
 	widget.Fire(in.OnChange, in)
 	h.Doc.Layout()
 	if len(tiles(h)) != 1 || find(h, "app-app03") == nil {
-		t.Errorf("one tile matches: %d", len(tiles(h)))
-	}
-	if find(h, "search-nocatalog") == nil {
-		t.Error("without a catalog the available section explains it")
+		t.Errorf("the field filters when its text changes: %d", len(tiles(h)))
 	}
 }
 
-func TestTheCatalogFailingIsShownAndTheInstalledStillAnswer(t *testing.T) {
-	h := searchHome(2, catalog{err: errors.New("sem rede")})
-	h.Search("app")
-	h.Doc.Layout()
-	if len(tiles(h)) != 2 || !strings.Contains(texts(h), "Catálogo indisponível: sem rede") {
-		t.Errorf("%d tiles; %s", len(tiles(h)), texts(h))
-	}
-}
-
-func TestOnlyAFewAvailableAppsAreListedAndTheRestIsCounted(t *testing.T) {
-	h := searchHome(1, catalog{list: listings(7)})
-	h.Search("web")
-	h.Doc.Layout()
-	rows := 0
-	h.Doc.Walk(func(w widget.Widget) bool {
-		if strings.HasPrefix(w.Elem().ID, "avail-") {
-			rows++
-		}
-		return true
+func TestTheCatalogIsFetchedInTheBackgroundAndShownWhenItArrives(t *testing.T) {
+	var later []func()
+	h := NewHome(Config{
+		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), Catalog: catalog{list: listings(2)},
+		CachedCatalog: func(string) []domain.Listing { return listings(1) },
+		After:         func(_ time.Duration, f func()) { later = append(later, f) },
+		Home:          application.Home{Apps: registry{apps: apps(1)}, Launcher: &launcher{}, SelfID: "launcher"},
+		IconFor:       func(domain.Tile) image.Image { return image.NewGray(image.Rect(0, 0, 128, 128)) },
 	})
-	if rows != availableMax || !strings.Contains(texts(h), "… e mais 3") {
-		t.Errorf("%d rows; %s", rows, texts(h))
-	}
-}
-
-func TestASearchPageFitsTheScreenAndKeepsPaging(t *testing.T) {
-	h := searchHome(40, catalog{list: listings(9)})
-	h.Search("app")
 	h.Doc.Layout()
-	if len(tiles(h)) != 4*searchRows || h.Pages() != 4 {
-		t.Fatalf("a search page holds %d tiles (3 rows), %d pages", len(tiles(h)), h.Pages())
+	if len(tiles(h)) != 2 {
+		t.Fatalf("the kept catalog shows at once: %d tiles", len(tiles(h)))
 	}
-	h.Search("")
-	h.Search("app")
-	if h.Page() != 0 {
-		t.Error("a new search starts on the first page")
-	}
-	h.Doc.Layout()
-	root := h.Doc.Root.Elem()
-	footer := root.Children()[3].Elem().Bounds
-	if footer.Bottom() > h.Doc.H+0.01 {
-		t.Errorf("the footer is pushed off the screen: %.0f > %.0f", footer.Bottom(), h.Doc.H)
-	}
-	for _, c := range root.Children()[2].Elem().Children() {
-		if b := c.Elem().Bounds; b.Bottom() > footer.Y+0.01 {
-			t.Errorf("%s overflows into the footer: %+v", c.Elem().ID, b)
+	for i := 0; i < 200 && len(tiles(h)) != 3; i++ {
+		fs := later
+		later = nil
+		for _, f := range fs {
+			f()
 		}
+		time.Sleep(5 * time.Millisecond)
 	}
-	// every tile can be touched at its center
-	tap(h.Doc, tiles(h)[0])
+	h.Doc.Layout()
+	if len(tiles(h)) != 3 {
+		t.Errorf("the answer of the network is shown: %d tiles", len(tiles(h)))
+	}
 }
 
 type installer struct {
@@ -195,7 +155,7 @@ func installHome(inst *installer, flushed *int) (*Home, *registry) {
 	return h, reg
 }
 
-func TestTappingAnAvailableAppDownloadsItAndMovesItToInstalled(t *testing.T) {
+func TestTappingAMissingAppDownloadsAndInstallsIt(t *testing.T) {
 	flushed := 0
 	inst := &installer{}
 	h, reg := installHome(inst, &flushed)
@@ -207,72 +167,48 @@ func TestTappingAnAvailableAppDownloadsItAndMovesItToInstalled(t *testing.T) {
 		reg.apps[1].ID = "web00"
 		reg.apps[1].Title = map[string]string{"pt-BR": "Web 00"}
 	}
-	h.Search("web")
 	h.Doc.Layout()
-	tap(h.Doc, find(h, "avail-web00"))
-
+	tap(h.Doc, find(h, "app-web00"))
 	if len(inst.installed) != 1 || inst.installed[0] != "web00" || flushed != 1 {
 		t.Fatalf("installed %v, flushed %d", inst.installed, flushed)
 	}
 	h.Doc.Layout()
-	if find(h, "app-web00") == nil || find(h, "avail-web00") != nil || find(h, "avail-web01") == nil {
-		t.Error("web00 is installed now; web01 is still available")
-	}
 	if !strings.Contains(texts(h), "“Web 00” instalado") {
 		t.Errorf("the result is told: %s", texts(h))
 	}
+	if h.all[1].ID != "web00" && h.all[2].ID != "web00" {
+		t.Error("web00 is in the list")
+	}
+	for _, tl := range h.all {
+		if tl.ID == "web00" && !tl.Installed {
+			t.Error("web00 is installed now")
+		}
+	}
 }
 
-func TestAFailedInstallIsToldAndTheListsStayAsTheyWere(t *testing.T) {
+func TestAFailedInstallIsTold(t *testing.T) {
 	flushed := 0
 	h, _ := installHome(&installer{err: errors.New("sem rede")}, &flushed)
-	h.Search("web")
 	h.Doc.Layout()
-	tap(h.Doc, find(h, "avail-web01"))
+	tap(h.Doc, find(h, "app-web01"))
 	h.Doc.Layout()
-	if !strings.Contains(texts(h), "Não foi possível instalar “Web 01”: sem rede") || find(h, "avail-web01") == nil {
+	if !strings.Contains(texts(h), "Não foi possível instalar “Web 01”: sem rede") {
 		t.Errorf("%s", texts(h))
 	}
 }
 
-func TestWithoutAnInstallerTheRowsOnlyShow(t *testing.T) {
-	h := searchHome(1, catalog{list: listings(1)})
-	h.Search("web")
-	h.Doc.Layout()
-	if row := find(h, "avail-web00"); row == nil || row.Elem().OnClick != nil {
-		t.Error("a row without an installer is not tappable")
-	}
-}
-
-func TestAnAvailableRowShowsTheIconOfTheCatalogWhenThereIsOne(t *testing.T) {
-	with := map[string]bool{"web00": true} // web01 has no icon
+func TestAMissingAppShowsTheIconOfTheCatalogWhenThereIsOne(t *testing.T) {
+	asked := map[string]bool{}
 	h := NewHome(Config{
-		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"),
-		Catalog: catalog{list: listings(2)},
+		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), Catalog: catalog{list: listings(2)},
 		ListingIcon: func(l domain.Listing) image.Image {
-			if with[l.ID] {
-				return image.NewGray(image.Rect(0, 0, 128, 128))
-			}
-			return nil
+			asked[l.ID] = true
+			return image.NewGray(image.Rect(0, 0, 128, 128))
 		},
 		Home: application.Home{Apps: registry{}, Launcher: &launcher{}, SelfID: "launcher"},
 	})
-	h.Search("web")
 	h.Doc.Layout()
-
-	images := func(id string) int {
-		n := 0
-		for _, c := range find(h, id).Elem().Children() {
-			if _, ok := c.(*widget.Image); ok {
-				n++
-			}
-		}
-		return n
-	}
-	if images("avail-web00") != 1 || images("avail-web01") != 0 {
-		t.Errorf("web00 shows its icon, web01 does not: %d %d", images("avail-web00"), images("avail-web01"))
-	}
-	if b := find(h, "avail-web00").Elem().Bounds; b.Bottom() > h.Doc.H {
-		t.Errorf("the row fits the screen: %+v", b)
+	if !asked["web00"] || !asked["web01"] {
+		t.Errorf("the icons come from the catalog cache: %v", asked)
 	}
 }

@@ -28,13 +28,26 @@ type Cache struct {
 	Dir    string
 }
 
+// Cached is the icon of a listing only when it is already kept: it never uses the network, so a
+// screen can draw many of them without waiting for one.
+func (c Cache) Cached(l domain.Listing) (image.Image, bool) {
+	data, err := os.ReadFile(c.path(l))
+	if err != nil {
+		return nil, false
+	}
+	img, err := png.Decode(bytes.NewReader(data))
+	return img, err == nil
+}
+
+func (c Cache) path(l domain.Listing) string { return filepath.Join(c.Dir, l.ID+"-"+l.Version+".png") }
+
 // Image is the icon of a listing: from the cache when it is there, otherwise
 // downloaded and kept. A version change is a new file, so a new icon shows up.
 func (c Cache) Image(l domain.Listing) (image.Image, error) {
 	if l.IconURL == "" {
 		return nil, ErrNoIcon
 	}
-	path := filepath.Join(c.Dir, l.ID+"-"+l.Version+".png")
+	path := c.path(l)
 	if data, err := os.ReadFile(path); err == nil {
 		if img, err := png.Decode(bytes.NewReader(data)); err == nil {
 			return img, nil

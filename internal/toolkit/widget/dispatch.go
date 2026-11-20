@@ -1,6 +1,13 @@
 package widget
 
-import "go-pocketbook-base/internal/kernel/geom"
+import (
+	"time"
+
+	"go-pocketbook-base/internal/kernel/geom"
+)
+
+// DefaultLongPress is how long a touch lasts to be a long press.
+const DefaultLongPress = 2 * time.Second
 
 // hit returns the deepest visible element containing p, or nil.
 func hit(w Widget, p geom.Point) Widget {
@@ -82,6 +89,7 @@ func (d *Document) pointerDown(p geom.Point) {
 		return
 	}
 	d.capture = d.TargetAt(p)
+	d.pressedAt = d.now()
 	d.deliver(d.capture, &PointerEvent{Type: PointerDown, X: p.X, Y: p.Y})
 }
 
@@ -92,9 +100,44 @@ func (d *Document) pointerUp(p geom.Point) {
 		return
 	}
 	d.deliver(target, &PointerEvent{Type: PointerUp, X: p.X, Y: p.Y})
-	if target.Elem().Bounds.Contains(p) {
-		d.click(target, p)
+	if !target.Elem().Bounds.Contains(p) {
+		return
 	}
+	if d.now().Sub(d.pressedAt) >= d.longPressTime() && d.longPress(target, p) {
+		return
+	}
+	d.click(target, p)
+}
+
+func (d *Document) now() time.Time {
+	if d.Now != nil {
+		return d.Now()
+	}
+	return time.Now()
+}
+
+func (d *Document) longPressTime() time.Duration {
+	if d.LongPress > 0 {
+		return d.LongPress
+	}
+	return DefaultLongPress
+}
+
+// longPress bubbles OnLongPress up from target and reports whether an element had one.
+func (d *Document) longPress(target Widget, p geom.Point) bool {
+	ev := &Event{Target: target, X: p.X, Y: p.Y}
+	handled := false
+	for w := target; w != nil && !ev.stopped; w = w.Elem().parent {
+		if h := w.Elem().OnLongPress; h != nil {
+			handled = true
+			h(ev)
+			break
+		}
+	}
+	if handled {
+		d.Invalidate()
+	}
+	return handled
 }
 
 func (d *Document) insidePopup(p geom.Point) bool {

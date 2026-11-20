@@ -147,7 +147,7 @@ func Run(cfg Config, factory Factory) error {
 		intent = nil
 	}
 	env := Env{
-		Manifest: m, Lang: lang, Version: version.Value, Notice: notice,
+		Manifest: m, Lang: lang, Version: version.Value, Notice: notice, Root: root,
 		Settings: settings, Apps: apps, HTTP: reader.HTTPClient(httpTimeout), Intent: intent,
 		Send: application.Intents{
 			Apps: apps, SelfID: m.ID, SelfExe: exe,
@@ -240,3 +240,13 @@ func (f registrarFunc) Register(r domain.Registration) (bool, error) { return f(
 // Chrome is the standard top bar every app puts above its screens: the app name with
 // About and Exit, in the language of the reader (see widget.AppChrome).
 func Chrome(env Env) widget.AppChrome { return application.Chrome(env) }
+
+// Uninstall removes an app and everything it left on the reader (see application.Uninstall):
+// the home screen entry and icons, the program, its record and log, the data files its manifest
+// lists and what eraseData drops from databases (nil: nothing).
+func Uninstall(root, appID string, eraseData func(appID string) error) error {
+	return application.Uninstall{
+		Apps: jsonfiles.NewApps(root), Desktop: reader.DesktopRegistrar{Root: root},
+		Files: jsonfiles.NewFiles(root), EraseData: eraseData,
+	}.Run(appID)
+}
