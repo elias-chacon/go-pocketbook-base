@@ -5,7 +5,6 @@
   "bible.menu.settings": "Configurações",
   "bible.footer.start": "Toque para ler.",
   "bible.failed": "Não deu certo: %s",
-
   "bible.home.progress": "Progresso de leitura",
   "bible.home.progress.detail": "%s de %s versículos lidos nesta versão",
   "bible.home.votd": "Versículo do dia",
@@ -18,7 +17,6 @@
   "bible.home.empty": "Baixe uma versão da Bíblia para começar a ler. Depois, ela fica no leitor e funciona sem internet.",
   "bible.home.get": "Baixar a Bíblia",
   "bible.home.open": "Abrir a Bíblia",
-
   "bible.version.current": "Versão atual: %s",
   "bible.version.none": "Nenhuma versão escolhida",
   "bible.version.pick": "Escolha a versão",
@@ -31,7 +29,6 @@
   "bible.search.none": "Nada encontrado para “%s”.",
   "bible.search.needs": "Baixe a versão para buscar nela.",
   "bible.search.clear": "Limpar busca",
-
   "bible.books": "Livros",
   "bible.books.alpha": "Ordem alfabética",
   "bible.books.canon": "Ordem original",
@@ -45,13 +42,11 @@
   "bible.verse.hint": "Toque no número para começar a ler dali.",
   "bible.notext": "Esta versão ainda não está no leitor. Baixe para ler.",
   "bible.nochapter": "Este capítulo não existe nesta versão.",
-
   "bible.reader.prev": "Capítulo anterior",
   "bible.reader.next": "Próximo capítulo",
   "bible.reader.listen": "Ouvir",
   "bible.reader.stop": "Parar",
   "bible.tts.unavailable": "Este leitor não oferece leitura em voz alta para aplicativos.",
-
   "bible.download": "Baixar",
   "bible.download.ask": "Baixar %s para ler sem internet? São alguns megabytes e é preciso estar conectado.",
   "bible.download.title": "Baixar versão",
@@ -61,7 +56,6 @@
   "bible.refresh": "Atualizar a lista de versões",
   "bible.refresh.failed": "Sem conexão com a Bíblia online: %s",
   "bible.versions.none": "Nenhuma versão no leitor ainda.",
-
   "bible.settings.title": "Configurações",
   "bible.settings.fontsize": "Tamanho da fonte: %d",
   "bible.settings.font": "Tipo de fonte",
@@ -75,7 +69,26 @@
   "bible.settings.preview": "No princípio, Deus criou os céus e a terra.",
   "bible.settings.save": "Salvar",
   "bible.settings.cancel": "Cancelar",
-
   "bible.lang.pt-BR": "Português",
-  "bible.lang.en": "English"
+  "bible.lang.en": "English",
+  "bible.menu.status": "Status",
+  "bible.status.title": "Status do leitor",
+  "bible.status.locale": "Idioma do aparelho: %s (de %s)",
+  "bible.status.lang": "Idioma do app: %s (%s)",
+  "bible.status.chosen": "escolhido nas Configurações",
+  "bible.status.fromreader": "segue o aparelho",
+  "bible.status.unknown": "não detectado, usando o dos apps",
+  "bible.status.time": "Hora: %s",
+  "bible.status.progress": "Lido: %s (%s de %s versículos)",
+  "bible.status.noversion": "Lido: nenhuma versão baixada ainda",
+  "bible.status.last": "Último versículo lido: %s",
+  "bible.status.nolast": "Nada lido ainda.",
+  "bible.status.goto": "Ir para %s",
+  "bible.home.last": "Onde você parou",
+  "bible.download.busy": "Outro download está em andamento. Espere terminar ou cancele.",
+  "bible.download.cancel": "Cancelar",
+  "bible.download.cancelled": "Download cancelado. Continua de onde parou.",
+  "bible.combo.search": "Buscar",
+  "bible.combo.close": "Fechar",
+  "bible.combo.none": "Nada encontrado"
 }

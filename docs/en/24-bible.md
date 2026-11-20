@@ -9,13 +9,24 @@ app contract (`apps/hello` is the blueprint) and has the same three tabs as Hell
 
 | Tab | What it has |
 |---|---|
-| **Home** | the percentage of the Bible read (`0%` to `100%`), the **Verse of the day** card with its "I read it" box and a button to **continue reading** where you stopped |
-| **Bible** | the selection bar (current version, language, version, search) and below it the books, the chapters, the verse numbers and the reader |
-| **More** | **Settings**, **About** and **Exit** |
+| **Home** | the percentage of the Bible read (`0%` to `100%`), the **Verse of the day** card with its "I read it" box and the **Where you stopped** card: the text of the last verse read and, inside it, the **Continue at** button |
+| **Bible** | the selection bar (current version, language, version, search), the **Continue at** button and below it the books, the chapters, the verse numbers and the reader. A tap on the tab always goes back to the list of books |
+| **More** | **Settings**, **Status**, **About** and **Exit** |
 
 **First run.** With no version on the reader, Home offers "Download the Bible": one tap fetches the list of versions, downloads the
 one of the reader's language (Almeida Livre in Portuguese, King James in English) and starts. Later, on the **Bible** tab, pick
 another language and version; a version that is not on the reader yet asks before downloading (a few megabytes, in about 60 requests).
+The language and the version are **searchable combo boxes** (`SearchComboBox`, [chapter 6](06-components.md)): the window opens on the
+page of the current option and typing filters the list, ignoring accents.
+
+**The download does not block the screen.** While it runs, a strip above the footer (on every tab) shows the version, a progress bar
+and a **Cancel** button; the person can browse and read meanwhile. The work is done in small steps (one request each) scheduled with
+`Env.After`, so between two steps the reader answers the touches (a touch can wait for the request in progress, a second or two). When
+it ends the version is put in use, unless the person is in the middle of a chapter: then the text stays and the notice says the version
+is ready. Cancelling keeps what was stored, and starting again goes on from there.
+
+**Status.** The **More → Status** window shows the language the reader reported and **where it came from**, the language of the app, the
+**time** with the offset from UTC, the percentage read and the last verse read (with its text), and a button to go straight to it.
 
 **Reading.** Book → chapter (the list shows the start of each chapter, or just the number, as the settings say) → the grid of verse
 numbers, to jump straight to one, or **Read the chapter**. Reading is by pages (the reader's page keys turn them too); every verse
@@ -76,6 +87,9 @@ For reading, the toolkit got three generic additions (they know nothing about th
   screens (every page fits the screen and every element gets its touch) and the full cycle in `apps/bible`: download → read → close →
   reopen with no network, with the position, the progress, the read verse and the settings in place.
 - **Compiled and tested on ARMv7** (`.\scripts\arm-test.ps1`, Go 1.17 + qemu) and compiled with the reader's SDK.
+- **The clock:** the reader keeps its time zone in `system/timezone` (a TZif file; `timezone=Buenos Aires` in `global.cfg`), and its Linux has no
+  zone database for a program to find, so the app loads that file (`time.LoadLocationFromTZData`): the day of the verse of the day and the time on
+  the Status window follow it.
 - **The reader's language** (checked on a PB741 and in the SDK): the firmware keeps it in `global.cfg` in the user's storage
   (`/mnt/ext1/system/config/global.cfg`, `CONFIGPATH` of `inkview.h`), as `language=pt`. The app reads it the way the SDK offers
   (`GetGlobalConfig` + `ReadString`, `inkview.GlobalConfigString`), then the file itself, then `LANG`/`LC_*`, and last the language of the

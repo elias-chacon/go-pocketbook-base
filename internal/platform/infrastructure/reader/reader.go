@@ -68,6 +68,9 @@ func (*Screen) ShowRect(img *image.Gray, r image.Rectangle) {
 // RequestRepaint implements application.Screen.
 func (*Screen) RequestRepaint() { inkview.Repaint() }
 
+// After implements application.Screen with an InkView timer.
+func (*Screen) After(d time.Duration, f func()) { inkview.After(d, f) }
+
 // Close implements application.Screen.
 func (s *Screen) Close() {
 	s.closed = true

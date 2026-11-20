@@ -31,8 +31,8 @@ func (s *Screen) homePage() widget.Widget {
 	page.AppendChild(widget.NewCard(s.t("bible.home.progress"), "", bar, detail))
 
 	page.AppendChild(s.dailyCard())
-	if cont := s.continueButton(); cont != nil {
-		page.AppendChild(cont)
+	if last := s.lastCard(); last != nil {
+		page.AppendChild(last)
 	}
 	return page
 }
@@ -109,24 +109,74 @@ func doneRow(label string) widget.Widget {
 	return row
 }
 
-// continueButton resumes the reading at the place saved, nil when there is none.
-func (s *Screen) continueButton() widget.Widget {
+// resumePoint is the place the reading stopped at (false when there is none, or the book is not known).
+func (s *Screen) resumePoint() (domain.Ref, bool) {
 	pos, err := s.cfg.Bible.Resume()
 	if err != nil || !pos.Valid() {
-		return nil
+		return domain.Ref{}, false
 	}
 	if _, ok := s.bookByID(pos.Book); !ok {
-		return nil
+		return domain.Ref{}, false
 	}
 	verse := pos.Verse
 	if verse < 1 {
 		verse = 1
 	}
-	at := s.refText(domain.At(pos.Book, pos.Chapter, verse))
-	b := widget.NewButton(s.t("bible.home.continue.at", at))
+	return domain.At(pos.Book, pos.Chapter, verse), true
+}
+
+// continueButton resumes the reading at the place saved, nil when there is none.
+func (s *Screen) continueButton() widget.Widget {
+	at, ok := s.resumePoint()
+	if !ok {
+		return nil
+	}
+	b := widget.NewButton(s.t("bible.home.continue.at", s.refText(at)))
 	b.ID = "continue"
 	b.SetVariant(widget.VariantPrimary)
-	b.Style.Padding = geom.XY(0, 32)
-	b.OnClick = func(*widget.Event) { s.OpenReader(pos.Book, pos.Chapter, verse) }
+	b.Style.Padding = geom.XY(0, 24)
+	b.OnClick = func(*widget.Event) { s.OpenReader(at.Book, at.Chapter, at.Verse) }
 	return b
+}
+
+// lastCard is the card of the last verse read: where it is, its text and the button to go on
+// from there. Nil when nothing was read yet.
+func (s *Screen) lastCard() widget.Widget {
+	at, ok := s.resumePoint()
+	if !ok {
+		return nil
+	}
+	card := widget.NewCard(s.t("bible.home.last"), "")
+	card.ID = "last"
+	ref := widget.NewLabel(s.refText(at))
+	ref.Style.Bold = true
+	card.AppendChild(ref)
+	if text := s.verseText(at); text != "" {
+		quote := widget.NewLabel("“" + oneLine(text, lastVerseLetters) + "”")
+		quote.ID = "last-text"
+		quote.Style.FontSize = float64(s.prefs.FontSize)
+		card.AppendChild(quote)
+	}
+	card.AppendChild(s.continueButton())
+	return card
+}
+
+// lastVerseLetters is the longest text of a verse the Home card shows (the reader has all of it).
+const lastVerseLetters = 280
+
+// verseText is the text of a verse in the version in use ("" when it is not on the reader).
+func (s *Screen) verseText(r domain.Ref) string {
+	if !s.ready() {
+		return ""
+	}
+	ch, err := s.cfg.Bible.Chapter(s.prefs.Version, r.Book, r.Chapter)
+	if err != nil {
+		return ""
+	}
+	for _, v := range ch.Verses {
+		if v.Number == r.Verse {
+			return v.Text
+		}
+	}
+	return ""
 }

@@ -62,9 +62,12 @@ func newBibleAt(env platform.Env, dir string, speaker domain.Speaker) *bible {
 	if env.HTTP != nil { // without a client (tests, a desktop) the app still reads what is stored
 		svc.Catalog = midvash.Client{HTTP: env.HTTP, Base: catalogBase}
 	}
+	lang, langSource := detectLanguage(env.Lang)
+	now, zone := readerClock(timezoneFile)
 	screen, err := presentation.NewScreen(presentation.Config{
 		Width: env.Width, Height: env.Height, Doc: a.doc, Chrome: platform.Chrome(env), Keyboard: env.Keyboard,
-		Bible: svc, DeviceLang: deviceLanguage(env.Lang), Speaker: speaker, Flush: env.Flush,
+		Bible: svc, DeviceLang: lang, DeviceLangSource: langSource, Speaker: speaker, Flush: env.Flush,
+		Now: now, ClockSource: zone, After: env.After,
 	})
 	if err != nil {
 		a.fail(err)

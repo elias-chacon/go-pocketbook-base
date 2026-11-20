@@ -2,7 +2,10 @@
 
 package inkview
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 // ErrNotOnDevice is returned by Run when built for a non-PocketBook target.
 var ErrNotOnDevice = errors.New("inkview: only available when built for PocketBook (linux/arm + cgo); use cmd/preview on desktop")
@@ -48,6 +51,9 @@ func BlitRect(pix []byte, stride, x, y, w, h int) {
 func OpenKeyboard(title, initial string, maxLen, flags int, done func(string, bool)) {
 	// No system keyboard on the desktop.
 }
+
+// After runs f later (off-device there is no event loop: a timer of the runtime does it).
+func After(d time.Duration, f func()) { time.AfterFunc(d, f) }
 
 // GlobalConfigString has no settings of the reader off-device.
 func GlobalConfigString(name string) string { return "" }

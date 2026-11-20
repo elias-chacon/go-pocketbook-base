@@ -70,7 +70,7 @@ the first run (so the Launcher lists it, and the home screen shows its icon). He
    Launcher reads to know what is installed. It runs on every start, so the record always has the current version.
 3. The platform reads the shared **settings** (`applications/.pbgo/settings.json`: today the language) and starts InkView.
 4. Once the screen size is known the platform calls your **factory** with an `platform.Env`: screen size, system keyboard,
-   `Exit`, the first-run notice, the manifest, the language, the version and `HTTP`, the network client that works on the reader (its Linux has no `resolv.conf` and no IPv6, which the standard client needs; `internal/device/network`). Use `env.HTTP` for any request. It returns an `platform.App`, which only has to
+   `Exit`, the first-run notice, the manifest, the language, the version and `HTTP`, the network client that works on the reader (its Linux has no `resolv.conf` and no IPv6, which the standard client needs; `internal/device/network`). Use `env.HTTP` for any request. `env.After(d, f)` runs `f` on the reader's event loop after `d`, never in the middle of a touch or a repaint: a long job (a download) is done in small steps, each one scheduled by the one before, and the screen keeps answering touches in between (a goroutine would touch the widgets at the wrong time). It returns an `platform.App`, which only has to
    give its `*widget.Document`.
 5. From then on the platform does the plumbing: touch, the system keyboard, **partial repaint** (full refresh every 10 updates
    to clear e-ink ghosting), and the keys: left and Menu close a popup, then a modal (`doc.HandleBack()`); keys the platform does not use go

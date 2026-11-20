@@ -263,3 +263,43 @@ func TestSearchAndPreviewsReadFromTheStoredText(t *testing.T) {
 		t.Errorf("previews: %v %v", pre, err)
 	}
 }
+
+func TestADownloadRunsOneBatchPerStepAndFinishesMarkingTheVersion(t *testing.T) {
+	b, cat := setup(t)
+	if err := b.Refresh(); err != nil {
+		t.Fatal(err)
+	}
+	d, err := b.StartDownload("kjv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if done, total := d.Progress(); done != 0 || total == 0 || d.Slug() != "kjv" {
+		t.Errorf("before the first step: %d/%d %s", done, total, d.Slug())
+	}
+	steps := 0
+	for !d.Finished() {
+		before := cat.calls
+		if err := d.Step(); err != nil {
+			t.Fatal(err)
+		}
+		if cat.calls > before+1 {
+			t.Errorf("a step makes at most one request, made %d", cat.calls-before)
+		}
+		steps++
+		if steps > 100 {
+			t.Fatal("never finishes")
+		}
+	}
+	if done, total := d.Progress(); done != total {
+		t.Errorf("finished at %d/%d", done, total)
+	}
+	if v, _, _ := b.Library.Version("kjv"); !v.Downloaded {
+		t.Error("the last step marks the version")
+	}
+	if err := d.Step(); err != nil {
+		t.Error("a step after the end does nothing")
+	}
+	if _, err := (Bible{Library: b.Library}).StartDownload("kjv"); !errors.Is(err, ErrNoCatalog) {
+		t.Errorf("without a catalog: %v", err)
+	}
+}

@@ -47,6 +47,7 @@ type recorder struct{ shows, closes int }
 func (r *recorder) Show(*image.Gray)                      { r.shows++ }
 func (r *recorder) ShowRect(*image.Gray, image.Rectangle) {}
 func (r *recorder) RequestRepaint()                       {}
+func (r *recorder) After(time.Duration, func())           {}
 func (r *recorder) Close()                                { r.closes++ }
 
 type app struct{ doc *widget.Document }

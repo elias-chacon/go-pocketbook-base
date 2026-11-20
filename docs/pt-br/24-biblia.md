@@ -9,13 +9,24 @@ em 69 idiomas), são **baixadas uma vez** para o banco SQLite do leitor e depois
 
 | Aba | O que tem |
 |---|---|
-| **Início** | a porcentagem de leitura da Bíblia (`0%` a `100%`), o card **Versículo do dia** com a caixa "Já li" e o botão para **continuar a leitura** de onde parou |
-| **Bíblia** | a barra de seleção (versão atual, idioma, versão, busca) e embaixo os livros, os capítulos, os números dos versículos e a leitura |
-| **Mais** | **Configurações**, **Sobre** e **Sair** |
+| **Início** | a porcentagem de leitura da Bíblia (`0%` a `100%`), o card **Versículo do dia** com a caixa "Já li" e o card **Onde você parou**: o texto do último versículo lido e, dentro dele, o botão **Continuar em** |
+| **Bíblia** | a barra de seleção (versão atual, idioma, versão, busca), o botão **Continuar em** e embaixo os livros, os capítulos, os números dos versículos e a leitura. Um toque na aba sempre volta à lista de livros |
+| **Mais** | **Configurações**, **Status**, **Sobre** e **Sair** |
 
 **Primeira vez.** Sem nenhuma versão no leitor, o Início oferece "Baixar a Bíblia": um toque busca a lista de versões, baixa a do
 idioma do aparelho (Almeida Livre em português, King James em inglês) e começa. Depois, na aba **Bíblia**, escolha outro idioma e
 outra versão; uma versão que ainda não está no leitor pergunta antes de baixar (são alguns megabytes, em cerca de 60 pedidos).
+O idioma e a versão são **combo-boxes com busca** (`SearchComboBox`, [capítulo 6](06-componentes.md)): a janela abre na página da opção
+atual e digitar filtra a lista, sem diferenciar acentos.
+
+**O download não trava a tela.** Enquanto ele roda, uma faixa acima do rodapé (em todas as abas) mostra a versão, uma barra de progresso
+e o botão **Cancelar**; dá para navegar e ler nesse meio tempo. O trabalho é feito em passos pequenos (um pedido cada) agendados com o
+`Env.After`, então entre dois passos o leitor atende os toques (um toque pode esperar o pedido em andamento, um ou dois segundos). Ao
+terminar, a versão passa a ser a em uso, a menos que a pessoa esteja no meio de um capítulo: aí o texto fica e o aviso diz que a versão
+está pronta. Cancelar guarda o que já foi gravado, e começar de novo continua dali.
+
+**Status.** A janela **Mais → Status** mostra o idioma que o leitor informou e **de onde veio**, o idioma do app, a **hora** com o desvio
+em relação ao UTC, a porcentagem lida e o último versículo lido (com o texto), e um botão para ir direto a ele.
 
 **Ler.** Livro → capítulo (a lista mostra o início de cada capítulo, ou só o número, conforme as configurações) → a grade com os
 números dos versículos, para saltar direto a um deles, ou **Ler o capítulo**. A leitura é por páginas (as teclas de página do
@@ -74,6 +85,9 @@ o tipo de letra escolhido por `gfx.SetFamily` e a tela em negativo com `Document
   (cada página cabe na tela e cada elemento recebe o seu toque) e o ciclo completo no `apps/bible`: baixar → ler → fechar → reabrir
   sem rede, com a posição, o progresso, o versículo lido e as configurações no lugar.
 - **Compilado e testado em ARMv7** (`.\scripts\arm-test.ps1`, Go 1.17 + qemu) e compilado com o SDK do leitor.
+- **O relógio:** o leitor guarda o fuso em `system/timezone` (um arquivo TZif; `timezone=Buenos Aires` no `global.cfg`) e o Linux dele não
+  tem um banco de fusos que um programa encontre, então o app carrega esse arquivo (`time.LoadLocationFromTZData`): o dia do versículo do
+  dia e a hora da janela Status seguem esse fuso.
 - **O idioma do leitor** (conferido num PB741 e no SDK): o firmware o guarda no `global.cfg` do armazenamento do usuário
   (`/mnt/ext1/system/config/global.cfg`, `CONFIGPATH` do `inkview.h`), como `language=pt`. O app lê do modo que o SDK oferece
   (`GetGlobalConfig` + `ReadString`, `inkview.GlobalConfigString`), depois o próprio arquivo, depois `LANG`/`LC_*` e por último o idioma

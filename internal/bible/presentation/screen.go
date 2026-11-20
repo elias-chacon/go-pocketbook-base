@@ -39,7 +39,7 @@ type Service interface {
 	Books() ([]domain.Book, error)
 	Versions() ([]domain.Version, error)
 	Refresh() error
-	Download(slug string, progress application.Progress) error
+	StartDownload(slug string) (*application.Download, error)
 	Preferences(deviceLang string) (domain.Preferences, error)
 	SavePreferences(p domain.Preferences) error
 	Chapter(version string, book, chapter int) (domain.ChapterText, error)
@@ -72,6 +72,12 @@ type Config struct {
 	Flush func()
 	// Now is the clock (time.Now when nil).
 	Now func() time.Time
+	// After runs a function on the event loop later (Env.After). A download is done in small steps
+	// scheduled with it, so the screen stays usable; nil runs a task in one go.
+	After func(d time.Duration, f func())
+	// DeviceLangSource says where DeviceLang came from, and ClockSource where the time zone did
+	// (for the Status window).
+	DeviceLangSource, ClockSource string
 }
 
 // view is what the Bible page shows.
@@ -100,6 +106,12 @@ type Screen struct {
 	note   *widget.Label
 	notice string
 
+	// the task running (a download) and its strip above the footer
+	job        *job
+	strip      *widget.Panel
+	stripLabel *widget.Label
+	stripBar   *widget.Progress
+
 	// the Bible page
 	view      view
 	book      int // the book open (id)
@@ -109,6 +121,7 @@ type Screen struct {
 	query     string
 	hits      []domain.Hit
 	bookPage  int
+	extra     float64 // height the page gives up to a continue button and to the task strip
 	listPage  int
 	text      domain.ChapterText // the chapter being read: the only text kept in memory
 	reader    *widget.ParagraphPager
@@ -220,6 +233,7 @@ func (s *Screen) build() {
 		&widget.Tab{ID: "home", Title: s.t("bible.menu.home"), Build: s.homePage, Mode: widget.TabRebuild},
 		&widget.Tab{ID: "bible", Title: s.t("bible.menu.bible"), Build: s.biblePage, Mode: widget.TabRebuild})
 	s.tabs.Bar.ID = "menubar"
+	s.tabs.Bar.Menus[1].OnSelect = s.openBibleTab // a tap on the tab always starts at the books
 	s.tabs.Bar.Menus = append(s.tabs.Bar.Menus, s.moreMenu())
 	s.tabs.Body.Style.Padding = geom.XY(28, 20)
 	s.tabs.Style.FlexGrow = 1
@@ -232,14 +246,17 @@ func (s *Screen) build() {
 	footer := widget.NewRow(24, s.note, version)
 	footer.Style.Padding = geom.XY(28, 8)
 
-	root := widget.NewColumn(0, s.tabs, footer)
+	root := widget.NewColumn(0, s.tabs, s.buildStrip(), footer)
 	root.ID, root.Style.Background = "root", widget.Paper
 	s.Doc.SetRoot(root)
 }
 
 // moreMenu is the More menu: Settings, then the About and Exit of every app.
 func (s *Screen) moreMenu() *widget.Menu {
-	items := []widget.MenuItem{{Label: s.t("bible.menu.settings"), Icon: gfx.IconMenu, OnSelect: s.OpenSettings}}
+	items := []widget.MenuItem{
+		{Label: s.t("bible.menu.settings"), Icon: gfx.IconMenu, OnSelect: s.OpenSettings},
+		{Label: s.t("bible.menu.status"), OnSelect: s.OpenStatus},
+	}
 	if chrome := s.cfg.Chrome; chrome.Enabled() {
 		items = append(items, widget.MenuItem{Separator: true})
 		items = append(items, chrome.Bar(s.Doc).Menus[0].Items...)
@@ -252,6 +269,13 @@ func (s *Screen) Show(i int) { s.tabs.Show(i) }
 
 // Page is the page shown (0 Home, 1 Bible).
 func (s *Screen) Page() int { return s.tabs.Current() }
+
+// openBibleTab is what the Bible tab does when tapped: the list of books, whatever was open.
+func (s *Screen) openBibleTab() {
+	s.view, s.query, s.hits, s.listPage = viewBooks, "", nil, 0
+	s.tabs.Show(1)
+	s.Doc.Invalidate()
+}
 
 // rebuildBible shows the Bible page again after the navigation changed.
 func (s *Screen) rebuildBible() {

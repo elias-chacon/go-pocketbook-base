@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"time"
 
 	"go-pocketbook-base/internal/bible/domain"
 	"go-pocketbook-base/internal/device/inkview"
@@ -27,20 +28,48 @@ var posixVariables = []string{"LC_ALL", "LC_MESSAGES", "LANGUAGE", "LANG"}
 // the language of the shared settings of the apps (fallback) when none of them is known. Only
 // Portuguese and English have translations.
 func deviceLanguage(fallback string) string {
-	if lang := fromTag(readerSetting("language")); lang != "" {
-		return lang
+	lang, _ := detectLanguage(fallback)
+	return lang
+}
+
+// detectLanguage is deviceLanguage and the place the answer came from (for the Status window):
+// "" when nothing was recognized and the fallback was taken.
+func detectLanguage(fallback string) (lang, source string) {
+	if raw := readerSetting("language"); fromTag(raw) != "" {
+		return fromTag(raw), "InkView global.cfg language=" + raw
 	}
 	for _, file := range localeFiles {
 		if lang := fromConfig(file); lang != "" {
-			return lang
+			return lang, file
 		}
 	}
 	for _, key := range posixVariables {
 		if lang := fromTag(os.Getenv(key)); lang != "" {
-			return lang
+			return lang, "$" + key + "=" + os.Getenv(key)
 		}
 	}
-	return fallback
+	return fallback, ""
+}
+
+// timezoneFile is where the reader keeps the time zone chosen in its settings: a TZif file. The
+// reader's Linux has no zone database of its own for a program to find, so without it the clock of
+// an app would be in UTC.
+var timezoneFile = "/mnt/ext1/system/timezone"
+
+// readerClock is the clock of the app in the time zone of the reader, and a line saying which
+// zone it is. When the zone file cannot be read it is the system's clock.
+func readerClock(path string) (now func() time.Time, source string) {
+	if data, err := os.ReadFile(path); err == nil {
+		name := readerSetting("timezone")
+		if name == "" {
+			name = "reader"
+		}
+		if loc, err := time.LoadLocationFromTZData(name, data); err == nil {
+			return func() time.Time { return time.Now().In(loc) }, name
+		}
+	}
+	name, _ := time.Now().Zone()
+	return time.Now, "system " + name
 }
 
 // fromConfig reads a "language=..." line of a settings file ("" when there is none).

@@ -79,57 +79,108 @@ func (b Bible) Refresh() error {
 // Progress reports a download: chapters stored out of the chapters to fetch.
 type Progress func(done, total int)
 
-// Download brings every chapter of a version that is not on the reader yet and keeps it,
-// a few at a time (so a failed or interrupted download goes on from where it stopped).
-func (b Bible) Download(slug string, progress Progress) error {
+// downloadBatch is how many chapters one request brings.
+const downloadBatch = 20
+
+// Download is a download of a version in progress, one batch of chapters at a time: the screen
+// calls Step between two touches, so the reader never stays blocked for more than one request.
+type Download struct {
+	b       Bible
+	slug    string
+	books   []domain.Book
+	missing []domain.ChapterRef
+	total   int
+	next    int // the first chapter of missing not fetched yet
+	done    bool
+}
+
+// StartDownload plans the download of a version: the chapters it has not got yet.
+func (b Bible) StartDownload(slug string) (*Download, error) {
 	if b.Catalog == nil {
-		return ErrNoCatalog
+		return nil, ErrNoCatalog
 	}
 	books, err := b.Books()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	have, err := b.Library.StoredChapters(slug)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	var missing []domain.ChapterRef
-	total := 0
+	d := &Download{b: b, slug: slug, books: books}
 	for _, bk := range books {
 		for ch := 1; ch <= bk.Chapters; ch++ {
-			total++
+			d.total++
 			if ref := (domain.ChapterRef{Book: bk.ID, Chapter: ch}); !have[ref] {
-				missing = append(missing, ref)
+				d.missing = append(d.missing, ref)
 			}
 		}
 	}
-	done := total - len(missing)
-	const batch = 20
-	for start := 0; start < len(missing); start += batch {
-		end := start + batch
-		if end > len(missing) {
-			end = len(missing)
+	return d, nil
+}
+
+// Slug is the version being downloaded.
+func (d *Download) Slug() string { return d.slug }
+
+// Progress is the chapters stored out of the chapters of the version.
+func (d *Download) Progress() (done, total int) { return d.total - len(d.missing) + d.next, d.total }
+
+// Finished reports whether every chapter is stored and the version is marked as downloaded.
+func (d *Download) Finished() bool { return d.done }
+
+// Step brings the next batch of chapters and keeps it (the last step also marks the version as
+// downloaded). A failed download goes on from where it stopped when started again.
+func (d *Download) Step() error {
+	if d.done {
+		return nil
+	}
+	if d.next < len(d.missing) {
+		end := d.next + downloadBatch
+		if end > len(d.missing) {
+			end = len(d.missing)
 		}
-		chapters, err := b.Catalog.Chapters(slug, books, missing[start:end])
+		chapters, err := d.b.Catalog.Chapters(d.slug, d.books, d.missing[d.next:end])
 		if err != nil {
 			return err
 		}
-		if err := b.Library.SaveChapters(chapters); err != nil {
+		if err := d.b.Library.SaveChapters(chapters); err != nil {
 			return err
 		}
-		done = total - len(missing) + end
-		if progress != nil {
-			progress(done, total)
+		d.next = end
+		if d.next < len(d.missing) {
+			return nil
 		}
 	}
-	stored, err := b.Library.StoredChapters(slug)
+	stored, err := d.b.Library.StoredChapters(d.slug)
 	if err != nil {
 		return err
 	}
 	if len(stored) == 0 {
-		return fmt.Errorf("bible: the catalog has no text for %s", slug)
+		return fmt.Errorf("bible: the catalog has no text for %s", d.slug)
 	}
-	return b.Library.MarkDownloaded(slug)
+	if err := d.b.Library.MarkDownloaded(d.slug); err != nil {
+		return err
+	}
+	d.done = true
+	return nil
+}
+
+// Download brings every chapter of a version that is not on the reader yet and keeps it,
+// a few at a time (so a failed or interrupted download goes on from where it stopped).
+func (b Bible) Download(slug string, progress Progress) error {
+	d, err := b.StartDownload(slug)
+	if err != nil {
+		return err
+	}
+	for !d.Finished() {
+		if err := d.Step(); err != nil {
+			return err
+		}
+		if progress != nil {
+			progress(d.Progress())
+		}
+	}
+	return nil
 }
 
 // Remove deletes the text of a version from the reader (what was read stays counted).

@@ -1,49 +1,12 @@
 package domain
 
-import (
-	"strings"
-	"unicode"
-)
-
-// accents maps the accented letters of the languages of the versions to the plain ones.
-var accents = map[rune]rune{
-	'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'å': 'a', 'ā': 'a',
-	'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e', 'ē': 'e',
-	'ì': 'i', 'í': 'i', 'î': 'i', 'ï': 'i', 'ī': 'i',
-	'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o', 'ō': 'o',
-	'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u', 'ū': 'u',
-	'ç': 'c', 'ñ': 'n', 'ý': 'y', 'ÿ': 'y',
-}
+import "go-pocketbook-base/internal/kernel/fold"
 
 // Fold lowers the case and removes the accents, so "Êxodo" and "exodo" meet.
-func Fold(s string) string {
-	var b strings.Builder
-	b.Grow(len(s))
-	for _, r := range s {
-		r = unicode.ToLower(r)
-		if p, ok := accents[r]; ok {
-			r = p
-		}
-		b.WriteRune(r)
-	}
-	return b.String()
-}
+func Fold(s string) string { return fold.Text(s) }
 
 // Words splits a search into folded words (letters and digits only).
-func Words(query string) []string {
-	return strings.FieldsFunc(Fold(query), func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) })
-}
+func Words(query string) []string { return fold.Words(query) }
 
 // MatchesAll reports whether the text has every word (the words are already folded).
-func MatchesAll(text string, words []string) bool {
-	if len(words) == 0 {
-		return false
-	}
-	folded := Fold(text)
-	for _, w := range words {
-		if !strings.Contains(folded, w) {
-			return false
-		}
-	}
-	return true
-}
+func MatchesAll(text string, words []string) bool { return fold.MatchesAll(text, words) }

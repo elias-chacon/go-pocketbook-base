@@ -38,6 +38,14 @@ func (s *Screen) biblePage() widget.Widget {
 		return page
 	}
 	page.AppendChild(s.versionBar())
+	s.extra = 0
+	if cont := s.continueButton(); cont != nil && s.view != viewSearch {
+		page.AppendChild(cont)
+		s.extra += widget.ControlHeight + 40
+	}
+	if s.Busy() {
+		s.extra += jobStripHeight
+	}
 	switch {
 	case len(s.versions) == 0:
 		page.AppendChild(s.noVersions())
@@ -65,8 +73,9 @@ func (s *Screen) versionBar() widget.Widget {
 	title.Style.Bold = true
 
 	lang := s.activeLanguage()
-	langBox := widget.NewComboBox(s.t("bible.lang"))
+	langBox := widget.NewSearchComboBox(s.t("bible.lang"))
 	langBox.ID = "combo-language"
+	s.searchable(langBox, s.t("bible.lang"))
 	for _, l := range domain.LanguagesOf(s.versions) {
 		langBox.Options = append(langBox.Options, widget.Option{Label: languageName(l.Tag), Value: l.Tag})
 	}
@@ -74,8 +83,9 @@ func (s *Screen) versionBar() widget.Widget {
 	langBox.Style.FlexGrow = 1
 	langBox.OnChange = func(*widget.Event) { s.pickLanguage(langBox.Value()) }
 
-	versionBox := widget.NewComboBox(s.t("bible.version.pick"))
+	versionBox := widget.NewSearchComboBox(s.t("bible.version.pick"))
 	versionBox.ID = "combo-version"
+	s.searchable(versionBox, s.t("bible.version.pick"))
 	for _, v := range domain.VersionsIn(s.versions, lang) {
 		state := s.t("bible.version.remote")
 		if v.Downloaded {
@@ -95,6 +105,14 @@ func (s *Screen) versionBar() widget.Widget {
 
 	row := widget.NewRow(12, langBox, versionBox)
 	return widget.NewColumn(12, title, row, search)
+}
+
+// searchable gives a search combo box the texts of the app.
+func (s *Screen) searchable(box *widget.SearchComboBox, title string) {
+	box.Title = title
+	box.SearchPlaceholder = s.t("bible.combo.search")
+	box.CancelText = s.t("bible.combo.close")
+	box.NoMatchText = s.t("bible.combo.none")
 }
 
 // activeLanguage is the language of the versions the picker shows: the one chosen, or the one
@@ -133,8 +151,15 @@ func (s *Screen) pickVersion(slug string) {
 	}
 }
 
-// useVersion switches the reading to a version that is on the reader and keeps the choice.
+// useVersion switches the reading to a version that is on the reader, keeps the choice and shows
+// the Bible page.
 func (s *Screen) useVersion(v domain.Version) {
+	s.adoptVersion(v)
+	s.rebuildBible()
+}
+
+// adoptVersion makes a version that is on the reader the one in use and keeps the choice.
+func (s *Screen) adoptVersion(v domain.Version) {
 	s.prefs.Version, s.prefs.VersionLang = v.Slug, v.Language
 	s.pickLang = ""
 	if err := s.cfg.Bible.SavePreferences(s.prefs); err != nil {
@@ -144,7 +169,6 @@ func (s *Screen) useVersion(v domain.Version) {
 	if s.view == viewSearch {
 		s.view = viewBooks
 	}
-	s.rebuildBible()
 }
 
 // noVersions is the page before the list of versions was ever fetched.
@@ -158,7 +182,7 @@ func (s *Screen) noVersions() widget.Widget {
 
 // rowsPerPage is how many list rows fit below the bar of the Bible page.
 func (s *Screen) rowsPerPage(row float64) int {
-	n := int((s.Doc.H - 820) / (row + 8))
+	n := int((s.Doc.H - 820 - s.extra) / (row + 8))
 	return int(geom.Clamp(float64(n), 4, 14))
 }
 

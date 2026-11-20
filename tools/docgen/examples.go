@@ -59,6 +59,7 @@ func examples() []example {
 		{"button", 640, 0, buttonExample, nil},
 		{"toggle", 760, 0, toggleExample, nil},
 		{"combobox", 640, 250, comboExample, func(d *widget.Document, w widget.Widget) { tapCenter(d, w.Elem().Children()[1]) }},
+		{"searchcombobox", 900, 0, searchComboExample, func(d *widget.Document, w widget.Widget) { tapCenter(d, w.Elem().Children()[1]) }},
 		{"dropdown", 640, 400, dropdownExample, func(d *widget.Document, w widget.Widget) { tapCenter(d, w.Elem().Children()[1]) }},
 		{"menubar", 760, 300, menubarExample, func(d *widget.Document, w widget.Widget) {
 			bar := w.(*widget.MenuBar)
@@ -181,6 +182,18 @@ func comboExample() widget.Widget {
 		widget.Option{Label: "Curitiba", Value: "cwb"})
 	cb.Index = 1
 	return captioned("Combo-box com a lista aberta (opção atual destacada)", cb)
+}
+
+func searchComboExample() widget.Widget {
+	var options []widget.Option
+	for _, name := range []string{"Afrikaans", "Alemão", "Árabe", "Búlgaro", "Chinês", "Coreano", "Dinamarquês", "Espanhol", "Finlandês",
+		"Francês", "Grego", "Hebraico", "Inglês", "Italiano", "Japonês", "Latim", "Polonês", "Português", "Russo", "Sueco"} {
+		options = append(options, widget.Option{Label: name, Value: name})
+	}
+	cb := widget.NewSearchComboBox("Idioma", options...)
+	cb.Title, cb.SearchPlaceholder, cb.CancelText = "Escolha o idioma", "Buscar", "Fechar"
+	cb.SetValue("Português")
+	return captioned("Combo-box com busca: abre na página da opção atual", cb)
 }
 
 func dropdownExample() widget.Widget {

@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"go-pocketbook-base/internal/platform/domain"
 	"go-pocketbook-base/internal/toolkit/widget"
@@ -44,11 +45,13 @@ func (f *fakeApp) Key(k Key) bool             { f.keys = append(f.keys, k); retu
 type recorder struct {
 	shows, repaints, closes int
 	rects                   []image.Rectangle
+	later                   []func()
 }
 
 func (r *recorder) Show(*image.Gray)                          { r.shows++ }
 func (r *recorder) ShowRect(_ *image.Gray, a image.Rectangle) { r.rects = append(r.rects, a) }
 func (r *recorder) RequestRepaint()                           { r.repaints++ }
+func (r *recorder) After(d time.Duration, f func())           { r.later = append(r.later, f) }
 func (r *recorder) Close()                                    { r.closes++ }
 
 func newRuntime(t *testing.T) (*Runtime, *fakeApp, *widget.Button, *recorder) {
@@ -76,6 +79,15 @@ func TestStartGivesTheAppTheScreenAndWiresItsExit(t *testing.T) {
 	got.Exit()
 	if rec.closes != 1 {
 		t.Error("Env.Exit closes the screen")
+	}
+	ran := false
+	got.After(time.Second, func() { ran = true })
+	if len(rec.later) != 1 {
+		t.Fatal("Env.After goes to the screen's event loop")
+	}
+	rec.later[0]()
+	if !ran {
+		t.Error("the function given to After is the one that runs")
 	}
 }
 
@@ -340,5 +352,46 @@ func TestIconFromPNGDecodesOrReportsAnError(t *testing.T) {
 	big, err := IconFromPNG(pngOf(t, image.NewGray(image.Rect(0, 0, 2000, 2000))))
 	if err != nil || big(32, false).Bounds().Dx() != 32 {
 		t.Errorf("%v", err)
+	}
+}
+
+func TestRequestsLeftOverByAFlushAreNotTakenForTheSystemRedrawing(t *testing.T) {
+	rt, _, btn, rec := newRuntime(t)
+	rt.Draw()
+	rec.shows, rec.rects = 0, nil
+	// a long job: every step changes the screen and paints it at once (Env.Flush)
+	for i := 0; i < 5; i++ {
+		btn.Text = "step " + string(rune('a'+i))
+		btn.Invalidate()
+		rt.flush()
+	}
+	if rec.repaints < 5 {
+		t.Fatalf("each step asked for a repaint: %d", rec.repaints)
+	}
+	rec.shows = 0
+	for i := 0; i < rec.repaints; i++ {
+		rt.Draw() // the events arrive after the job
+	}
+	if rec.shows != 0 {
+		t.Errorf("the leftovers must not flash the whole panel: %d full updates", rec.shows)
+	}
+	rt.Draw() // one more than we asked for: the system's
+	if rec.shows != 1 {
+		t.Errorf("a draw nobody asked for repaints everything: %d", rec.shows)
+	}
+}
+
+func TestACountOfRequestsThatNeverArrivesExpires(t *testing.T) {
+	rt, _, btn, rec := newRuntime(t)
+	now := time.Now()
+	rt.clock = func() time.Time { return now }
+	rt.Draw()
+	btn.Text = "x"
+	btn.Invalidate() // asked, and the reader never answers
+	now = now.Add(time.Minute)
+	rec.shows = 0
+	rt.Draw()
+	if rec.shows != 1 {
+		t.Errorf("an old request is forgotten, the next draw is the system's: %d", rec.shows)
 	}
 }

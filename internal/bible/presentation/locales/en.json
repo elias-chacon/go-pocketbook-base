@@ -5,7 +5,6 @@
   "bible.menu.settings": "Settings",
   "bible.footer.start": "Tap to read.",
   "bible.failed": "That did not work: %s",
-
   "bible.home.progress": "Reading progress",
   "bible.home.progress.detail": "%s of %s verses read in this version",
   "bible.home.votd": "Verse of the day",
@@ -18,7 +17,6 @@
   "bible.home.empty": "Download a version of the Bible to start reading. It then stays on the reader and works without internet.",
   "bible.home.get": "Download the Bible",
   "bible.home.open": "Open the Bible",
-
   "bible.version.current": "Current version: %s",
   "bible.version.none": "No version chosen",
   "bible.version.pick": "Choose the version",
@@ -31,7 +29,6 @@
   "bible.search.none": "Nothing found for “%s”.",
   "bible.search.needs": "Download the version to search it.",
   "bible.search.clear": "Clear search",
-
   "bible.books": "Books",
   "bible.books.alpha": "Alphabetical order",
   "bible.books.canon": "Original order",
@@ -45,13 +42,11 @@
   "bible.verse.hint": "Tap a number to start reading from there.",
   "bible.notext": "This version is not on the reader yet. Download it to read.",
   "bible.nochapter": "This chapter does not exist in this version.",
-
   "bible.reader.prev": "Previous chapter",
   "bible.reader.next": "Next chapter",
   "bible.reader.listen": "Listen",
   "bible.reader.stop": "Stop",
   "bible.tts.unavailable": "This reader does not offer reading aloud to apps.",
-
   "bible.download": "Download",
   "bible.download.ask": "Download %s to read offline? It takes a few megabytes and needs a connection.",
   "bible.download.title": "Download version",
@@ -61,7 +56,6 @@
   "bible.refresh": "Refresh the list of versions",
   "bible.refresh.failed": "No connection to the online Bible: %s",
   "bible.versions.none": "No versions on the reader yet.",
-
   "bible.settings.title": "Settings",
   "bible.settings.fontsize": "Font size: %d",
   "bible.settings.font": "Typeface",
@@ -75,7 +69,26 @@
   "bible.settings.preview": "In the beginning God created the heaven and the earth.",
   "bible.settings.save": "Save",
   "bible.settings.cancel": "Cancel",
-
   "bible.lang.pt-BR": "Português",
-  "bible.lang.en": "English"
+  "bible.lang.en": "English",
+  "bible.menu.status": "Status",
+  "bible.status.title": "Reader status",
+  "bible.status.locale": "Reader language: %s (from %s)",
+  "bible.status.lang": "App language: %s (%s)",
+  "bible.status.chosen": "chosen in Settings",
+  "bible.status.fromreader": "follows the reader",
+  "bible.status.unknown": "not detected, using the apps' setting",
+  "bible.status.time": "Time: %s",
+  "bible.status.progress": "Read: %s (%s of %s verses)",
+  "bible.status.noversion": "Read: no version downloaded yet",
+  "bible.status.last": "Last verse read: %s",
+  "bible.status.nolast": "Nothing read yet.",
+  "bible.status.goto": "Go to %s",
+  "bible.home.last": "Where you stopped",
+  "bible.download.busy": "Another download is running. Wait for it to end or cancel it.",
+  "bible.download.cancel": "Cancel",
+  "bible.download.cancelled": "Download cancelled. It goes on from where it stopped.",
+  "bible.combo.search": "Search",
+  "bible.combo.close": "Close",
+  "bible.combo.none": "Nothing found"
 }

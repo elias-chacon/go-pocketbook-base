@@ -19,16 +19,28 @@ import (
 )
 
 // fakeCatalog is a small Bible: three books of three chapters with 30 long verses each.
-type fakeCatalog struct{ fail error }
+type fakeCatalog struct {
+	fail error
+	// chapters is how many chapters each book has (3 when zero); more than 20 books-worth makes a
+	// download take several requests.
+	chapters int
+}
+
+func (f *fakeCatalog) per() int {
+	if f.chapters > 0 {
+		return f.chapters
+	}
+	return 3
+}
 
 func (f *fakeCatalog) Books() ([]domain.Book, error) {
 	if f.fail != nil {
 		return nil, f.fail
 	}
 	return []domain.Book{
-		{ID: 1, Slug: "genesis", Names: map[string]string{"en": "Genesis", "pt-br": "Gênesis"}, Chapters: 3},
-		{ID: 19, Slug: "psalms", Names: map[string]string{"en": "Psalms", "pt-br": "Salmos"}, Chapters: 3},
-		{ID: 43, Slug: "john", Names: map[string]string{"en": "John", "pt-br": "João"}, Chapters: 3, New: true},
+		{ID: 1, Slug: "genesis", Names: map[string]string{"en": "Genesis", "pt-br": "Gênesis"}, Chapters: f.per()},
+		{ID: 19, Slug: "psalms", Names: map[string]string{"en": "Psalms", "pt-br": "Salmos"}, Chapters: f.per()},
+		{ID: 43, Slug: "john", Names: map[string]string{"en": "John", "pt-br": "João"}, Chapters: f.per(), New: true},
 	}, nil
 }
 
@@ -76,6 +88,22 @@ type world struct {
 	catalog *fakeCatalog
 	speaker *fakeSpeaker
 	flushes int
+	async   bool        // the screen gets a timer: a task runs a step at a time
+	later   []func()    // what the screen asked to run later
+}
+
+// after is the Config.After of an async world: it only queues.
+func (w *world) after(_ time.Duration, f func()) { w.later = append(w.later, f) }
+
+// runNext runs the oldest queued function and reports whether there was one.
+func (w *world) runNext() bool {
+	if len(w.later) == 0 {
+		return false
+	}
+	f := w.later[0]
+	w.later = w.later[1:]
+	f()
+	return true
 }
 
 func newWorld(t *testing.T) *world {
@@ -98,8 +126,13 @@ func newWorld(t *testing.T) *world {
 // screen opens the app over the world (again, as the next run would).
 func (w *world) screen(lang string) *Screen {
 	w.t.Helper()
+	var after func(time.Duration, func())
+	if w.async {
+		after = w.after
+	}
 	s, err := NewScreen(Config{
-		Width: 1404, Height: 1872, Bible: w.bible, DeviceLang: lang, Speaker: w.speaker,
+		Width: 1404, Height: 1872, Bible: w.bible, DeviceLang: lang, Speaker: w.speaker, After: after,
+		DeviceLangSource: "InkView global.cfg language=pt", ClockSource: "Buenos Aires",
 		Chrome: widget.AppChrome{Title: "Bíblia", Version: "1.2.3", LabelAbout: "Sobre", LabelExit: "Sair", LabelVersion: "versão %s", Exit: func() {}},
 		Flush:  func() { w.flushes++ }, Now: func() time.Time { return today },
 	})
@@ -192,9 +225,6 @@ func TestTheFirstRunOffersToDownloadTheBibleOfTheReadersLanguageInOneTap(t *test
 		t.Fatal("with nothing downloaded the Home asks to download")
 	}
 	tap(t, s, "get-bible")
-	if w.flushes == 0 {
-		t.Error("a download paints its progress before blocking")
-	}
 	if !s.ready() {
 		t.Fatal("the default version is downloaded and in use")
 	}
@@ -394,12 +424,12 @@ func TestPickingALanguageAndANotDownloadedVersionDownloadsItAfterAsking(t *testi
 	s := w.screen("pt-BR")
 	s.Show(1)
 	snap(t, s, "08-bar")
-	lang := byID(t, s, "combo-language").(*widget.ComboBox)
+	lang := byID(t, s, "combo-language").(*widget.SearchComboBox)
 	if len(lang.Options) != 2 || lang.Value() != "pt-br" {
 		t.Fatalf("languages: %+v value=%q", lang.Options, lang.Value())
 	}
 	s.pickLanguage("en")
-	versions := byID(t, s, "combo-version").(*widget.ComboBox)
+	versions := byID(t, s, "combo-version").(*widget.SearchComboBox)
 	if len(versions.Options) != 2 || versions.Value() != "" || !strings.Contains(versions.Options[0].Label, "baixar") {
 		t.Fatalf("English versions, none chosen, not downloaded: %+v value=%q", versions.Options, versions.Value())
 	}
@@ -536,10 +566,10 @@ func TestTheMoreMenuKeepsSettingsAboutAndExit(t *testing.T) {
 	for _, it := range items {
 		labels = append(labels, it.Label)
 	}
-	if strings.Join(labels, "|") != "Configurações||Sobre||Sair" {
+	if strings.Join(labels, "|") != "Configurações|Status||Sobre||Sair" {
 		t.Errorf("the More menu: %q", labels)
 	}
-	items[2].OnSelect() // About
+	items[3].OnSelect() // About
 	if !s.Doc.HasModal() {
 		t.Error("About opens a modal")
 	}
@@ -667,7 +697,7 @@ func TestEveryPageFitsTheScreenAndEveryElementGetsItsTouch(t *testing.T) {
 		s.Doc.Layout()
 		h := s.Doc.Root.Elem().Bounds.H
 		s.Doc.Walk(func(x widget.Widget) bool {
-			if id := x.Elem().ID; s.Doc.HasModal() && !strings.HasPrefix(id, "settings-") && !strings.HasPrefix(id, "modal-") {
+			if id := x.Elem().ID; s.Doc.HasModal() && !strings.HasPrefix(id, "settings-") && !strings.HasPrefix(id, "modal-") && !strings.HasPrefix(id, "status-") && !strings.HasPrefix(id, "combo-") || strings.HasPrefix(id, "combo-") && !strings.Contains(id, "-picker") && !strings.Contains(id, "-search") && !strings.Contains(id, "-opt-") {
 				return true // under the modal: not touchable now
 			}
 			checkElement(t, s, where, x, h)
@@ -701,6 +731,20 @@ func TestEveryPageFitsTheScreenAndEveryElementGetsItsTouch(t *testing.T) {
 	}
 	s.Search("livro")
 	check("search")
+	s.OpenStatus()
+	check("status")
+	byID(t, s, "modal-status").(*widget.Modal).Close()
+	s.openBibleTab()
+	check("books with the continue button")
+	s.Show(0)
+	check("home with the last verse")
+	s.Show(1)
+	tap(t, s, "combo-language")
+	check("language picker")
+	byID(t, s, "combo-language-picker").(*widget.Modal).Close()
+	tap(t, s, "combo-version")
+	check("version picker")
+	byID(t, s, "combo-version-picker").(*widget.Modal).Close()
 	s.OpenSettings()
 	check("settings")
 	byID(t, s, "modal-settings").(*widget.Modal).Cancel()

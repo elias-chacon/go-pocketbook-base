@@ -1,12 +1,19 @@
 package application
 
 import (
+	"time"
+
 	"go-pocketbook-base/internal/toolkit/widget"
 )
 
 // fullRefreshEvery forces a full (flashing) panel refresh after this many
 // partial ones, to clear the ghosting that fast e-ink updates leave behind.
 const fullRefreshEvery = 10
+
+// staleRequests is how long a repaint we asked for may stay unanswered before we stop counting
+// it: the reader may merge two requests into one event, and a count that never comes down would
+// hide a draw the system really asked for.
+const staleRequests = 10 * time.Second
 
 // Runtime runs one app: it connects the reader's events (draw, key, touch) to
 // the app's document.
@@ -17,8 +24,17 @@ type Runtime struct {
 
 	app      App
 	doc      *widget.Document
-	pending  bool // a repaint is already queued
+	pending  bool // a change is waiting to be painted
 	partials int  // partial panel updates since the last full one
+
+	// queued is how many repaint events we asked the reader for that have not arrived yet. When
+	// one arrives it is ours (a cheap partial update, often nothing at all); only a draw that
+	// nobody here asked for means the system covered the screen. Counting them matters: the
+	// app may paint by itself (Env.Flush) while its earlier requests are still on the way, and
+	// each of those leftovers taken for a system draw would flash the whole panel.
+	queued  int
+	lastReq time.Time
+	clock   func() time.Time // time.Now, a test replaces it
 }
 
 // NewRuntime prepares the runtime; Start builds the app.
@@ -32,6 +48,7 @@ func (r *Runtime) Start(width, height int, keyboard widget.Keyboard) {
 	r.env.Width, r.env.Height, r.env.Keyboard = width, height, keyboard
 	r.env.Exit = r.screen.Close
 	r.env.Flush = r.flush
+	r.env.After = r.screen.After
 	r.app = r.factory(r.env)
 	r.doc = r.app.Document()
 	r.doc.OnInvalidate = r.requestRepaint
@@ -41,23 +58,40 @@ func (r *Runtime) Start(width, height int, keyboard widget.Keyboard) {
 func (r *Runtime) requestRepaint() {
 	if !r.pending {
 		r.pending = true
+		r.queued++
+		r.lastReq = r.now()
 		r.screen.RequestRepaint()
 	}
 }
 
-// flush paints now what has changed (see Env.Flush).
-func (r *Runtime) flush() {
-	r.pending = true
-	r.Draw()
+func (r *Runtime) now() time.Time {
+	if r.clock != nil {
+		return r.clock()
+	}
+	return time.Now()
 }
+
+// flush paints now what has changed (see Env.Flush). The repaint events already requested stay
+// counted: they will arrive and find nothing left to do.
+func (r *Runtime) flush() { r.paint() }
 
 // Draw repaints only what changed (Document.Update) and sends just those areas
 // to the panel. A draw the system asked for (not ours) may mean something
 // covered the screen, so it repaints everything.
 func (r *Runtime) Draw() {
-	if !r.pending {
+	if r.queued > 0 && r.now().Sub(r.lastReq) > staleRequests {
+		r.queued = 0
+	}
+	if r.queued > 0 {
+		r.queued-- // an event we asked for
+	} else {
 		r.doc.ResetFrame()
 	}
+	r.paint()
+}
+
+// paint sends what changed to the panel.
+func (r *Runtime) paint() {
 	r.pending = false
 
 	f := r.doc.Update()

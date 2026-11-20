@@ -69,6 +69,11 @@ func render(ex example) *image.Gray {
 	img := d.Render()
 
 	b := host.Bounds
+	if m := d.Modal(); m != nil { // an open window: the picture is the window
+		d.Layout()
+		b = m.Bounds
+		ex.extra = 0
+	}
 	r := image.Rect(int(b.X)-8, int(b.Y)-8, int(b.Right())+8, int(b.Bottom()+ex.extra)+8)
 	return img.SubImage(r.Intersect(img.Bounds())).(*image.Gray)
 }

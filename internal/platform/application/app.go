@@ -7,6 +7,7 @@ package application
 
 import (
 	"net/http"
+	"time"
 
 	"image"
 
@@ -51,6 +52,10 @@ type Env struct {
 	// Send opens another app with an action and some data (see Intents); on the
 	// reader it does not return when it works, because the other app takes over.
 	Send func(appID, action string, data map[string]string) error
+	// After runs f on the event loop once d has passed, never in the middle of a touch or a
+	// repaint, so f may change the widgets. An app does a long job (a download) in small steps,
+	// each one scheduled by the one before, and the reader keeps answering touches in between.
+	After func(d time.Duration, f func())
 	// HTTP is the client to use for the network: it works on the reader's Linux
 	// (no resolv.conf, no IPv6), which the standard one does not. Nil in tests.
 	HTTP *http.Client
@@ -95,6 +100,8 @@ type Screen interface {
 	ShowRect(img *image.Gray, r image.Rectangle)
 	// RequestRepaint asks for a call to Runtime.Draw.
 	RequestRepaint()
+	// After runs f on the event loop once d has passed (see Env.After).
+	After(d time.Duration, f func())
 	// Close ends the app.
 	Close()
 }

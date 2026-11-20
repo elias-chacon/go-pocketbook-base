@@ -14,6 +14,7 @@ package inkview
 
 extern int main_handler(int t, int p1, int p2);
 extern void c_keyboard_handler(char *text);
+extern void c_timer_handler();
 
 // Exported by libinkview but missing from the public header.
 void LeaveInkViewMain();
@@ -22,6 +23,7 @@ import "C"
 
 import (
 	"fmt"
+	"time"
 	"unsafe"
 )
 
@@ -187,6 +189,30 @@ func goKeyboardHandler(text *C.char) {
 		done(s, ok)
 	}
 }
+
+var later timers
+
+// timerName is the one InkView timer the app uses; it is always armed for the earliest entry.
+var timerName = C.CString("pbgo-after")
+
+// After runs f on the event loop once d has passed (an InkView timer). Unlike a goroutine it never
+// runs while a touch or a repaint is being handled, so f may touch the screen's widgets. Between two
+// calls the loop handles touches: the app uses it to do a long job in small steps.
+func After(d time.Duration, f func()) { arm(later.add(time.Now(), d, f)) }
+
+func arm(wait time.Duration) {
+	if wait < 0 {
+		return
+	}
+	ms := int(wait / time.Millisecond)
+	if ms < 1 {
+		ms = 1
+	}
+	C.SetHardTimer(timerName, C.iv_timerproc(C.c_timer_handler), C.int(ms))
+}
+
+//export goTimerHandler
+func goTimerHandler() { arm(later.runDue(time.Now())) }
 
 // GlobalConfigString reads a key of the reader's global settings (global.cfg, the file where the
 // firmware keeps "language=pt", "ttslanguage=..." and so on) through InkView, "" when it is not set.

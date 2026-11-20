@@ -142,6 +142,39 @@ func ComboBoxExample() widget.Widget {
 }
 ```
 
+## SearchComboBox
+
+![searchcombobox](../components/searchcombobox.png)
+
+The combo box for a list **too long to look through** (the languages or the versions of the Bible, for example). A tap opens
+a window with a **search field** and the options **a page at a time** (there is no scrolling on e-ink): it opens on the page
+that has the current option, typing filters the options by any part of their text, ignoring the case and the accents, and a
+tap on an option chooses it and closes the window. Closing it with Back, or with the button, changes nothing.
+
+| | |
+|---|---|
+| Create | `widget.NewSearchComboBox(placeholder, options...)`; it is a `ComboBox`, so it serves wherever one does |
+| Properties | those of `ComboBox`, plus `Title` (the window's title), `SearchPlaceholder`, `CancelText`, `NoMatchText` |
+| Events | `OnChange` (the window is already closed when it runs, so it may open another) |
+
+```go
+// examples/components/combobox.go#SearchComboBoxExample
+// SearchComboBoxExample is a combo box for a long list: it opens a window with a search field and
+// the options a page at a time, on the page of the option chosen.
+func SearchComboBoxExample() widget.Widget {
+	var options []widget.Option
+	for _, name := range []string{"Afrikaans", "Alemão", "Árabe", "Búlgaro", "Chinês", "Coreano", "Dinamarquês", "Espanhol", "Finlandês",
+		"Francês", "Grego", "Hebraico", "Inglês", "Italiano", "Japonês", "Latim", "Polonês", "Português", "Russo", "Sueco"} {
+		options = append(options, widget.Option{Label: name, Value: name})
+	}
+	language := widget.NewSearchComboBox("Language", options...)
+	language.Title, language.SearchPlaceholder, language.CancelText = "Pick a language", "Search", "Close"
+	language.SetValue("Português") // the window opens on the page that has it
+	language.OnChange = func(e *widget.Event) { fmt.Println("language:", language.Value()) }
+	return language
+}
+```
+
 ## Dropdown
 
 ![dropdown](../components/dropdown.png)
