@@ -203,6 +203,19 @@ func TestTheLanguageOfTheReaderIsRecognized(t *testing.T) {
 	if got := deviceLanguage("pt-BR"); got != "pt-BR" {
 		t.Errorf("nothing known: the language of the shared settings: %q", got)
 	}
+	old := readerSetting
+	t.Cleanup(func() { readerSetting = old })
+	readerSetting = func(name string) string { // the reader's own settings come first
+		if name == "language" {
+			return "en"
+		}
+		return ""
+	}
+	t.Setenv("LANG", "pt_BR.UTF-8")
+	if got := deviceLanguage("pt-BR"); got != "en" {
+		t.Errorf("the reader's setting wins over LANG: %q", got)
+	}
+	readerSetting = old
 	t.Setenv("LANG", "en_GB.UTF-8")
 	if got := deviceLanguage("pt-BR"); got != "en" {
 		t.Errorf("LANG: %q", got)

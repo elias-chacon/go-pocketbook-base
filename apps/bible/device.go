@@ -8,18 +8,28 @@ import (
 	"sync"
 
 	"go-pocketbook-base/internal/bible/domain"
+	"go-pocketbook-base/internal/device/inkview"
 )
 
-// localeFiles are where a PocketBook keeps its settings, the first one that names a language wins.
-var localeFiles = []string{"/ebrmain/config/global.cfg", "/ebrmain/config/system.cfg"}
+// readerSetting reads a key of the reader's global settings through InkView (GetGlobalConfig +
+// ReadString, what the SDK offers): a variable so a test can stand in for the reader.
+var readerSetting = inkview.GlobalConfigString
+
+// localeFiles are where a PocketBook keeps its settings if InkView says nothing: the firmware keeps
+// them in the user's storage (CONFIGPATH of inkview.h, "language=pt" on a Portuguese reader).
+var localeFiles = []string{"/mnt/ext1/system/config/global.cfg", "/ebrmain/config/global.cfg"}
 
 // posixVariables are the variables a Linux reads its language from.
 var posixVariables = []string{"LC_ALL", "LC_MESSAGES", "LANGUAGE", "LANG"}
 
 // deviceLanguage is the language of the reader as the app understands it ("pt-BR" or "en"): what
-// the reader says in its settings, then the POSIX variables, and the language of the shared settings
-// of the apps (fallback) when none of them is known. Only Portuguese and English have translations.
+// the reader says in its settings (through InkView, then the file), then the POSIX variables, and
+// the language of the shared settings of the apps (fallback) when none of them is known. Only
+// Portuguese and English have translations.
 func deviceLanguage(fallback string) string {
+	if lang := fromTag(readerSetting("language")); lang != "" {
+		return lang
+	}
 	for _, file := range localeFiles {
 		if lang := fromConfig(file); lang != "" {
 			return lang

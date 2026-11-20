@@ -76,10 +76,20 @@ For reading, the toolkit got three generic additions (they know nothing about th
   screens (every page fits the screen and every element gets its touch) and the full cycle in `apps/bible`: download → read → close →
   reopen with no network, with the position, the progress, the read verse and the settings in place.
 - **Compiled and tested on ARMv7** (`.\scripts\arm-test.ps1`, Go 1.17 + qemu) and compiled with the reader's SDK.
-- **Not tested on the device:** the speed of SQLite and of the download on a real PB741, the memory use measured there, and the reader's
-  language (read from `/ebrmain/config/global.cfg`, `LANG`…; if nothing is recognized the language of the apps' shared settings is used).
-- **Reading aloud:** the PocketBook SDK (6.3, `inkview.h`) has **no speech API for apps**. The Settings option exists and the **Listen**
+- **The reader's language** (checked on a PB741 and in the SDK): the firmware keeps it in `global.cfg` in the user's storage
+  (`/mnt/ext1/system/config/global.cfg`, `CONFIGPATH` of `inkview.h`), as `language=pt`. The app reads it the way the SDK offers
+  (`GetGlobalConfig` + `ReadString`, `inkview.GlobalConfigString`), then the file itself, then `LANG`/`LC_*`, and last the language of the
+  apps' shared settings. (`/ebrmain` is the firmware's read-only area; the settings are not there.)
+- **Not tested on the device:** the speed of SQLite and of the download on a real PB741 and the memory use measured there.
+- **Reading aloud:** the PocketBook SDK (6.3, `inkview.h`) has **no speech API for apps** (only the `PB_TTS_STATE` enum and an internal
+  `hw_isttsplaying`). The firmware's own voices are on the reader (`system/tts/<voice>/`, e.g. `pt_br_rafael`, `pt_br_helena`,
+  `en_us_julie`; `ttslanguage=`, `ttsspeed=` and `tts_volume=` in `global.cfg`): the **ReadSpeaker VT** engine (`libvtapi.so`,
+  `librsttswrapper.so`, the `VT_LOADTTS_RS`/`VT_PLAYTTS_RS` functions), with no public header, license-checked and loaded by the reader
+  application. Calling it from an app would be reverse engineering, so it was not done. The Settings option exists and the **Listen**
   button shows, but it only speaks if the reader has a speech program (`flite`, `espeak-ng` or `espeak`); without one the app says so
   instead of pretending. When there is a way on the device, only the `Speaker` in `apps/bible/device.go` changes.
+- **Colors:** the PB741 canvas is 24 bits (a Kaleido color screen) but the toolkit renders and blits 8-bit grays
+  (`inkview.Blit`), so the "green" of the done icon is a dark square. Colors would be a toolkit change (an RGB pipeline), not one of
+  this app.
 - **Different canons:** the download asks for the 1189 chapters of the 66 books; a version with chapters beyond those (e.g. `cpdv`,
   1197) or deuterocanonical books is left without the extras (the denominator already follows what was downloaded).

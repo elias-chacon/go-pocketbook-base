@@ -49,5 +49,8 @@ func OpenKeyboard(title, initial string, maxLen, flags int, done func(string, bo
 	// No system keyboard on the desktop.
 }
 
+// GlobalConfigString has no settings of the reader off-device.
+func GlobalConfigString(name string) string { return "" }
+
 // NetConnect reports success off-device: the computer's network is already up.
 func NetConnect() error { return nil }

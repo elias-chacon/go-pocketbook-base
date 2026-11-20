@@ -74,10 +74,20 @@ o tipo de letra escolhido por `gfx.SetFamily` e a tela em negativo com `Document
   (cada página cabe na tela e cada elemento recebe o seu toque) e o ciclo completo no `apps/bible`: baixar → ler → fechar → reabrir
   sem rede, com a posição, o progresso, o versículo lido e as configurações no lugar.
 - **Compilado e testado em ARMv7** (`.\scripts\arm-test.ps1`, Go 1.17 + qemu) e compilado com o SDK do leitor.
-- **Não testado no aparelho:** a velocidade do SQLite e do download no PB741 real, o consumo de memória medido lá, e o idioma do
-  aparelho (lido de `/ebrmain/config/global.cfg`, `LANG`…; se nada for reconhecido vale o idioma das configurações dos apps).
-- **Leitura em voz alta:** o SDK do PocketBook (6.3, `inkview.h`) **não oferece uma API de voz para apps**. A opção de Configurações
-  existe e o botão **Ouvir** aparece, mas ele só fala se o leitor tiver um programa de voz (`flite`, `espeak-ng` ou `espeak`); sem
-  eles o app avisa em vez de fingir. Quando houver um caminho no aparelho, só o `Speaker` de `apps/bible/device.go` muda.
+- **O idioma do leitor** (conferido num PB741 e no SDK): o firmware o guarda no `global.cfg` do armazenamento do usuário
+  (`/mnt/ext1/system/config/global.cfg`, `CONFIGPATH` do `inkview.h`), como `language=pt`. O app lê do modo que o SDK oferece
+  (`GetGlobalConfig` + `ReadString`, `inkview.GlobalConfigString`), depois o próprio arquivo, depois `LANG`/`LC_*` e por último o idioma
+  das configurações compartilhadas dos apps. (`/ebrmain` é a área só de leitura do firmware; as configurações não ficam lá.)
+- **Não testado no aparelho:** a velocidade do SQLite e do download no PB741 real e o consumo de memória medido lá.
+- **Leitura em voz alta:** o SDK do PocketBook (6.3, `inkview.h`) **não oferece uma API de voz para apps** (só o enum `PB_TTS_STATE` e
+  um `hw_isttsplaying` interno). As vozes do próprio firmware estão no leitor (`system/tts/<voz>/`, ex. `pt_br_rafael`, `pt_br_helena`,
+  `en_us_julie`; `ttslanguage=`, `ttsspeed=` e `tts_volume=` no `global.cfg`): é o motor **ReadSpeaker VT** (`libvtapi.so`,
+  `librsttswrapper.so`, funções `VT_LOADTTS_RS`/`VT_PLAYTTS_RS`), sem header público, com verificação de licença e carregado pelo
+  aplicativo de leitura do leitor. Chamá-lo de um app seria engenharia reversa, então não foi feito. A opção de Configurações existe e o
+  botão **Ouvir** aparece, mas ele só fala se o leitor tiver um programa de voz (`flite`, `espeak-ng` ou `espeak`); sem eles o app avisa
+  em vez de fingir. Quando houver um caminho no aparelho, só o `Speaker` de `apps/bible/device.go` muda.
+- **Cores:** o canvas do PB741 é de 24 bits (tela colorida Kaleido), mas o toolkit desenha e envia tons de cinza de 8 bits
+  (`inkview.Blit`), então o "verde" do ícone de concluído é um quadrado escuro. Cores seriam uma mudança do toolkit (um pipeline RGB),
+  não deste app.
 - **Cânones diferentes:** o download pede os 1189 capítulos dos 66 livros; uma versão que tenha capítulos além desses (ex.: `cpdv`,
   1197) ou livros deuterocanônicos fica sem os extras (o denominador já acompanha o que foi baixado).

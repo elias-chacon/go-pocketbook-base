@@ -188,6 +188,20 @@ func goKeyboardHandler(text *C.char) {
 	}
 }
 
+// GlobalConfigString reads a key of the reader's global settings (global.cfg, the file where the
+// firmware keeps "language=pt", "ttslanguage=..." and so on) through InkView, "" when it is not set.
+func GlobalConfigString(name string) string {
+	cfg := C.GetGlobalConfig()
+	if cfg == nil {
+		return ""
+	}
+	key := C.CString(name)
+	defer C.free(unsafe.Pointer(key))
+	empty := C.CString("")
+	defer C.free(unsafe.Pointer(empty))
+	return C.GoString(C.ReadString(cfg, key, empty))
+}
+
 // NetConnect brings the default network (Wi-Fi) up and blocks until it is
 // connected or it fails; it returns nil when the reader already was. The reader
 // does not keep Wi-Fi connected for an app: without this call a request fails
