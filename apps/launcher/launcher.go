@@ -23,8 +23,8 @@ import (
 
 // The repository whose latest release is the catalog of apps.
 const (
-	repoOwner = "elias-chacon"
-	repoName  = "go-pocketbook-base"
+	repoOwner = platform.RepoOwner
+	repoName  = platform.RepoName
 	// httpTimeout is the client's timeout when the platform gives none (tests).
 	httpTimeout = 60 * time.Second
 )

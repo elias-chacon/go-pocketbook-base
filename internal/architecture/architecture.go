@@ -19,7 +19,7 @@
 //	platform      what an app of this project is. Three layers:
 //	                domain          Manifest, InstalledApp, Settings and the ports
 //	                application     use cases: Runtime (run an app), FirstRun
-//	                infrastructure  adapters of the ports: jsonfiles, reader
+//	                infrastructure  adapters of the ports: jsonfiles, reader, selfupdate
 //	              plus the package platform itself, the composition root that
 //	              wires them and the one import an app needs.
 //	launcher      the App Launcher, the second context of the ecosystem. Same layers:

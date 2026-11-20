@@ -3,5 +3,11 @@
   "install.failed": "Falha ao registrar o ícone: %s",
   "chrome.about": "Sobre",
   "chrome.exit": "Sair",
-  "chrome.version": "Versão %s"
+  "chrome.version": "Versão %s",
+  "update.title": "Atualização disponível",
+  "update.body": "A versão %s está disponível (esta é a %s). Atualizar agora? O app baixa a nova versão, substitui a si mesmo e reinicia.",
+  "update.now": "Atualizar agora",
+  "update.later": "Depois",
+  "update.working": "Baixando a versão %s e substituindo o app. Não desligue o leitor...",
+  "update.failed": "Não foi possível atualizar (o app continua como estava): %s"
 }

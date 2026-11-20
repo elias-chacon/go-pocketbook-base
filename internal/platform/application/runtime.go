@@ -22,6 +22,8 @@ type Runtime struct {
 	factory Factory
 	screen  Screen
 
+	updates *Updater // looks for a newer build in the background (nil: no check)
+
 	app      App
 	doc      *widget.Document
 	pending  bool // a change is waiting to be painted
@@ -52,6 +54,7 @@ func (r *Runtime) Start(width, height int, keyboard widget.Keyboard) {
 	r.app = r.factory(r.env)
 	r.doc = r.app.Document()
 	r.doc.OnInvalidate = r.requestRepaint
+	r.watchUpdates()
 }
 
 // requestRepaint queues at most one repaint, however many changes happen.

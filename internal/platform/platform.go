@@ -30,6 +30,7 @@ import (
 	"go-pocketbook-base/internal/platform/infrastructure/jsonfiles"
 	"go-pocketbook-base/internal/platform/infrastructure/process"
 	"go-pocketbook-base/internal/platform/infrastructure/reader"
+	"go-pocketbook-base/internal/platform/infrastructure/selfupdate"
 	"go-pocketbook-base/internal/toolkit/widget"
 )
 
@@ -58,6 +59,16 @@ const (
 
 // httpTimeout bounds every request of Env.HTTP: a download of a few megabytes over Wi-Fi.
 const httpTimeout = 60 * time.Second
+
+// The repository whose latest release holds the published build of every app: the Launcher lists
+// the apps from it and every app updates itself from it.
+const (
+	RepoOwner = "elias-chacon"
+	RepoName  = "go-pocketbook-base"
+)
+
+// checkTimeout bounds the background look for an update (an offline reader answers at once).
+const checkTimeout = 15 * time.Second
 
 // DefaultRoot is the user storage of the reader (what RegisterOnDrive takes on the reader itself).
 const DefaultRoot = application.DefaultRoot
@@ -149,13 +160,24 @@ func Run(cfg Config, factory Factory) error {
 	if intent != nil {
 		reply = intent.ReplyTo
 	}
+	client := env.HTTP
+	quick := *client
+	quick.Timeout = checkTimeout
+	updater := application.Updater{
+		ID: m.ID, Current: version.Value,
+		Source:  selfupdate.Source{Client: &quick, Owner: RepoOwner, Repo: RepoName},
+		Install: selfupdate.Installer{Client: client, Exe: exe},
+		State:   jsonfiles.NewUpdateState(root),
+		// The new build starts the way this one was started (same intent, same way back).
+		Restart: func() error { return process.Exec(exe, os.Environ()) },
+	}
 	screen := &reader.Screen{}
 	// InkView ends the process when the app closes, so going back to the Launcher
 	// has to happen as the app asks to exit, not after the event loop.
 	screen.BeforeClose = func() {
 		returnToLauncher(exe, true, os.Getenv(domain.LauncherEnv), reply, process.Exec)
 	}
-	err = reader.Run(application.NewRuntime(env, factory, screen))
+	err = reader.Run(application.NewRuntime(env, factory, screen).WithUpdates(updater))
 	reader.Logf("Run returned err=%v", err)
 	return err
 }

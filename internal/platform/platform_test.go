@@ -123,3 +123,17 @@ func TestVerboseModeIsAskedForWithAMarkerFileOrTheEnvironment(t *testing.T) {
 		t.Error("so does PBGO_DEBUG")
 	}
 }
+
+// The automatic update is part of the blueprint of every app and of the Launcher, and they all
+// get it by calling Run: the day Run stops wiring it, none of them updates any more.
+func TestRunWiresTheBackgroundUpdateForEveryApp(t *testing.T) {
+	src, err := os.ReadFile("platform.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"WithUpdates(", "selfupdate.Source", "selfupdate.Installer"} {
+		if !strings.Contains(string(src), want) {
+			t.Errorf("platform.Run must wire the update (%s)", want)
+		}
+	}
+}

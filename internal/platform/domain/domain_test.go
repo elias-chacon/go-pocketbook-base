@@ -72,3 +72,22 @@ func TestSettingsAreNormalizedAndNeverEmpty(t *testing.T) {
 		}
 	}
 }
+
+func TestIsNewerComparesNumbersNotText(t *testing.T) {
+	cases := []struct {
+		cur, next string
+		want      bool
+	}{
+		{"1.49.3", "1.50.0", true}, {"1.9.0", "1.10.0", true}, {"1.2.9", "1.2.10", true},
+		{"1.2.3", "1.2.3", false}, {"1.2.3", "1.2.2", false}, {"2.0.0", "1.99.9", false},
+		{"1.2.3", "v1.2.4", true}, {"dev", "1.0.0", false}, {"1.0.0", "garbage", false},
+	}
+	for _, c := range cases {
+		if got := IsNewer(c.cur, c.next); got != c.want {
+			t.Errorf("IsNewer(%q, %q) = %v", c.cur, c.next, got)
+		}
+	}
+	if IsRelease("dev") || !IsRelease("1.2.3") {
+		t.Error("only MAJOR.MINOR.BUILD is a release")
+	}
+}

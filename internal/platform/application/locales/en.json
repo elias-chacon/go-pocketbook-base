@@ -3,5 +3,11 @@
   "install.failed": "Could not register the icon: %s",
   "chrome.about": "About",
   "chrome.exit": "Exit",
-  "chrome.version": "Version %s"
+  "chrome.version": "Version %s",
+  "update.title": "Update available",
+  "update.body": "Version %s is available (this is %s). Update now? The app downloads it, replaces itself and restarts.",
+  "update.now": "Update now",
+  "update.later": "Later",
+  "update.working": "Downloading version %s and replacing the app. Do not turn the reader off...",
+  "update.failed": "Could not update (the app stays as it was): %s"
 }

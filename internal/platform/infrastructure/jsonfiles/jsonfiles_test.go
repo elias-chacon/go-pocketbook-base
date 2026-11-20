@@ -98,3 +98,24 @@ func TestSettingsDefaultsAndPersistence(t *testing.T) {
 		t.Errorf("an empty language gives the default: %q", s.Lang)
 	}
 }
+
+func TestUpdateStateIsRememberedAndABrokenFileIsForgotten(t *testing.T) {
+	root := t.TempDir()
+	s := NewUpdateState(root)
+	if got := s.Load(); got.Dismissed != "" || !got.CheckedAt.IsZero() {
+		t.Fatalf("nothing remembered yet: %+v", got)
+	}
+	if err := s.Save(domain.UpdateState{Dismissed: "1.2.3", Available: domain.Update{Version: "1.2.3", URL: "u"}}); err != nil {
+		t.Fatal(err)
+	}
+	if got := s.Load(); got.Dismissed != "1.2.3" || got.Available.URL != "u" {
+		t.Errorf("state = %+v", got)
+	}
+	os.WriteFile(filepath.Join(metaDir(root), updateFile), []byte("{broken"), 0o644)
+	if got := s.Load(); got.Dismissed != "" {
+		t.Errorf("a broken file must give an empty state: %+v", got)
+	}
+	if apps := NewApps(root).List(); len(apps) != 0 {
+		t.Errorf("the update file is not an installed app: %+v", apps)
+	}
+}
