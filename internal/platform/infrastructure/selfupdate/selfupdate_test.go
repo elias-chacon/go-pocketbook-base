@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -129,5 +130,15 @@ func TestUnpackFindsTheAppWhereverTheZipKeptItAndNamesWhatItHadWhenItIsMissing(t
 	_, err := unpack(zipOf(t, map[string]string{"tasks.app": elf, "app.json": "{}"}), "hello")
 	if err == nil || !strings.Contains(err.Error(), "tasks.app") {
 		t.Errorf("the error says what the zip has: %v", err)
+	}
+}
+
+func TestInstallErrorSaysWhatArrivedWhenTheZipHasNoApp(t *testing.T) {
+	data := zipOf(t, map[string]string{"other.app": "\x7fELF"})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write(data) }))
+	defer srv.Close()
+	err := Installer{Client: srv.Client(), Exe: filepath.Join(t.TempDir(), "hello.app")}.Install("hello", domain.Update{URL: srv.URL + "/hello.zip"})
+	if err == nil || !strings.Contains(err.Error(), "other.app") || !strings.Contains(err.Error(), "bytes from "+srv.URL) || !strings.Contains(err.Error(), "PK") {
+		t.Errorf("%v", err)
 	}
 }

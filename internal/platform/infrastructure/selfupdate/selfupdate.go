@@ -136,7 +136,9 @@ func (i Installer) Install(appID string, u domain.Update) error {
 	}
 	binary, err := unpack(data, appID)
 	if err != nil {
-		return err
+		// What arrived, for the person who reads the log: a download that is not the zip announced
+		// (a proxy page, another file) is told apart from a zip that lacks the app.
+		return fmt.Errorf("%w [%d bytes from %s, starts with %q]", err, len(data), u.URL, head(data))
 	}
 	if u.AppSHA256 != "" && !strings.EqualFold(Sum(binary), u.AppSHA256) {
 		return errors.New("the app in the zip is not the one the release announced")
@@ -153,6 +155,14 @@ func (i Installer) Install(appID string, u domain.Update) error {
 		return err
 	}
 	return nil
+}
+
+// head is the first bytes of data, to recognize what a download is ("PK" for a zip).
+func head(data []byte) []byte {
+	if len(data) > 8 {
+		return data[:8]
+	}
+	return data
 }
 
 // Sum is the SHA-256 of data, in hex.
