@@ -196,3 +196,15 @@ func TestAReleaseWithoutTheAppChecksumOffersNothing(t *testing.T) {
 		t.Error("without the checksum nothing says the app changed")
 	}
 }
+
+func TestCheckNeverOffersAnOlderReleaseToANewerBuild(t *testing.T) {
+	src := &fakeSource{update: domain.Update{Version: "1.49.7", AppSHA256: "bbb"}}
+	u, _, _, _ := newUpdater("1.49.8", src)
+	if _, ok := u.Check(); ok {
+		t.Error("a local build newer than the release must not be taken back to it")
+	}
+	same, _, _, _ := newUpdater("1.49.7", src)
+	if _, ok := same.Check(); !ok {
+		t.Error("the same version with another checksum is still an update")
+	}
+}

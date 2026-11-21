@@ -11,7 +11,7 @@ func TestEveryComponentExampleRendersAndRespondsToTouch(t *testing.T) {
 	examples := map[string]func() widget.Widget{
 		"FlexRow": FlexRow, "FlexGrow": FlexGrow, "FlexWrap": FlexWrap, "FlexColumn": FlexColumn,
 		"GridLayout": GridLayout, "LabelExample": LabelExample, "ButtonExample": ButtonExample,
-		"ToggleExample": ToggleExample, "ComboBoxExample": ComboBoxExample, "LongComboBoxExample": LongComboBoxExample, "DropdownExample": DropdownExample,
+		"ToggleExample": ToggleExample, "ComboBoxExample": ComboBoxExample, "LongComboBoxExample": LongComboBoxExample, "OAuthLoginExample": OAuthLoginExample, "DropdownExample": DropdownExample,
 		"MenuBarExample": MenuBarExample, "TextInputExample": TextInputExample, "NumberInputExample": NumberInputExample,
 		"MaskedInputExample": MaskedInputExample, "SearchInputExample": SearchInputExample,
 		"TextAreaExample": TextAreaExample, "TableExample": TableExample, "ProgressExample": ProgressExample,
@@ -25,14 +25,15 @@ func TestEveryComponentExampleRendersAndRespondsToTouch(t *testing.T) {
 			t.Errorf("%s draws nothing", name)
 		}
 		for _, w := range harness.Interactive(doc) {
-			if w.Elem().Disabled {
-				continue // a disabled element correctly ignores touch
+			if w.Elem().Disabled || w.Elem().Document() == nil {
+				continue // a disabled element correctly ignores touch; a detached one (the example changed screen) is gone
 			}
 			if got := doc.TargetAt(w.Elem().Bounds.Center()); got != w {
 				t.Errorf("%s: a touch at the center of %T reaches %T", name, w, got)
 			}
 			harness.Tap(doc, w) // runs the example's handlers
 			doc.ClosePopups()
+			doc.Layout()
 		}
 	}
 }

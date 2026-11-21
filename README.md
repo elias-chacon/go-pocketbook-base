@@ -11,8 +11,8 @@ biblioteca de componentes visuais desenhada do zero em gráficos vetoriais
 ([`fogleman/gg`](https://github.com/fogleman/gg)), ícone que se registra sozinho e build
 reproduzível em Docker. Faça um fork para começar novos apps. Otimizada para um hardware limitado com no máximo 1G de ram.
 
-O app de exemplo (`apps/hello`, o blueprint de todo app do ecossistema) é uma vitrine com todos os componentes, em 4 páginas
-(**Entradas**, **Escolhas**, **Dados**, **Calendário**) navegadas por uma barra de menus.
+O app de exemplo (`apps/hello`, o blueprint de todo app do ecossistema) é uma vitrine com todos os componentes, em 5 páginas
+(**Entradas**, **Escolhas**, **Dados**, **Calendário**, **Conta**) navegadas por uma barra de menus.
 
 > Versão atual: ver [`.version`](.version) · `MAJOR.MINOR.BUILD` (veja [Versionamento](#versionamento)).
 
@@ -147,7 +147,7 @@ Legenda: `[x]` concluída · `[ ]` pendente. Ao concluir uma task, o MINOR é in
 
 **Entrega e qualidade**
 
-- [x] T28 Tela de demonstração com todos os componentes (4 páginas) e rodapé com o último toque
+- [x] T28 Tela de demonstração com todos os componentes (5 páginas) e rodapé com o último toque
 - [x] T29 Testes de toque: centro de cada elemento interativo, tamanho mínimo, sem estouro de tela
 - [x] T30 Integração com o Sonar local (`sonar-project.properties`, `scripts/sonar.ps1`) e cobertura
 - [x] T31 README com requisitos e tasks
@@ -226,6 +226,7 @@ Critério de pronto de **cada app** (herdado das regras do projeto): segue o con
 - [x] T78 **Atualização automática no blueprint**: todo app e o Launcher (via `platform.Run`) verificam em segundo plano, ao abrir, se há internet e se o `app_sha256` do app no `catalog.json` da última Release difere do SHA-256 do `.app` instalado (o checksum decide, não a versão); se houver, um diálogo oferece Atualizar agora / Depois, baixa o zip (tamanho, SHA-256 e verificação de programa ELF), substitui o próprio `.app` e reinicia. Offline é silencioso; `dev` nunca é substituída; "Depois" lembra a versão. Testado em PC e ARM; **não testado no aparelho nem contra uma Release real**
 - [x] T79 **ComboBox de lista longa no próprio componente** (sem modal): quando as opções não cabem na tela o popup do `ComboBox` ganha busca (sem acento nem maiúsculas) e páginas com anterior/próximo, abre na página da opção atual e tem tamanho fixo (o `SearchComboBox` foi removido; a Bíblia usa o `ComboBox`). **Bíblia**: *Mais > Versões baixadas* lista as versões no aparelho numa `Table` e exclui a selecionada por completo (texto + espaço do arquivo), com confirmação; o progresso lido permanece. Testes, docs e imagem do componente; **não testado no aparelho**
 - [x] T80 **Launcher com todo o ecossistema**: a grade mostra os apps instalados e os que só o `catalog.json` da Release tem (guardado no leitor, consultado em segundo plano; toque em um não instalado instala), **toque longo de 2 s** (novo no toolkit: `OnLongPress`) abre a janela do app: **Atualizar** (só se o SHA-256 do arquivo instalado difere do `app_sha256` da Release), **Esconder** (instalado ou não) e **Remover** (apaga o app, o banco, os ícones e a entrada do `view.json`; arquivos compartilhados como as contas só quando nenhum outro app os usa). Em Configurações: **Gerenciar apps** e **Apps escondidos** com `Table`. Manifesto ganhou `data` e `shares`. Testes de PC; **não testado no aparelho**
+- [x] T81 **Combo-box de lista longa corrigido** (os botões de página não saem mais do painel), **`OAuthLogin`** no toolkit (login Google/Microsoft por código ou QR, genérico, com exemplo, docs e testes), página **Conta** no hello com os novos componentes, e o aviso de atualização do Launcher não oferece mais uma Release mais antiga que a build instalada
 - [ ] T75 Bíblia, melhorias: remover o texto de uma versão baixada pela tela (a função existe), capítulos além do cânon de 66 livros (ex.: `cpdv` tem 1197), nota de direitos autorais da versão, e marcar na lista os capítulos já lidos
 
 Ordem sugerida: T51 → T52/T53/T54 → T57 → T55 → T58/T59/T62 (primeiro e-mail ponta a ponta, com IMAP) → T66/T67 (calendário local com `.ics`) → T63 (tarefas locais) → sincronizações (T60, T64, T68) → integrações entre apps (T65, T69, T70) → Exchange local (T61). Cada fase termina com validação no aparelho.

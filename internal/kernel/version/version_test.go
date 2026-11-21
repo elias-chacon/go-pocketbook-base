@@ -61,3 +61,14 @@ func TestBumpFile(t *testing.T) {
 		t.Errorf("file = %q", data)
 	}
 }
+
+func TestOlder(t *testing.T) {
+	for _, c := range []struct {
+		a, b string
+		want bool
+	}{{"1.49.7", "1.49.8", true}, {"1.49.8", "1.49.8", false}, {"1.50.0", "1.49.9", false}, {"2.0.0", "1.99.99", false}, {"x", "1.0.0", false}, {"1.0.0", "dev", false}} {
+		if got := Older(c.a, c.b); got != c.want {
+			t.Errorf("Older(%q, %q) = %v", c.a, c.b, got)
+		}
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"go-pocketbook-base/internal/kernel/geom"
+	"go-pocketbook-base/internal/kernel/version"
 	"go-pocketbook-base/internal/launcher/domain"
 	"go-pocketbook-base/internal/toolkit/widget"
 )
@@ -20,7 +21,8 @@ func (h *Home) updatable(t domain.Tile) bool {
 		return false
 	}
 	sum := h.cfg.InstalledSum(t.ID)
-	return sum != "" && !strings.EqualFold(sum, t.Listing.AppSHA256)
+	// A build newer than the published one (a local build) is never taken back to it.
+	return sum != "" && !strings.EqualFold(sum, t.Listing.AppSHA256) && !version.Older(t.Listing.Version, t.Version)
 }
 
 // Manage opens the window of an app (a long press on its tile, or the settings): update it when

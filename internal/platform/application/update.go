@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"go-pocketbook-base/internal/kernel/version"
 	"go-pocketbook-base/internal/platform/domain"
 )
 
@@ -70,6 +71,9 @@ func (u Updater) Check() (domain.Update, bool) {
 	// app and leave another as it was. A release that does not publish it offers nothing.
 	if latest.AppSHA256 == "" || strings.EqualFold(latest.AppSHA256, mine) || latest.AppSHA256 == st.Dismissed {
 		return domain.Update{}, false
+	}
+	if version.Older(latest.Version, u.Current) {
+		return domain.Update{}, false // the build running is newer than the published one (a local build): never go back
 	}
 	return latest, true
 }

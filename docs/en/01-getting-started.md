@@ -40,7 +40,7 @@ the samples of this documentation.
 go run ./cmd/preview
 ```
 
-It writes `preview-0.png` … `preview-3.png`, one per page of the demo (Inputs, Choices, Data, Calendar),
+It writes `preview-0.png` … `preview-4.png`, one per page of the demo (Inputs, Choices, Data, Calendar, Account),
 at the size of the PB741 screen. Use `-page 2` for a single page and `-w 758 -h 1024` for another
 resolution.
 

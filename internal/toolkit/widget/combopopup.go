@@ -12,8 +12,8 @@ import (
 const popupGap = 6.0
 
 // comboChrome is what a paged popup spends besides its rows: the padding, the search field, the
-// page footer and the gaps between them.
-const comboChrome = 12 + ControlHeight + 6 + 6 + ControlHeight
+// page footer, the gaps between them and the border.
+const comboChrome = 2*BorderThin + 12 + ControlHeight + 6 + 6 + ControlHeight
 
 // comboPopup is the list a ComboBox opens when its options do not fit the screen: the same
 // popup under the field, but with a search field on top and the options a page at a time
@@ -65,7 +65,7 @@ func newComboPopup(cb *ComboBox, rows int, width float64) *comboPopup {
 	p.prev.OnClick = func(*Event) { p.goTo(p.page - 1) }
 	p.next.OnClick = func(*Event) { p.goTo(p.page + 1) }
 	footer := NewRow(12, p.indicator, p.prev, p.next)
-	footer.Style.Padding = geom.XY(8, 0)
+	footer.Style.Padding = geom.XY(0, 8) // sideways only: a vertical padding would push the buttons out of the panel
 
 	p.AppendChild(p.search)
 	p.AppendChild(p.body)

@@ -326,3 +326,26 @@ func TestStartingInEnglishAndTheLanguageMenuItem(t *testing.T) {
 		t.Errorf("the menu item must switch back to Portuguese: %q %v", app.Lang(), app.Pages())
 	}
 }
+
+func TestAccountPageSignsInWithTheSimulatedProviders(t *testing.T) {
+	app, _ := newApp(nil)
+	app.SetLang("en")
+	app.ShowPage(4)
+	app.Doc.Layout()
+	tapPoint(app, byID(t, app, "oauth-microsoft").Elem().Bounds.Center())
+	app.Doc.Layout()
+	if byID(t, app, "oauth-code").(*widget.Label).Text != "HELLO-2024" {
+		t.Fatal("the device code is shown")
+	}
+	for i, want := range []string{"Not approved yet. Try again in a moment.", "Signed in."} {
+		tapPoint(app, byID(t, app, "oauth-complete").Elem().Bounds.Center())
+		app.Doc.Layout()
+		if got := byID(t, app, "oauth-note").(*widget.Label).Text; got != want {
+			t.Errorf("check %d: %q, want %q", i+1, got, want)
+		}
+	}
+	tapPoint(app, byID(t, app, "combo-language").Elem().Bounds.Center())
+	if app.Doc.HasModal() {
+		t.Error("the long combo box opens a popup, not a window")
+	}
+}

@@ -60,6 +60,9 @@ func examples() []example {
 		{"toggle", 760, 0, toggleExample, nil},
 		{"combobox", 640, 250, comboExample, func(d *widget.Document, w widget.Widget) { tapCenter(d, w.Elem().Children()[1]) }},
 		{"longcombobox", 900, 1750, longComboExample, func(d *widget.Document, w widget.Widget) { tapCenter(d, w.Elem().Children()[1]) }},
+		{"oauthlogin", 760, 0, oauthExample, nil},
+		{"oauthlogin-code", 760, 0, oauthExample, func(d *widget.Document, w widget.Widget) { tapCenter(d, d.GetElementByID("oauth-microsoft")) }},
+		{"oauthlogin-qr", 760, 0, oauthExample, func(d *widget.Document, w widget.Widget) { tapCenter(d, d.GetElementByID("oauth-google")) }},
 		{"dropdown", 640, 400, dropdownExample, func(d *widget.Document, w widget.Widget) { tapCenter(d, w.Elem().Children()[1]) }},
 		{"menubar", 760, 300, menubarExample, func(d *widget.Document, w widget.Widget) {
 			bar := w.(*widget.MenuBar)
@@ -193,6 +196,18 @@ func longComboExample() widget.Widget {
 	cb.SearchPlaceholder, cb.NoMatchText = "Buscar", "Nada encontrado"
 	cb.SetValue("Português")
 	return captioned("Combo-box de lista longa: busca e páginas dentro do popup, na página da opção atual", cb)
+}
+
+func oauthExample() widget.Widget {
+	login := widget.NewOAuthLogin(
+		widget.OAuthProvider{ID: "google", Label: "Google",
+			Start:    func() (widget.OAuthChallenge, error) { return widget.OAuthChallenge{URL: "https://accounts.google.com/o/oauth2/v2/auth?client_id=demo"}, nil },
+			Complete: func(widget.OAuthChallenge, string) (bool, error) { return false, nil }},
+		widget.OAuthProvider{ID: "microsoft", Label: "Microsoft",
+			Start:    func() (widget.OAuthChallenge, error) { return widget.OAuthChallenge{URL: "https://microsoft.com/devicelogin", Code: "AB12-CD34"}, nil },
+			Complete: func(widget.OAuthChallenge, string) (bool, error) { return false, nil }})
+	login.Root.Style.Padding = geom.All(12)
+	return captioned("Login OAuth: escolha do provedor", login.Root)
 }
 
 func dropdownExample() widget.Widget {

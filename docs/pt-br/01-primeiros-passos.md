@@ -40,7 +40,7 @@ exemplos desta documentação.
 go run ./cmd/preview
 ```
 
-Ele gera `preview-0.png` … `preview-3.png`, uma por página da demo (Entradas, Escolhas, Dados, Calendário), no
+Ele gera `preview-0.png` … `preview-4.png`, uma por página da demo (Entradas, Escolhas, Dados, Calendário, Conta), no
 tamanho da tela do PB741. Use `-page 2` para uma página só e `-w 758 -h 1024` para outra resolução.
 
 ## Passo 4 — Desenhar a sua primeira tela

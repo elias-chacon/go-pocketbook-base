@@ -833,6 +833,57 @@ func ImageExample() widget.Widget {
 }
 ```
 
+## OAuth sign-in (Google, Microsoft)
+
+![oauthlogin](../components/oauthlogin.png) ![code](../components/oauthlogin-code.png) ![qr](../components/oauthlogin-qr.png)
+
+`OAuthLogin` is the sign-in with an online account for a screen **without a browser**. It shows a button per provider and, after the choice, what
+the person has to do on **another device** (a phone or a computer): either **a code to type at an address** (the *device code* sign-in, Microsoft) or
+**the address as a QR code with a field for the code pasted back** (the *authorization code* sign-in, Google). The widget knows nothing about OAuth:
+the app gives each provider two functions, `Start` (asks the provider for the challenge: address and, maybe, a code) and `Complete` (finishes: it
+answers *pending* while the person has not approved, or an error). A provider without `Start` is not configured and its button is disabled. Like
+`Pager`, it is built from existing widgets: add `Root` to the document. `Start` and `Complete` run on the event loop and block on the network; an
+app that wants the screen to stay alive does the network work in the background (see the Tasks app).
+
+| | |
+|---|---|
+| Create | `widget.NewOAuthLogin(providers...)`, each `OAuthProvider{ID, Label, Start, Complete}` |
+| Properties | `Root` (the element to add), `Texts` (`OAuthTexts`: every word, English by default, for the app to translate) |
+| Events | `OnSuccess(providerID)` |
+| Methods | `Reset()` goes back to the providers |
+| Ids | `oauth-<provider>`, `oauth-code`, `oauth-qr`, `oauth-input`, `oauth-complete`, `oauth-cancel`, `oauth-note` |
+
+```go
+// examples/components/oauthlogin.go#OAuthLoginExample
+// OAuthLoginExample is the sign-in with a Google or Microsoft account for a screen without a browser:
+// a button per provider, then a code to type at an address (Microsoft) or an address shown as a QR
+// code with a field for the code pasted back (Google). The widget only asks; the app gives it the
+// two steps of its OAuth client.
+func OAuthLoginExample() widget.Widget {
+	login := widget.NewOAuthLogin(
+		widget.OAuthProvider{ID: "microsoft", Label: "Microsoft",
+			Start: func() (widget.OAuthChallenge, error) {
+				return widget.OAuthChallenge{URL: "https://microsoft.com/devicelogin", Code: "AB12-CD34"}, nil
+			},
+			Complete: func(widget.OAuthChallenge, string) (bool, error) {
+				return false, nil // true: the person has not approved yet
+			}},
+		widget.OAuthProvider{ID: "google", Label: "Google",
+			Start: func() (widget.OAuthChallenge, error) {
+				return widget.OAuthChallenge{URL: "https://accounts.google.com/o/oauth2/v2/auth?client_id=..."}, nil
+			},
+			Complete: func(_ widget.OAuthChallenge, code string) (bool, error) {
+				if code == "" {
+					return false, errors.New("paste the code first")
+				}
+				return false, nil
+			}},
+	)
+	login.OnSuccess = func(provider string) { fmt.Println("signed in with", provider) }
+	return login.Root
+}
+```
+
 ## Modal
 
 ![modal](../components/modal.png)

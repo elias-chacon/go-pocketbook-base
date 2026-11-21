@@ -31,7 +31,7 @@ type Config struct {
 }
 
 // pageKeys are the translation keys of the page titles, in order.
-var pageKeys = []string{"menu.inputs", "menu.choices", "menu.data", "menu.calendar"}
+var pageKeys = []string{"menu.inputs", "menu.choices", "menu.data", "menu.calendar", "menu.account"}
 
 // App is the demo application: a menu bar, one page at a time and a footer.
 type App struct {
@@ -84,7 +84,8 @@ func New(deviceW, deviceH int, cfg Config) *App {
 		&widget.Tab{Title: a.t(pageKeys[0]), Build: build(a.inputsPage), Restored: restored},
 		&widget.Tab{Title: a.t(pageKeys[1]), Build: build(a.choicesPage), Restored: restored},
 		&widget.Tab{Title: a.t(pageKeys[2]), Build: build(a.dataPage), Restored: restored},
-		&widget.Tab{Title: a.t(pageKeys[3]), Build: build(a.calendarPage), Restored: restored})
+		&widget.Tab{Title: a.t(pageKeys[3]), Build: build(a.calendarPage), Restored: restored},
+		&widget.Tab{Title: a.t(pageKeys[4]), Build: build(a.accountPage), Restored: restored})
 	a.menu, a.body = a.tabs.Bar, a.tabs.Body
 	a.menu.ID = "menubar"
 	a.menu.Menus = append(a.menu.Menus, a.moreMenu())

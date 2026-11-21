@@ -48,6 +48,25 @@ func Parse(s string) (Version, error) {
 	return Version{n[0], n[1], n[2]}, nil
 }
 
+// Less reports whether v comes before o.
+func (v Version) Less(o Version) bool {
+	if v.Major != o.Major {
+		return v.Major < o.Major
+	}
+	if v.Minor != o.Minor {
+		return v.Minor < o.Minor
+	}
+	return v.Build < o.Build
+}
+
+// Older reports whether version a is older than version b. Text that is not a version (a "dev"
+// build) is never older: nothing can be said, so the caller decides some other way.
+func Older(a, b string) bool {
+	x, err1 := Parse(a)
+	y, err2 := Parse(b)
+	return err1 == nil && err2 == nil && x.Less(y)
+}
+
 // String formats the version as MAJOR.MINOR.BUILD.
 func (v Version) String() string { return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Build) }
 

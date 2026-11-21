@@ -157,3 +157,18 @@ func TestTheLongListWorksWhenTheFieldIsLowOnTheScreen(t *testing.T) {
 		t.Errorf("the popup must stay on the screen: %+v", p.Bounds)
 	}
 }
+
+func TestEverythingOfThePagedPopupStaysInsideItsPanel(t *testing.T) {
+	d, cb, _ := longBox()
+	tap(d, cb)
+	p, _ := openPage(t, d)
+	for _, w := range []Widget{p.search, p.body, p.prev, p.next, p.indicator} {
+		b := w.Elem().Bounds
+		if b.X < p.Bounds.X || b.Y < p.Bounds.Y || b.Right() > p.Bounds.Right() || b.Bottom() > p.Bounds.Bottom() {
+			t.Errorf("%q %+v leaves the panel %+v", w.Elem().ID, b, p.Bounds)
+		}
+	}
+	if b := p.next.Bounds; b.Bottom() > p.Bounds.Bottom()-BorderThin-6 {
+		t.Errorf("the buttons must clear the padding and the border: %+v in %+v", b, p.Bounds)
+	}
+}
