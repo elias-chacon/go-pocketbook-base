@@ -211,9 +211,6 @@ func TestOutlookWithoutAClientIDSaysHowToEnableIt(t *testing.T) {
 	if !strings.Contains(labels(s), "oauth.json") || !strings.Contains(labels(s), "client id") {
 		t.Errorf("no setup help:\n%s", labels(s))
 	}
-	tap(t, s, "signin-back")
-	s.StartOAuth() // not configured: nothing happens
-	s.CheckOAuth()
 }
 
 func TestOutlookSignsInByCodeOnAnotherDevice(t *testing.T) {
@@ -222,16 +219,16 @@ func TestOutlookSignsInByCodeOnAnotherDevice(t *testing.T) {
 	s, done := newScreen(f, auth, nil)
 	tap(t, s, "signin-outlook")
 	s.email.Value, s.name.Value = "ana@outlook.com", "Ana"
-	tap(t, s, "signin-oauth")
+	tap(t, s, "oauth-microsoft")
 	if auth.startedN != 1 || !strings.Contains(labels(s), "ABCD1234") || !strings.Contains(labels(s), "devicelogin") {
 		t.Fatalf("the code was not shown:\n%s", labels(s))
 	}
-	tap(t, s, "signin-check")
-	if !strings.Contains(s.note.Text, "Ainda não aprovado") || done.ID != "" {
-		t.Errorf("pending: note %q done %v", s.note.Text, done)
+	tap(t, s, "oauth-complete")
+	if !strings.Contains(labels(s), "Ainda não aprovado") || done.ID != "" {
+		t.Errorf("pending:\n%s", labels(s))
 	}
 	auth.waitErr, auth.secret = nil, domain.Secret{AccessToken: "tok", RefreshToken: "r"}
-	tap(t, s, "signin-check")
+	tap(t, s, "oauth-complete")
 	if done.ID != "ana" || f.gotToken.RefreshToken != "r" || f.got.Email != "ana@outlook.com" || f.got.Name != "Ana" {
 		t.Errorf("done %+v got %+v token %v", done, f.got, f.gotToken)
 	}
@@ -241,51 +238,41 @@ func TestOutlookFailuresAreExplainedAndTheCodeCanBeCancelled(t *testing.T) {
 	auth := &fakeAuth{challenge: domain.Challenge{UserCode: "X"}, waitErr: domain.ErrDenied}
 	s, done := newScreen(&fakeRegistrar{}, auth, nil)
 	tap(t, s, "signin-outlook")
-	s.email.Value = "ana@outlook.com"
-	tap(t, s, "signin-oauth")
-	tap(t, s, "signin-check")
-	if !strings.Contains(s.note.Text, "negado") || s.challenge != nil || done.ID != "" {
-		t.Errorf("denied: %q", s.note.Text)
+	tap(t, s, "oauth-microsoft") // no address yet: it is asked before the network is used
+	if !strings.Contains(labels(s), "Confira o endereço") || auth.startedN != 0 {
+		t.Errorf("an invalid address must be refused first:\n%s", labels(s))
 	}
-
+	s.email.Value = "ana@outlook.com"
+	tap(t, s, "oauth-microsoft")
+	tap(t, s, "oauth-complete")
+	if !strings.Contains(labels(s), "negado") || done.ID != "" {
+		t.Errorf("denied:\n%s", labels(s))
+	}
 	auth.waitErr = domain.ErrExpired
-	s.showOutlook()
-	s.email.Value = "ana@outlook.com"
-	tap(t, s, "signin-oauth")
-	tap(t, s, "signin-check")
-	if !strings.Contains(s.note.Text, "expirou") {
-		t.Errorf("expired: %q", s.note.Text)
+	tap(t, s, "oauth-complete")
+	if !strings.Contains(labels(s), "expirou") {
+		t.Errorf("expired:\n%s", labels(s))
 	}
-
 	auth.waitErr = errors.New("sem rede")
-	s.showOutlook()
-	s.email.Value = "ana@outlook.com"
-	tap(t, s, "signin-oauth")
-	tap(t, s, "signin-check")
-	if !strings.Contains(s.note.Text, "sem rede") || s.challenge == nil {
-		t.Errorf("network: %q", s.note.Text)
+	tap(t, s, "oauth-complete")
+	if !strings.Contains(labels(s), "sem rede") {
+		t.Errorf("network:\n%s", labels(s))
 	}
-	tap(t, s, "signin-back") // cancel: back to the Outlook form
-	if s.challenge != nil {
-		t.Error("the code was kept after cancelling")
-	}
-
+	tap(t, s, "oauth-cancel") // back to the provider
 	auth.startErr = errors.New("recusado")
-	s.email.Value = "ana@outlook.com"
-	tap(t, s, "signin-oauth")
-	if !strings.Contains(s.note.Text, "recusado") {
-		t.Errorf("start failure: %q", s.note.Text)
+	tap(t, s, "oauth-microsoft")
+	if !strings.Contains(labels(s), "recusado") {
+		t.Errorf("start failure:\n%s", labels(s))
 	}
 
 	auth.startErr, auth.waitErr, auth.secret = nil, nil, domain.Secret{AccessToken: "t"}
-	f := &fakeRegistrar{err: application.ErrNotOAuth}
-	s2, _ := newScreen(f, auth, nil)
+	s2, _ := newScreen(&fakeRegistrar{err: application.ErrNotOAuth}, auth, nil)
 	tap(t, s2, "signin-outlook")
 	s2.email.Value = "ana@gmail.com"
-	tap(t, s2, "signin-oauth")
-	tap(t, s2, "signin-check")
-	if !strings.Contains(s2.note.Text, "não entra com a Microsoft") {
-		t.Errorf("not oauth: %q", s2.note.Text)
+	tap(t, s2, "oauth-microsoft")
+	tap(t, s2, "oauth-complete")
+	if !strings.Contains(labels(s2), "não entra com a Microsoft") {
+		t.Errorf("not oauth:\n%s", labels(s2))
 	}
 }
 
@@ -334,6 +321,6 @@ func TestEveryScreenFitsAndEveryButtonGetsItsTouch(t *testing.T) {
 	tap(t, s, "signin-outlook")
 	checkScreen(t, s, "outlook")
 	s.email.Value = "ana@outlook.com"
-	tap(t, s, "signin-oauth")
+	tap(t, s, "oauth-microsoft")
 	checkScreen(t, s, "code")
 }

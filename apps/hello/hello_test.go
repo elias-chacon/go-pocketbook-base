@@ -72,3 +72,20 @@ func TestHelloIsAnAppWithKeysAndTheLanguageIsSharedThroughTheSettings(t *testing
 		t.Error(err)
 	}
 }
+
+func TestTheAccountPageUsesTheRealSignInsWhenTheClientIDsExist(t *testing.T) {
+	env, _ := testEnv(t, "en")
+	dir := t.TempDir()
+	for _, p := range oauthProviders(env, dir) {
+		if p.Start != nil {
+			t.Errorf("%s must be disabled without client ids", p.ID)
+		}
+	}
+	if err := os.WriteFile(dir+"/oauth.json", []byte(`{"microsoft":"m","google":"g"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	got := oauthProviders(env, dir)
+	if len(got) != 2 || got[0].Label != "Google" || got[1].Label != "Microsoft" || got[0].Start == nil || got[1].Start == nil {
+		t.Errorf("both providers are enabled by their client ids: %+v", got)
+	}
+}

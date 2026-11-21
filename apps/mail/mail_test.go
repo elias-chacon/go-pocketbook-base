@@ -197,18 +197,15 @@ func TestAnOutlookAccountUsesGraphWithTheRenewedToken(t *testing.T) {
 
 func TestTheClientIDComesFromTheDataFolder(t *testing.T) {
 	dir := t.TempDir()
-	if microsoftClientID(dir) != "" || authorizer(dir, nil) != nil {
+	if authorizer(dir, nil) != nil {
 		t.Error("no file must mean no OAuth")
 	}
 	os.WriteFile(dir+"/oauth.json", []byte(`{"microsoft": " abc-123 "}`), 0o644)
-	if got := microsoftClientID(dir); got != "abc-123" {
-		t.Errorf("client id = %q", got)
-	}
 	if authorizer(dir, nil) == nil {
 		t.Error("a client id must enable the sign-in")
 	}
 	os.WriteFile(dir+"/oauth.json", []byte(`not json`), 0o644)
-	if microsoftClientID(dir) != "" {
+	if authorizer(dir, nil) != nil {
 		t.Error("a broken file must be ignored")
 	}
 	if httpClient(nil) == nil {

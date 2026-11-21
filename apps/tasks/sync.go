@@ -7,9 +7,7 @@ import (
 	"time"
 
 	accounts "go-pocketbook-base/internal/accounts/domain"
-	"go-pocketbook-base/internal/accounts/infrastructure/oauthcode"
 	"go-pocketbook-base/internal/accounts/infrastructure/oauthconfig"
-	"go-pocketbook-base/internal/accounts/infrastructure/oauthdevice"
 	accountsui "go-pocketbook-base/internal/accounts/presentation"
 	"go-pocketbook-base/internal/platform"
 	"go-pocketbook-base/internal/tasks/application"
@@ -37,14 +35,8 @@ type authorizers struct {
 }
 
 func newAuthorizers(dir string, web *http.Client) authorizers {
-	cfg := oauthconfig.Load(dir)
 	var a authorizers
-	if cfg.Microsoft != "" {
-		a.microsoft = oauthdevice.Client{HTTP: web, Provider: oauthdevice.Microsoft(cfg.Microsoft)}
-	}
-	if cfg.Google != "" {
-		a.google = oauthcode.Client{HTTP: web, Provider: oauthcode.Google(cfg.Google, cfg.GoogleSecret)}
-	}
+	a.microsoft, a.google = oauthconfig.Sources(dir, web)
 	return a
 }
 

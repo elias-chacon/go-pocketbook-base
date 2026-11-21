@@ -2,9 +2,19 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
+
+	accountsapp "go-pocketbook-base/internal/accounts/application"
+	accounts "go-pocketbook-base/internal/accounts/domain"
+	"go-pocketbook-base/internal/accounts/infrastructure/jsonaccounts"
+	"go-pocketbook-base/internal/accounts/infrastructure/oauthconfig"
+	"go-pocketbook-base/internal/accounts/infrastructure/securefile"
+	accountsui "go-pocketbook-base/internal/accounts/presentation"
+	"go-pocketbook-base/internal/localization/i18n"
 
 	"go-pocketbook-base/internal/calendar/application"
 	"go-pocketbook-base/internal/calendar/infrastructure/sqlstore"
@@ -35,9 +45,14 @@ func zoneName() string {
 
 // calendar is the app: one document with the calendar screens.
 type calendar struct {
-	doc    *widget.Document
-	db     *storage.Store
-	screen *presentation.Screen
+	env      platform.Env
+	dir      string
+	doc      *widget.Document
+	db       *storage.Store
+	agenda   application.Agenda
+	tr       *i18n.Bundle
+	accounts accountsapp.Accounts
+	screen   *presentation.Screen
 }
 
 // newCalendar is the platform.Factory.
@@ -48,7 +63,7 @@ func newCalendar(env platform.Env) platform.App {
 // newCalendarAt builds the app over a data folder and a time zone (the tests use
 // a temporary folder).
 func newCalendarAt(env platform.Env, dir, zone string) *calendar {
-	a := &calendar{doc: widget.NewDocument(env.Width, env.Height)}
+	a := &calendar{env: env, dir: dir, doc: widget.NewDocument(env.Width, env.Height)}
 	a.doc.Keyboard = env.Keyboard
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		a.fail(err)
@@ -65,17 +80,56 @@ func newCalendarAt(env platform.Env, dir, zone string) *calendar {
 		a.fail(err)
 		return a
 	}
-	tr := presentation.NewTranslator(env.Lang)
-	agenda := application.Agenda{AccountID: localAccount, Store: store, Zone: zone}
-	if _, err := agenda.EnsureCalendar(tr.T("cal.title")); err != nil {
+	a.tr = presentation.NewTranslator(env.Lang)
+	a.agenda = application.Agenda{AccountID: localAccount, Store: store, Zone: zone}
+	if _, err := a.agenda.EnsureCalendar(a.tr.T("cal.title")); err != nil {
 		a.fail(err)
 		return a
 	}
-	a.screen = presentation.NewScreen(presentation.Config{
-		Width: env.Width, Height: env.Height, Doc: a.doc, Chrome: platform.Chrome(env), Tr: tr, Agenda: agenda, Flush: env.Flush,
-		Importer: icsImporter{agenda: agenda, web: env.HTTP, roots: []string{platform.DefaultRoot, filepath.Join(platform.DefaultRoot, "Download")}},
-	})
+	a.accounts = accountsapp.Accounts{Store: jsonaccounts.New(dir), Vault: securefile.New(dir), Eraser: db}
+	a.showScreen("")
 	return a
+}
+
+// showScreen shows the calendar, with a notice at the foot when there is one.
+func (a *calendar) showScreen(notice string) {
+	a.screen = presentation.NewScreen(presentation.Config{
+		Width: a.env.Width, Height: a.env.Height, Doc: a.doc, Chrome: platform.Chrome(a.env), Tr: a.tr, Agenda: a.agenda,
+		Flush: a.env.Flush, Notice: notice,
+		Importer: icsImporter{agenda: a.agenda, web: a.env.HTTP, roots: []string{platform.DefaultRoot, filepath.Join(platform.DefaultRoot, "Download")}},
+		Connect:  a.connect, Account: a.account(),
+	})
+}
+
+// account is the address of the account the person connected ("" when there is none).
+func (a *calendar) account() string {
+	list, err := a.accounts.List(accounts.Calendar)
+	if err != nil || len(list) == 0 {
+		return ""
+	}
+	return list[0].Email
+}
+
+// connect opens the sign-in to a Google or Microsoft account (the shared accounts of the mail, tasks
+// and calendar apps).
+func (a *calendar) connect() {
+	microsoft, google := oauthconfig.Sources(a.dir, httpClient(a.env.HTTP))
+	accountsui.NewConnect(accountsui.ConnectConfig{
+		Width: a.env.Width, Height: a.env.Height, Doc: a.doc, Chrome: platform.Chrome(a.env),
+		Tr: accountsui.NewTranslator(a.env.Lang), Accounts: a.accounts, Microsoft: microsoft, Google: google,
+		OAuthSetup: filepath.Join(a.dir, oauthconfig.File),
+		OnDone:     func(acc accounts.Account) { a.showScreen(a.tr.T("cal.account.done", acc.Email)) },
+		OnCancel:   func() { a.showScreen("") },
+	})
+	a.doc.ResetFrame()
+}
+
+// httpClient is the network client of the platform, or the standard one in tests.
+func httpClient(env *http.Client) *http.Client {
+	if env != nil {
+		return env
+	}
+	return &http.Client{Timeout: 60 * time.Second}
 }
 
 // Document implements platform.App.

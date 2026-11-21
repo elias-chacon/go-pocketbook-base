@@ -65,22 +65,29 @@ func TestEveryInteractiveElementReceivesItsOwnTouch(t *testing.T) {
 		app.ShowPage(i)
 		checked := map[widget.Widget]bool{}
 		eachScrollPosition(app, func() { checkTouches(t, app, title, checked) })
-		all := 0
-		app.Doc.Walk(func(w widget.Widget) bool {
-			if _, isScroll := w.(*widget.Scroll); !isScroll && w.Elem().Visible() {
-				if _, ok := w.(widget.PointerHandler); ok {
-					all++
-					if !checked[w] {
-						t.Errorf("%s: %T (id %q) was never reachable, even scrolling", title, w, w.Elem().ID)
-					}
-				}
-			}
-			return true
-		})
-		if all < 3 {
+		if all := countUnreached(t, app, title, checked); all < 3 {
 			t.Errorf("%s: only %d interactive elements found", title, all)
 		}
 	}
+}
+
+// countUnreached counts the interactive elements of the page and reports the ones no scroll position
+// ever put in sight.
+func countUnreached(t *testing.T, app *App, title string, checked map[widget.Widget]bool) int {
+	all := 0
+	app.Doc.Walk(func(w widget.Widget) bool {
+		if _, isScroll := w.(*widget.Scroll); isScroll || !w.Elem().Visible() {
+			return true
+		}
+		if _, ok := w.(widget.PointerHandler); ok {
+			all++
+			if !checked[w] {
+				t.Errorf("%s: %T (id %q) was never reachable, even scrolling", title, w, w.Elem().ID)
+			}
+		}
+		return true
+	})
+	return all
 }
 
 // checkTouches checks the touch-accuracy rule on the interactive elements in sight and records them.

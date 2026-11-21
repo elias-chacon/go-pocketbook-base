@@ -10,12 +10,12 @@ package presentation
 import (
 	"embed"
 	"errors"
+	"strings"
 
 	"go-pocketbook-base/internal/accounts/application"
 	"go-pocketbook-base/internal/accounts/domain"
 	"go-pocketbook-base/internal/kernel/geom"
 	"go-pocketbook-base/internal/localization/i18n"
-	"go-pocketbook-base/internal/toolkit/gfx"
 	"go-pocketbook-base/internal/toolkit/widget"
 )
 
@@ -85,7 +85,6 @@ type SignIn struct {
 	name, email, password *widget.Input
 	imap, smtp            *widget.Input
 	hint, note            *widget.Label
-	challenge             *domain.Challenge // non-nil while waiting for the approval on the other device
 }
 
 // NewSignIn builds the screen on the choice of provider.
@@ -139,7 +138,7 @@ func (s *SignIn) input(id, placeholder string, kind widget.InputType) *widget.In
 // ----- the choice of provider -----
 
 func (s *SignIn) showChooser() {
-	s.provider, s.challenge = "", nil
+	s.provider = ""
 	intro := widget.NewLabel(s.t("signin.choose"))
 	intro.Style.Color = widget.Muted
 	items := []widget.Widget{
@@ -168,8 +167,6 @@ func (s *SignIn) choose(provider string) {
 // ----- Outlook.com and Microsoft 365: sign in by code -----
 
 func (s *SignIn) showOutlook() {
-	s.note = widget.NewLabel("")
-	s.note.Style.Bold = true
 	back := s.button(idBack, s.t("signin.back"), s.showChooser)
 	if s.cfg.Authorizer == nil {
 		hint := widget.NewLabel(s.t("signin.oauth.setup", s.cfg.OAuthSetup))
@@ -181,83 +178,32 @@ func (s *SignIn) showOutlook() {
 	s.name = s.input("signin-name", s.t("signin.name"), widget.TypeText)
 	hint := widget.NewLabel(s.t("signin.oauth.hint"))
 	hint.Style.FontSize, hint.Style.Color = widget.FontSmall, widget.Muted
-	start := s.button("signin-oauth", s.t("signin.oauth.start"), s.StartOAuth)
-	s.show(s.heading(keyOutlook), s.email, s.name, hint, s.note, widget.NewRow(12, start, back))
-}
-
-// StartOAuth asks the provider for a code and shows it, to be typed on another device.
-func (s *SignIn) StartOAuth() {
-	if s.cfg.Authorizer == nil {
-		return
-	}
-	ch, err := s.cfg.Authorizer.Start()
-	if err != nil {
-		s.note.Text = s.t(keyFailed, err.Error())
-		s.Doc.Invalidate()
-		return
-	}
-	s.challenge = &ch
-	s.showChallenge()
-}
-
-func (s *SignIn) showChallenge() {
-	ch := s.challenge
-	steps := widget.NewLabel(s.t("signin.oauth.steps", ch.VerificationURI))
-	code := widget.NewLabel(ch.UserCode)
-	code.ID = "signin-code"
-	code.Style.FontSize, code.Style.Bold = widget.FontTitle+12, true
-	code.Style.TextAlign = gfx.AlignCenter
-	s.note = widget.NewLabel("")
-	s.note.Style.Bold = true
-	check := s.button("signin-check", s.t("signin.oauth.check"), s.CheckOAuth)
-	back := s.button(idBack, s.t("signin.cancel"), func() { s.challenge = nil; s.showOutlook() })
-	s.show(s.heading(keyOutlook), steps, code, s.note, widget.NewRow(12, check, back))
-}
-
-// CheckOAuth asks whether the code was approved; when it was, the account is added.
-func (s *SignIn) CheckOAuth() {
-	if s.challenge == nil || s.cfg.Authorizer == nil {
-		return
-	}
-	s.note.Text = s.t("signin.oauth.checking")
-	s.Doc.Invalidate()
-	secret, pending, err := application.CheckOAuth(s.cfg.Authorizer, *s.challenge)
-	switch {
-	case pending:
-		s.note.Text = s.t("signin.oauth.pending")
-	case err != nil:
-		s.note.Text = s.explainOAuth(err)
-		if errors.Is(err, domain.ErrExpired) || errors.Is(err, domain.ErrDenied) {
-			s.challenge = nil
+	// The sign-in itself is the toolkit's OAuthLogin: the code to type on another device.
+	providers := OAuthProviders(s.cfg.Tr, OAuthSources{Microsoft: s.cfg.Authorizer}, s.registerOAuth, ProviderMicrosoft)
+	if start := providers[0].Start; start != nil {
+		providers[0].Start = func() (widget.OAuthChallenge, error) {
+			if !strings.Contains(s.email.Value, "@") {
+				return widget.OAuthChallenge{}, errors.New(s.t("signin.invalid"))
+			}
+			return start()
 		}
-	default:
-		s.finishOAuth(secret)
-		return
 	}
-	s.Doc.Invalidate()
+	login := widget.NewOAuthLogin(providers...)
+	login.Texts = OAuthTexts(s.cfg.Tr)
+	login.Reset() // the words were set after the first build
+	s.show(s.heading(keyOutlook), s.email, s.name, hint, login.Root, back)
 }
 
-func (s *SignIn) finishOAuth(secret domain.Secret) {
+// registerOAuth adds the account with the tokens the sign-in gave.
+func (s *SignIn) registerOAuth(_ string, secret domain.Secret) error {
 	acc, err := s.cfg.Accounts.RegisterOAuth(application.Registration{Name: s.name.Value, Email: s.email.Value}, secret)
 	if err != nil {
-		s.note.Text = s.explain(err)
-		s.Doc.Invalidate()
-		return
+		return explainRegistration(s.cfg.Tr, err)
 	}
-	s.challenge = nil
 	if s.cfg.OnDone != nil {
 		s.cfg.OnDone(acc)
 	}
-}
-
-func (s *SignIn) explainOAuth(err error) string {
-	switch {
-	case errors.Is(err, domain.ErrDenied):
-		return s.t("signin.oauth.denied")
-	case errors.Is(err, domain.ErrExpired):
-		return s.t("signin.oauth.expired")
-	}
-	return s.t(keyFailed, err.Error())
+	return nil
 }
 
 // ----- Gmail, iCloud and others: address and password -----

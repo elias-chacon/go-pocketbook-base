@@ -32,12 +32,37 @@ func (a *App) longListCard() widget.Widget {
 		field(a.t("account.field.language"), withID(lang, "combo-language")))
 }
 
-// signIn is the OAuthLogin with two simulated providers: nothing leaves the reader. A real app gives
-// it the provider of its OAuth client (see the Tasks app).
+// signIn is the OAuthLogin: with the providers the app gave (the real sign-ins when oauth.json has the
+// client ids; the demo keeps no token) or, without any, two simulated ones that send nothing.
 func (a *App) signIn() widget.Widget {
+	providers := a.cfg.OAuth
+	if len(providers) == 0 {
+		providers = a.simulatedProviders()
+	}
+	login := widget.NewOAuthLogin(providers...)
+	login.Texts = widget.OAuthTexts{
+		Intro: a.t("account.login.intro"), Cancel: a.t("account.login.cancel"), Check: a.t("account.login.check"),
+		Finish: a.t("account.login.finish"), Checking: a.t("account.login.checking"), Pending: a.t("account.login.pending"),
+		Done: a.t("account.login.done"), Steps: a.t("account.login.steps"), Scan: a.t("account.login.scan"),
+		Pasted: a.t("account.login.pasted"), Failed: a.t("account.login.failed"),
+	}
+	login.Reset() // the words were set after the first build
+	login.OnSuccess = func(id string) { a.say(a.t("say.signedin", id)) }
+	items := []widget.Widget{login.Root}
+	for _, p := range providers {
+		if p.Start == nil {
+			items = append(items, hint(a.t("account.login.setup", a.cfg.OAuthSetup)))
+			break
+		}
+	}
+	return widget.NewColumn(16, items...)
+}
+
+// simulatedProviders are two providers that answer by themselves, for the preview and the tests.
+func (a *App) simulatedProviders() []widget.OAuthProvider {
 	checks := 0
-	login := widget.NewOAuthLogin(
-		widget.OAuthProvider{ID: "google", Label: a.t("account.login.google"),
+	return []widget.OAuthProvider{
+		{ID: "google", Label: a.t("account.login.google"),
 			Start: func() (widget.OAuthChallenge, error) {
 				return widget.OAuthChallenge{URL: "https://accounts.example.com/demo-google"}, nil
 			},
@@ -47,21 +72,12 @@ func (a *App) signIn() widget.Widget {
 				}
 				return false, nil
 			}},
-		widget.OAuthProvider{ID: "microsoft", Label: a.t("account.login.microsoft"),
+		{ID: "microsoft", Label: a.t("account.login.microsoft"),
 			Start: func() (widget.OAuthChallenge, error) {
 				checks = 0
 				return widget.OAuthChallenge{URL: "https://login.example.com/demo-device", Code: "HELLO-2024"}, nil
 			},
 			// The first answer is "not approved yet", like a person who is still typing the code.
 			Complete: func(widget.OAuthChallenge, string) (bool, error) { checks++; return checks < 2, nil }},
-	)
-	login.Texts = widget.OAuthTexts{
-		Intro: a.t("account.login.intro"), Cancel: a.t("account.login.cancel"), Check: a.t("account.login.check"),
-		Finish: a.t("account.login.finish"), Checking: a.t("account.login.checking"), Pending: a.t("account.login.pending"),
-		Done: a.t("account.login.done"), Steps: a.t("account.login.steps"), Scan: a.t("account.login.scan"), Pasted: a.t("account.login.pasted"),
-		Failed: a.t("account.login.failed"),
 	}
-	login.Reset() // the words were set after the first build
-	login.OnSuccess = func(id string) { a.say(a.t("say.signedin", id)) }
-	return login.Root
 }

@@ -49,5 +49,8 @@
   "cal.import.working": "Importing…",
   "cal.import.failed": "Could not import: %s",
   "cal.import.partial": "Imported %d events; %d problems (first: %s).",
-  "cal.import.done": "Imported %d events."
+  "cal.import.done": "Imported %d events.",
+  "cal.account.connect": "Connect account",
+  "cal.account.connected": "Account: %s",
+  "cal.account.done": "Account %s connected. Syncing events with it is not available yet."
 }

@@ -98,3 +98,13 @@ Google: Gmail does not allow its mail scope on the code flow a reader can do, so
 ## Sign-in by authorization code (Google)
 
 `oauthcode` signs in with the authorization code and **PKCE** for the providers whose device flow does not allow the scopes needed (Google Tasks and Calendar). `Start` gives the address (shown as a QR code by the toolkit's `NewQRCode`) and keeps the PKCE verifier in the challenge; `Exchange` trades the code the person typed (or the whole address of the page that failed to open, which holds it) for the tokens; `Refresh` renews them. `oauthconfig` reads the client ids from `oauth.json`. A `google` preset (OAuth2, Tasks and Calendar) joins the others, and `Registration.Provider` picks a preset without relying on the e-mail domain.
+
+## One sign-in component for every app
+
+Every screen that signs in to a Google or Microsoft account is the toolkit's [`OAuthLogin`](06-components.md) (a button per provider, then the code to type or the QR code to read):
+the **Mail** app (Outlook.com), the **Tasks** app and the **Calendar** app (**Connect account** at the foot of the screen; both providers) and the **hello** blueprint (its *Account* page).
+`accountsui.OAuthProviders` adapts the two sign-ins of this context (`Authorizer` by device code, `CodeAuthorizer` by authorization code) to the widget, and
+`oauthconfig.Sources(dir, client)` builds them from `applications/.pbgo/oauth.json` (`{"microsoft": "...", "google": "...", "google_secret": "..."}`): a provider without a client id is
+shown **disabled** and the screen says where the ids go. The address must be typed before the sign-in starts (it names the account). Honest limits: the **Mail** app signs in to Microsoft only
+(Google mail would need a restricted Gmail scope and an IMAP-with-OAuth backend that this project does not have; Gmail keeps using an app password), and the **Calendar** app registers the
+account but **does not synchronize events yet**; neither the real sign-ins nor the vault have been tried on the reader.

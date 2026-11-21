@@ -58,6 +58,10 @@ type Config struct {
 	Importer Importer
 	// Flush paints pending changes now, before a slow call (nil: no flush).
 	Flush func()
+	// Connect opens the sign-in to an online account (Google or Microsoft); Account is the address
+	// of the one already connected ("" when there is none). Nil Connect: no Account button.
+	Connect func()
+	Account string
 }
 
 // View is how the schedule is shown.
@@ -248,6 +252,16 @@ func (s *Screen) show() {
 		imp.ID = "cal-import"
 		imp.OnClick = func(*widget.Event) { s.ShowImport() }
 		foot.AppendChild(imp)
+	}
+	if s.cfg.Connect != nil {
+		label := s.t("cal.account.connect")
+		if s.cfg.Account != "" {
+			label = s.t("cal.account.connected", s.cfg.Account)
+		}
+		acc := widget.NewButton(label)
+		acc.ID = "cal-account"
+		acc.OnClick = func(*widget.Event) { s.cfg.Connect() }
+		foot.AppendChild(acc)
 	}
 	foot.Style.AlignItems = widget.AlignCenter
 	foot.Style.Padding = geom.XY(8, 20)

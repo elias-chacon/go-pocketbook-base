@@ -66,5 +66,6 @@
   "connect.google.hint": "You will get a QR code to read with your phone, and sign in to Google there.",
   "connect.google.steps": "1. Read this code with your phone's camera and sign in to Google.\n2. The page will fail to open (that is expected). Copy the code from its address bar, or the whole address, and type it below.",
   "connect.google.code": "Code (or the whole address)",
-  "connect.google.finish": "Finish"
+  "connect.google.finish": "Finish",
+  "signin.oauth.done": "Signed in."
 }

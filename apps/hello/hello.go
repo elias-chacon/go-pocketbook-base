@@ -1,6 +1,9 @@
 package main
 
 import (
+	"path/filepath"
+
+	"go-pocketbook-base/internal/accounts/infrastructure/oauthconfig"
 	"go-pocketbook-base/internal/platform"
 	"go-pocketbook-base/internal/showcase"
 	"go-pocketbook-base/internal/toolkit/widget"
@@ -19,6 +22,7 @@ func newHello(env platform.Env) platform.App {
 		Exit:     env.Exit,
 		Notice:   env.Notice,
 		Lang:     env.Lang,
+		OAuth:    oauthProviders(env, dataDir(platform.DefaultRoot)), OAuthSetup: filepath.Join(dataDir(platform.DefaultRoot), oauthconfig.File),
 		// The language chosen here becomes the language of every app.
 		OnLangChange: func(lang string) { _ = env.Settings.Save(platform.Settings{Lang: lang}) },
 	})}

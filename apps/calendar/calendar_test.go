@@ -137,3 +137,33 @@ func TestTheImporterReadsAFileAndAnAddressWithoutDuplicating(t *testing.T) {
 		t.Fatal("an unreachable address must be an error")
 	}
 }
+
+func TestTheCalendarConnectsAGoogleOrMicrosoftAccountAndComesBack(t *testing.T) {
+	dir := t.TempDir()
+	a := newCalendarAt(testEnv(t), dir, "America/Sao_Paulo")
+	t.Cleanup(a.close)
+	a.Document().Layout()
+	btn := a.Document().GetElementByID("cal-account")
+	if btn == nil {
+		t.Fatal("the calendar offers to connect an account")
+	}
+	c := btn.Elem().Bounds.Center()
+	a.Document().HandlePointer(widget.PointerDown, c.X, c.Y)
+	a.Document().HandlePointer(widget.PointerUp, c.X, c.Y)
+	a.Document().Layout()
+	for _, id := range []string{"connect-email", "oauth-microsoft", "oauth-google", "connect-setup"} {
+		if a.Document().GetElementByID(id) == nil {
+			t.Fatalf("the sign-in screen lacks %s:\n%s", id, labels(a.Document()))
+		}
+	}
+	if !a.Document().GetElementByID("oauth-google").Elem().Disabled {
+		t.Error("without client ids the providers are disabled")
+	}
+	cancel := a.Document().GetElementByID("connect-cancel").Elem().Bounds.Center()
+	a.Document().HandlePointer(widget.PointerDown, cancel.X, cancel.Y)
+	a.Document().HandlePointer(widget.PointerUp, cancel.X, cancel.Y)
+	a.Document().Layout()
+	if a.Document().GetElementByID("cal-account") == nil {
+		t.Error("cancelling goes back to the calendar")
+	}
+}

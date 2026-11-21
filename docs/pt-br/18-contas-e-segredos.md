@@ -98,3 +98,13 @@ Google: o Gmail não permite o escopo de e-mail no fluxo por código que um leit
 ## Login por código de autorização (Google)
 
 O `oauthcode` entra com o código de autorização e **PKCE** para os provedores cujo fluxo por dispositivo não permite os escopos necessários (Google Tasks e Calendar). O `Start` dá o endereço (mostrado como QR code pelo `NewQRCode` do toolkit) e guarda o verifier do PKCE no desafio; o `Exchange` troca o código digitado (ou o endereço inteiro da página que não abriu, que o contém) pelos tokens; o `Refresh` os renova. O `oauthconfig` lê os client ids do `oauth.json`. Um preset `google` (OAuth2, Tarefas e Calendário) se junta aos outros, e o `Registration.Provider` escolhe um preset sem depender do domínio do e-mail.
+
+## Um só componente de login para todos os apps
+
+Toda tela que entra numa conta Google ou Microsoft é o [`OAuthLogin`](06-componentes.md) do toolkit (um botão por provedor, depois o código para digitar ou o QR code para ler): o app
+**Mail** (Outlook.com), o app **Tasks** e o app **Calendar** (**Conectar conta** no rodapé; os dois provedores) e o blueprint **hello** (a página *Conta*). O
+`accountsui.OAuthProviders` adapta os dois logins deste contexto (`Authorizer` por device code, `CodeAuthorizer` por código de autorização) ao widget, e o
+`oauthconfig.Sources(dir, client)` os monta a partir de `applications/.pbgo/oauth.json` (`{"microsoft": "...", "google": "...", "google_secret": "..."}`): um provedor sem client id aparece
+**desabilitado** e a tela diz onde colocar os ids. O endereço precisa ser digitado antes do login começar (ele dá nome à conta). Limites honestos: o app **Mail** entra só na Microsoft (e-mail do
+Google exigiria um escopo restrito do Gmail e um backend IMAP com OAuth que este projeto não tem; o Gmail continua com senha de app) e o app **Calendar** registra a conta mas **ainda não
+sincroniza eventos**; nem os logins reais nem o cofre foram testados no leitor.
