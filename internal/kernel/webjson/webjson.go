@@ -38,6 +38,8 @@ type Client struct {
 	HTTP  Doer
 	Token func() (string, error) // nil for a public service: no Authorization header is sent
 	Base  string                 // put before a path; a path that is already an address is used as it is
+	// Header is sent with every request (Graph's Prefer, for instance).
+	Header map[string]string
 }
 
 // Do sends a request. in (a value, or nil) is the JSON body; out (a pointer, or nil)
@@ -70,6 +72,9 @@ func (c Client) Do(method, path string, in, out interface{}) error {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
 	req.Header.Set("Accept", "application/json")
+	for k, v := range c.Header {
+		req.Header.Set(k, v)
+	}
 	if in != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}

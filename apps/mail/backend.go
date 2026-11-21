@@ -10,6 +10,7 @@ import (
 	"go-pocketbook-base/internal/mail/infrastructure/graph"
 	"go-pocketbook-base/internal/mail/infrastructure/imapmail"
 	"go-pocketbook-base/internal/mail/infrastructure/smtpsend"
+	"go-pocketbook-base/internal/mail/infrastructure/xoauth2"
 )
 
 var errNoMailServer = errors.New("this account has no IMAP server")
@@ -21,10 +22,7 @@ type tokenSource func() (string, error)
 // or Microsoft Graph (Outlook.com, Microsoft 365) with an access token that tokens renews.
 func backendFor(acc accounts.Account, secret accounts.Secret, tokens tokenSource, web graph.Doer) (domain.Backend, error) {
 	if acc.Auth == accounts.OAuth2 {
-		if _, ok := acc.Endpoint(accounts.Mail, accounts.Graph); !ok || tokens == nil {
-			return nil, errNoMailServer
-		}
-		return graph.Client{HTTP: web, Token: tokens}, nil
+		return oauthBackend(acc, tokens, web)
 	}
 	in, ok := acc.Endpoint(accounts.Mail, accounts.IMAP)
 	if !ok {
@@ -61,4 +59,30 @@ func smtpSecurity(s accounts.Security) smtpsend.Security {
 		return smtpsend.TLS
 	}
 	return smtpsend.StartTLS
+}
+
+// oauthBackend connects an OAuth2 account: Microsoft Graph, or an IMAP server (Gmail) signed in
+// with XOAUTH2 and an SMTP server that takes the same token.
+func oauthBackend(acc accounts.Account, tokens tokenSource, web graph.Doer) (domain.Backend, error) {
+	if tokens == nil {
+		return nil, errNoMailServer
+	}
+	if _, ok := acc.Endpoint(accounts.Mail, accounts.Graph); ok {
+		return graph.Client{HTTP: web, Token: tokens}, nil
+	}
+	in, ok := acc.Endpoint(accounts.Mail, accounts.IMAP)
+	if !ok {
+		return nil, errNoMailServer
+	}
+	auth := xoauth2.Auth{User: acc.Login(), Token: tokens}
+	client := &imapmail.Client{
+		Addr: address(in), Security: imapSecurity(in.Security),
+		SignIn: imapmail.SASL(auth.SASL),
+		// Gmail keeps a copy of what is sent by itself.
+		SaveSent: false,
+	}
+	if out, ok := acc.Endpoint(accounts.Mail, accounts.SMTP); ok {
+		client.Sender = smtpsend.Sender{Addr: address(out), Security: smtpSecurity(out.Security), Auth: auth.SMTP()}
+	}
+	return client, nil
 }

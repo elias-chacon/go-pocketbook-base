@@ -67,5 +67,6 @@
   "connect.google.steps": "1. Leia este código com a câmera do celular e entre no Google.\n2. A página vai falhar ao abrir (é esperado). Copie o código da barra de endereço, ou o endereço inteiro, e digite abaixo.",
   "connect.google.code": "Código (ou o endereço inteiro)",
   "connect.google.finish": "Concluir",
-  "signin.oauth.done": "Conectado."
+  "signin.oauth.done": "Conectado.",
+  "signin.google": "Google (Gmail, entrar com o Google)"
 }

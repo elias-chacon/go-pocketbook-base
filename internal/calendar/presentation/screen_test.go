@@ -450,3 +450,31 @@ func TestImportScreenSaysWhenNoFileWasFound(t *testing.T) {
 	s.Doc.Layout()
 	byID(t, s, "import-fetch")
 }
+
+func TestTheCalendarSyncsTheConnectedAccountAndSaysWhatItBroughtOrWhatFailed(t *testing.T) {
+	var result error
+	flushed := 0
+	s := NewScreen(Config{Width: 1404, Height: 1872, Tr: NewTranslator("en"), Flush: func() { flushed++ },
+		Agenda:  application.Agenda{AccountID: "local", Store: &memStore{events: map[string]domain.Event{}}, Now: func() time.Time { return now }},
+		Connect: func() {}, Account: "ana@gmail.com",
+		Sync: func() (string, error) { return "3 events from 1 calendars", result }})
+	s.Doc.Layout()
+	if s.Doc.GetElementByID("cal-sync") == nil || !strings.Contains(s.Doc.GetElementByID("cal-account").(*widget.Button).Text, "ana@gmail.com") {
+		t.Fatal("the connected account and the Sync button are at the foot")
+	}
+	c := s.Doc.GetElementByID("cal-sync").Elem().Bounds.Center()
+	s.Doc.HandlePointer(widget.PointerDown, c.X, c.Y)
+	s.Doc.HandlePointer(widget.PointerUp, c.X, c.Y)
+	s.Doc.Layout()
+	if flushed != 1 || !strings.Contains(s.note.Text, "3 events") {
+		t.Errorf("flushed %d, note %q", flushed, s.note.Text)
+	}
+	result = errors.New("HTTP 401")
+	s.SyncNow()
+	if !strings.Contains(s.note.Text, "HTTP 401") {
+		t.Errorf("the failure is told: %q", s.note.Text)
+	}
+	if NewScreen(Config{Width: 1404, Height: 1872, Tr: NewTranslator("en"), Agenda: application.Agenda{AccountID: "local", Store: &memStore{events: map[string]domain.Event{}}, Now: func() time.Time { return now }}}).Doc.GetElementByID("cal-sync") != nil {
+		t.Error("without an account there is nothing to sync")
+	}
+}

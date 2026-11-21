@@ -125,9 +125,14 @@ func explainOAuth(tr *i18n.Bundle, err error) error {
 	return err
 }
 
+// ExplainRegistration puts a failure to add the account in the words of the person (nil stays nil).
+func ExplainRegistration(tr *i18n.Bundle, err error) error { return explainRegistration(tr, err) }
+
 // explainRegistration puts a failure to add the account in the words of the person.
 func explainRegistration(tr *i18n.Bundle, err error) error {
 	switch {
+	case err == nil:
+		return nil
 	case errors.Is(err, application.ErrInvalidEmail):
 		return errors.New(tr.T("signin.invalid"))
 	case errors.Is(err, domain.ErrExists):

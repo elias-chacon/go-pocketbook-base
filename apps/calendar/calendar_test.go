@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	accountsapp "go-pocketbook-base/internal/accounts/application"
+	accounts "go-pocketbook-base/internal/accounts/domain"
 	"go-pocketbook-base/internal/platform"
 	"go-pocketbook-base/internal/platform/infrastructure/jsonfiles"
 	"go-pocketbook-base/internal/toolkit/widget"
@@ -165,5 +167,30 @@ func TestTheCalendarConnectsAGoogleOrMicrosoftAccountAndComesBack(t *testing.T) 
 	a.Document().Layout()
 	if a.Document().GetElementByID("cal-account") == nil {
 		t.Error("cancelling goes back to the calendar")
+	}
+}
+
+func TestAConnectedGoogleOrMicrosoftAccountEnablesTheSync(t *testing.T) {
+	dir := t.TempDir()
+	a := newCalendarAt(testEnv(t), dir, "America/Sao_Paulo")
+	t.Cleanup(a.close)
+	if a.syncFunc() != nil || a.account() != "" {
+		t.Fatal("no account, no sync")
+	}
+	for _, preset := range []string{"google", "outlook"} {
+		if _, err := a.accounts.RegisterOAuth(accountsapp.Registration{Name: "Ana", Email: preset + "@example.org", Provider: preset},
+			accounts.Secret{AccessToken: "t", RefreshToken: "r", ExpiresAt: time.Now().Add(time.Hour).Unix()}); err != nil {
+			t.Fatal(err)
+		}
+		acc, ok := a.linked()
+		if !ok || a.syncFunc() == nil || a.account() == "" {
+			t.Fatalf("%s: linked %v %+v", preset, ok, acc)
+		}
+		if _, err := backendFor(acc, func() (string, error) { return "t", nil }, nil); err != nil {
+			t.Errorf("%s: %v", preset, err)
+		}
+		if err := a.accounts.Remove(acc.ID); err != nil {
+			t.Fatal(err)
+		}
 	}
 }

@@ -121,6 +121,30 @@ func TestBackendForGmailUsesImapAndSmtpWithoutSavingSent(t *testing.T) {
 	}
 }
 
+func TestBackendForGoogleOAuthUsesImapWithXOAuth2AndTheTokenOfTheMoment(t *testing.T) {
+	p, _ := accounts.PresetByID("google")
+	a := p.Account("Ana", "ana@gmail.com")
+	calls := 0
+	b, err := backendFor(a, accounts.Secret{}, func() (string, error) { calls++; return "tok", nil }, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, ok := b.(*imapmail.Client)
+	if !ok || c.Addr != "imap.gmail.com:993" || c.SignIn == nil || c.SaveSent {
+		t.Fatalf("client = %T %+v", b, b)
+	}
+	s := c.Sender.(smtpsend.Sender)
+	if s.Addr != "smtp.gmail.com:587" || s.Auth == nil {
+		t.Errorf("sender = %+v", s)
+	}
+	if calls != 0 {
+		t.Error("the token is asked when the connection is made, not before")
+	}
+	if _, err := backendFor(a, accounts.Secret{}, nil, nil); err == nil {
+		t.Error("an OAuth2 account without a token source was accepted")
+	}
+}
+
 func TestBackendForRefusesWhatItCannotDo(t *testing.T) {
 	p, _ := accounts.PresetByID("outlook")
 	if _, err := backendFor(p.Account("Ana", "ana@outlook.com"), accounts.Secret{}, nil, nil); err == nil {

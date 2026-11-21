@@ -170,5 +170,6 @@
   "account.login.empty": "cole o código primeiro",
   "say.language": "Idioma: %s",
   "say.signedin": "Conectado com %s",
-  "account.login.setup": "Para entrar de verdade, coloque em %s os client ids dos seus apps registrados no Google e na Microsoft (veja a documentação). A demonstração não guarda os tokens."
+  "account.login.setup": "Para entrar de verdade, coloque em %s os client ids dos seus apps registrados no Google e na Microsoft (veja a documentação). Entrar adiciona a conta às que os apps Mail, Tasks e Calendar compartilham.",
+  "account.login.address": "Seu endereço de e-mail"
 }

@@ -52,5 +52,8 @@
   "cal.import.done": "%d eventos importados.",
   "cal.account.connect": "Conectar conta",
   "cal.account.connected": "Conta: %s",
-  "cal.account.done": "Conta %s conectada. A sincronização de eventos com ela ainda não está disponível."
+  "cal.account.done": "Conta %s conectada. Toque em Sincronizar para trazer os eventos dela.",
+  "cal.sync": "Sincronizar",
+  "cal.sync.working": "Sincronizando…",
+  "cal.sync.done": "%d eventos de %d calendários. O que você muda aqui não volta para o serviço."
 }

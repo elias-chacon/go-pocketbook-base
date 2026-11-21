@@ -28,9 +28,10 @@ type Config struct {
 	// OnLangChange runs after the user switches the language (the device app
 	// saves it in the shared settings).
 	OnLangChange func(lang string)
-	// OAuth are the providers of the sign-in of the Account page (nil: a simulation that sends
-	// nothing, for the preview and the tests). A provider without Start is shown disabled.
-	OAuth []widget.OAuthProvider
+	// OAuth gives the providers of the sign-in of the Account page, given a function that reads the
+	// address typed above the buttons (nil: a simulation that sends nothing, for the preview and the
+	// tests). A provider without Start is shown disabled.
+	OAuth func(address func() string) []widget.OAuthProvider
 	// OAuthSetup is where the client ids of the providers go, told when one is disabled.
 	OAuthSetup string
 }

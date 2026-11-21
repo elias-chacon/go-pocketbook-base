@@ -52,6 +52,8 @@ type SignInConfig struct {
 	// Authorizer signs in to Outlook.com by code (nil: it is not configured, and the
 	// screen says how to).
 	Authorizer domain.Authorizer
+	// Google signs in to Google (Gmail, Calendar, Tasks) by authorization code (nil: not configured).
+	Google domain.CodeAuthorizer
 	// OAuthSetup tells where the client id of the app registration goes, shown when
 	// Authorizer is nil.
 	OAuthSetup string
@@ -71,6 +73,7 @@ const (
 // The providers the first screen offers.
 const (
 	providerOutlook = "outlook"
+	providerGoogle  = "googleoauth"
 	providerGmail   = "gmail"
 	providerICloud  = "icloud"
 	providerOther   = "other"
@@ -144,6 +147,7 @@ func (s *SignIn) showChooser() {
 	items := []widget.Widget{
 		s.heading("signin.title"), intro,
 		s.button("signin-outlook", s.t(keyOutlook), func() { s.choose(providerOutlook) }),
+		s.button("signin-google", s.t("signin.google"), func() { s.choose(providerGoogle) }),
 		s.button("signin-gmail", s.t("signin.gmail"), func() { s.choose(providerGmail) }),
 		s.button("signin-icloud", s.t("signin.icloud"), func() { s.choose(providerICloud) }),
 		s.button("signin-other", s.t("signin.other"), func() { s.choose(providerOther) }),
@@ -157,8 +161,12 @@ func (s *SignIn) showChooser() {
 // choose opens the form of a provider.
 func (s *SignIn) choose(provider string) {
 	s.provider = provider
-	if provider == providerOutlook {
+	switch provider {
+	case providerOutlook:
 		s.showOutlook()
+		return
+	case providerGoogle:
+		s.showGoogle()
 		return
 	}
 	s.showPassword()
@@ -167,11 +175,22 @@ func (s *SignIn) choose(provider string) {
 // ----- Outlook.com and Microsoft 365: sign in by code -----
 
 func (s *SignIn) showOutlook() {
+	s.showOAuth(keyOutlook, ProviderMicrosoft, s.cfg.Authorizer != nil, OAuthSources{Microsoft: s.cfg.Authorizer})
+}
+
+// showGoogle is the sign-in to a Google account (Gmail, Calendar and Tasks).
+func (s *SignIn) showGoogle() {
+	s.showOAuth("signin.google", ProviderGoogle, s.cfg.Google != nil, OAuthSources{Google: s.cfg.Google})
+}
+
+// showOAuth shows the address, the name and the toolkit's OAuthLogin of one provider; without its
+// client id it says where to put it.
+func (s *SignIn) showOAuth(titleKey, provider string, configured bool, src OAuthSources) {
 	back := s.button(idBack, s.t("signin.back"), s.showChooser)
-	if s.cfg.Authorizer == nil {
+	if !configured {
 		hint := widget.NewLabel(s.t("signin.oauth.setup", s.cfg.OAuthSetup))
 		hint.Style.Color = widget.Muted
-		s.show(s.heading(keyOutlook), hint, back)
+		s.show(s.heading(titleKey), hint, back)
 		return
 	}
 	s.email = s.input("signin-email", s.t("signin.email"), widget.TypeText)
@@ -179,7 +198,7 @@ func (s *SignIn) showOutlook() {
 	hint := widget.NewLabel(s.t("signin.oauth.hint"))
 	hint.Style.FontSize, hint.Style.Color = widget.FontSmall, widget.Muted
 	// The sign-in itself is the toolkit's OAuthLogin: the code to type on another device.
-	providers := OAuthProviders(s.cfg.Tr, OAuthSources{Microsoft: s.cfg.Authorizer}, s.registerOAuth, ProviderMicrosoft)
+	providers := OAuthProviders(s.cfg.Tr, src, s.registerOAuth, provider)
 	if start := providers[0].Start; start != nil {
 		providers[0].Start = func() (widget.OAuthChallenge, error) {
 			if !strings.Contains(s.email.Value, "@") {
@@ -191,12 +210,16 @@ func (s *SignIn) showOutlook() {
 	login := widget.NewOAuthLogin(providers...)
 	login.Texts = OAuthTexts(s.cfg.Tr)
 	login.Reset() // the words were set after the first build
-	s.show(s.heading(keyOutlook), s.email, s.name, hint, login.Root, back)
+	s.show(s.heading(titleKey), s.email, s.name, hint, login.Root, back)
 }
 
 // registerOAuth adds the account with the tokens the sign-in gave.
-func (s *SignIn) registerOAuth(_ string, secret domain.Secret) error {
-	acc, err := s.cfg.Accounts.RegisterOAuth(application.Registration{Name: s.name.Value, Email: s.email.Value}, secret)
+func (s *SignIn) registerOAuth(providerID string, secret domain.Secret) error {
+	reg := application.Registration{Name: s.name.Value, Email: s.email.Value}
+	if providerID == ProviderGoogle {
+		reg.Provider = PresetOf(providerID)
+	}
+	acc, err := s.cfg.Accounts.RegisterOAuth(reg, secret)
 	if err != nil {
 		return explainRegistration(s.cfg.Tr, err)
 	}

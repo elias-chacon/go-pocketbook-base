@@ -67,5 +67,6 @@
   "connect.google.steps": "1. Read this code with your phone's camera and sign in to Google.\n2. The page will fail to open (that is expected). Copy the code from its address bar, or the whole address, and type it below.",
   "connect.google.code": "Code (or the whole address)",
   "connect.google.finish": "Finish",
-  "signin.oauth.done": "Signed in."
+  "signin.oauth.done": "Signed in.",
+  "signin.google": "Google (Gmail, sign in with Google)"
 }

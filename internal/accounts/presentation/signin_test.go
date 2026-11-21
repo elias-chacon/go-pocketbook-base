@@ -324,3 +324,30 @@ func TestEveryScreenFitsAndEveryButtonGetsItsTouch(t *testing.T) {
 	tap(t, s, "oauth-microsoft")
 	checkScreen(t, s, "code")
 }
+
+func TestGoogleSignsInByQRCodeAndAddsTheGoogleAccount(t *testing.T) {
+	f := &fakeRegistrar{}
+	goog := &fakeCodeAuth{fakeAuth: fakeAuth{challenge: domain.Challenge{VerificationURI: "https://accounts.example/auth?x=1"}, secret: domain.Secret{AccessToken: "g", RefreshToken: "r"}}}
+	var done domain.Account
+	s := NewSignIn(SignInConfig{Width: 1404, Height: 1872, Tr: NewTranslator("en"), Accounts: f, Google: goog,
+		OAuthSetup: "x/oauth.json", OnDone: func(a domain.Account) { done = a }})
+	s.Doc.Layout()
+	tap(t, s, "signin-google")
+	s.email.Value, s.name.Value = "ana@gmail.com", "Ana"
+	tap(t, s, "oauth-google")
+	if find(t, s, "oauth-qr") == nil {
+		t.Fatal("the address is shown as a QR code")
+	}
+	find(t, s, "oauth-input").(*widget.Input).Value = "4/0Abc"
+	tap(t, s, "oauth-complete")
+	if goog.gotCode != "4/0Abc" || f.got.Provider != "google" || f.got.Email != "ana@gmail.com" || f.gotToken.RefreshToken != "r" || done.ID != "ana" {
+		t.Errorf("code %q got %+v token %+v done %+v", goog.gotCode, f.got, f.gotToken, done)
+	}
+	checkScreen(t, s, "google")
+
+	none := NewSignIn(SignInConfig{Width: 1404, Height: 1872, Tr: NewTranslator("en"), Accounts: f, OAuthSetup: "x/oauth.json"})
+	tap(t, none, "signin-google")
+	if !strings.Contains(labels(none), "x/oauth.json") {
+		t.Errorf("without a client id it says where to put it:\n%s", labels(none))
+	}
+}

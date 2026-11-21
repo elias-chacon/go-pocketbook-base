@@ -170,5 +170,6 @@
   "account.login.empty": "paste the code first",
   "say.language": "Language: %s",
   "say.signedin": "Signed in with %s",
-  "account.login.setup": "To sign in for real, put the client ids of your apps registered at Google and Microsoft in %s (see the documentation). The demo does not keep the tokens."
+  "account.login.setup": "To sign in for real, put the client ids of your apps registered at Google and Microsoft in %s (see the documentation). Signing in adds the account to the ones the Mail, Tasks and Calendar apps share.",
+  "account.login.address": "Your e-mail address"
 }

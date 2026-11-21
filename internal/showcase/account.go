@@ -35,7 +35,12 @@ func (a *App) longListCard() widget.Widget {
 // signIn is the OAuthLogin: with the providers the app gave (the real sign-ins when oauth.json has the
 // client ids; the demo keeps no token) or, without any, two simulated ones that send nothing.
 func (a *App) signIn() widget.Widget {
-	providers := a.cfg.OAuth
+	address := widget.NewInput(a.t("account.login.address"))
+	address.ID = "oauth-address"
+	var providers []widget.OAuthProvider
+	if a.cfg.OAuth != nil {
+		providers = a.cfg.OAuth(func() string { return address.Value })
+	}
 	if len(providers) == 0 {
 		providers = a.simulatedProviders()
 	}
@@ -48,7 +53,7 @@ func (a *App) signIn() widget.Widget {
 	}
 	login.Reset() // the words were set after the first build
 	login.OnSuccess = func(id string) { a.say(a.t("say.signedin", id)) }
-	items := []widget.Widget{login.Root}
+	items := []widget.Widget{address, login.Root}
 	for _, p := range providers {
 		if p.Start == nil {
 			items = append(items, hint(a.t("account.login.setup", a.cfg.OAuthSetup)))

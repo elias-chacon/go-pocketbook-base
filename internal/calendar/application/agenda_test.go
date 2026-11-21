@@ -34,10 +34,12 @@ func (m *memStore) Save(es ...domain.Event) error {
 	}
 	return nil
 }
-func (m *memStore) Between(time.Time, time.Time, ...string) ([]domain.Event, error) {
+func (m *memStore) Between(_, _ time.Time, calendarIDs ...string) ([]domain.Event, error) {
 	var out []domain.Event
 	for _, e := range m.events {
-		out = append(out, e)
+		if len(calendarIDs) == 0 || e.CalendarID == calendarIDs[0] {
+			out = append(out, e)
+		}
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
 	return out, m.err

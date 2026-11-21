@@ -29,9 +29,9 @@ func TestEveryPresetBuildsAValidAccountExceptTheCustomOne(t *testing.T) {
 // tasks too (Gmail is mail by app password: its calendar is a secret iCal address).
 func checkServices(t *testing.T, p Preset, a Account) {
 	t.Helper()
-	if p.ID == "google" { // Google here is Tasks and Calendar over OAuth2; the mail is the gmail preset
-		if a.Has(Mail) || !a.Has(Tasks) || !a.Has(Calendar) || a.Auth != OAuth2 {
-			t.Errorf("google is tasks and calendar by OAuth2: %+v", a)
+	if p.ID == "google" { // Google by OAuth2 is mail (Gmail over XOAUTH2), tasks and calendar
+		if _, imap := a.Endpoint(Mail, IMAP); !imap || !a.Has(Tasks) || !a.Has(Calendar) || a.Auth != OAuth2 {
+			t.Errorf("google is mail, tasks and calendar by OAuth2: %+v", a)
 		}
 		return
 	}

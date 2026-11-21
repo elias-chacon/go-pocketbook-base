@@ -50,6 +50,7 @@ type calendar struct {
 	doc      *widget.Document
 	db       *storage.Store
 	agenda   application.Agenda
+	store    *sqlstore.Store
 	tr       *i18n.Bundle
 	accounts accountsapp.Accounts
 	screen   *presentation.Screen
@@ -80,6 +81,7 @@ func newCalendarAt(env platform.Env, dir, zone string) *calendar {
 		a.fail(err)
 		return a
 	}
+	a.store = store
 	a.tr = presentation.NewTranslator(env.Lang)
 	a.agenda = application.Agenda{AccountID: localAccount, Store: store, Zone: zone}
 	if _, err := a.agenda.EnsureCalendar(a.tr.T("cal.title")); err != nil {
@@ -101,13 +103,12 @@ func (a *calendar) showScreen(notice string) {
 	})
 }
 
-// account is the address of the account the person connected ("" when there is none).
+// account is the address of the account the calendar synchronizes with ("" when there is none).
 func (a *calendar) account() string {
-	list, err := a.accounts.List(accounts.Calendar)
-	if err != nil || len(list) == 0 {
-		return ""
+	if acc, ok := a.linked(); ok {
+		return acc.Email
 	}
-	return list[0].Email
+	return ""
 }
 
 // connect opens the sign-in to a Google or Microsoft account (the shared accounts of the mail, tasks

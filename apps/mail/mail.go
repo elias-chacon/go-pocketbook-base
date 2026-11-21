@@ -9,6 +9,7 @@ import (
 	accountsapp "go-pocketbook-base/internal/accounts/application"
 	accounts "go-pocketbook-base/internal/accounts/domain"
 	"go-pocketbook-base/internal/accounts/infrastructure/jsonaccounts"
+	"go-pocketbook-base/internal/accounts/infrastructure/oauthconfig"
 	"go-pocketbook-base/internal/accounts/infrastructure/securefile"
 	accountsui "go-pocketbook-base/internal/accounts/presentation"
 	"go-pocketbook-base/internal/kernel/geom"
@@ -34,7 +35,8 @@ type mail struct {
 	db       *storage.Store
 	store    *sqlstore.Store
 	dir      string
-	auth     accounts.Authorizer
+	auth     accounts.Authorizer     // Microsoft
+	google   accounts.CodeAuthorizer // Google
 	screen   *presentation.Screen
 }
 
@@ -59,7 +61,7 @@ func newMailAt(env platform.Env, dir string) *mail {
 		m.fail(err)
 		return m
 	}
-	m.auth = authorizer(dir, httpClient(env.HTTP))
+	m.auth, m.google = oauthconfig.Sources(dir, httpClient(env.HTTP))
 	m.accounts = accountsapp.Accounts{Store: jsonaccounts.New(dir), Vault: securefile.New(dir), Eraser: db}
 	m.start()
 	return m
@@ -107,7 +109,7 @@ func (m *mail) signIn() {
 	m.screen = nil
 	accountsui.NewSignIn(accountsui.SignInConfig{
 		Width: m.env.Width, Height: m.env.Height, Doc: m.doc, Chrome: platform.Chrome(m.env), Tr: accountsui.NewTranslator(m.env.Lang),
-		Accounts: m.accounts, Authorizer: m.auth, OAuthSetup: filepath.Join(m.dir, oauthFile), OnDone: m.open,
+		Accounts: m.accounts, Authorizer: m.auth, Google: m.google, OAuthSetup: filepath.Join(m.dir, oauthFile), OnDone: m.open,
 	})
 	m.doc.ResetFrame()
 }
@@ -118,7 +120,8 @@ func (m *mail) open(acc accounts.Account) {
 		m.fail(err)
 		return
 	}
-	tokens := func() (string, error) { return m.accounts.AccessToken(acc.ID, m.auth, time.Now()) }
+	renew := m.authorizerFor(acc)
+	tokens := func() (string, error) { return m.accounts.AccessToken(acc.ID, renew, time.Now()) }
 	backend, err := backendFor(acc, secret, tokens, httpClient(m.env.HTTP))
 	if err != nil {
 		m.fail(err)
@@ -134,6 +137,18 @@ func (m *mail) open(acc accounts.Account) {
 		Mailbox: box, Flush: m.env.Flush, Signature: acc.Signature,
 		OnAccount: func() { m.editAccount(acc) },
 	})
+}
+
+// authorizerFor is the sign-in that renews the tokens of an account: Google's for an account with a
+// Google service, Microsoft's for the others (nil when its client id is not set).
+func (m *mail) authorizerFor(acc accounts.Account) accounts.Authorizer {
+	if _, ok := acc.Endpoint(accounts.Calendar, accounts.Google); ok {
+		if m.google == nil {
+			return nil
+		}
+		return m.google
+	}
+	return m.auth
 }
 
 // fail shows what went wrong where the person can read it, and logs it.

@@ -36,9 +36,12 @@ type Provider struct {
 	Scopes       []string
 }
 
-// GoogleScopes are the permissions of the tasks and calendar apps.
+// GoogleScopes are the permissions of the mail, tasks and calendar apps: one sign-in serves the three
+// (the account is shared), as the Microsoft one does. The Gmail scope is a restricted one: for an
+// app that is not verified by Google it works for the test users of the Cloud project (the person
+// themselves), and the tokens last a week until the project is published.
 var GoogleScopes = []string{
-	"https://www.googleapis.com/auth/tasks", "https://www.googleapis.com/auth/calendar",
+	"https://mail.google.com/", "https://www.googleapis.com/auth/tasks", "https://www.googleapis.com/auth/calendar",
 }
 
 // Google is the provider of Google accounts, for a "Desktop app" client of a Google Cloud project.

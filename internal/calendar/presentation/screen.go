@@ -62,6 +62,9 @@ type Config struct {
 	// of the one already connected ("" when there is none). Nil Connect: no Account button.
 	Connect func()
 	Account string
+	// Sync brings the events of the connected account in and says what it brought, already
+	// translated (nil: no Sync button).
+	Sync func() (string, error)
 }
 
 // View is how the schedule is shown.
@@ -263,6 +266,12 @@ func (s *Screen) show() {
 		acc.OnClick = func(*widget.Event) { s.cfg.Connect() }
 		foot.AppendChild(acc)
 	}
+	if s.cfg.Sync != nil {
+		sync := widget.NewButton(s.t("cal.sync"))
+		sync.ID = "cal-sync"
+		sync.OnClick = func(*widget.Event) { s.SyncNow() }
+		foot.AppendChild(sync)
+	}
 	foot.Style.AlignItems = widget.AlignCenter
 	foot.Style.Padding = geom.XY(8, 20)
 	root := widget.NewColumn(0, s.toolbar(), body, foot)
@@ -428,6 +437,28 @@ func gridEvent(o domain.Occurrence, loc *time.Location) widget.GridEvent {
 		ev.Detail += " " + o.Event.Location
 	}
 	return ev
+}
+
+// SyncNow brings the events of the connected account in, telling first that it is working (the
+// call blocks on the network), and shows the calendar again with the result.
+func (s *Screen) SyncNow() {
+	if s.cfg.Sync == nil {
+		return
+	}
+	s.notice = s.t("cal.sync.working")
+	if s.note != nil {
+		s.note.Text = s.notice
+		s.Doc.Invalidate()
+	}
+	if s.cfg.Flush != nil {
+		s.cfg.Flush()
+	}
+	msg, err := s.cfg.Sync()
+	if err != nil {
+		msg = s.t("cal.failed", err.Error())
+	}
+	s.notice = msg
+	s.show()
 }
 
 // Importer is the importer the screen was given (nil when there is none).

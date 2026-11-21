@@ -52,5 +52,8 @@
   "cal.import.done": "Imported %d events.",
   "cal.account.connect": "Connect account",
   "cal.account.connected": "Account: %s",
-  "cal.account.done": "Account %s connected. Syncing events with it is not available yet."
+  "cal.account.done": "Account %s connected. Tap Sync to bring its events.",
+  "cal.sync": "Sync",
+  "cal.sync.working": "Syncing…",
+  "cal.sync.done": "%d events from %d calendars. What you change here is not sent back."
 }
