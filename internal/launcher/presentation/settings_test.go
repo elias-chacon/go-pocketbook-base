@@ -239,3 +239,44 @@ func TestWithoutStoresTheSettingsStillApply(t *testing.T) {
 		t.Error("applied without being kept")
 	}
 }
+
+func TestTheSettingsHaveAboutAndTheSystemInformation(t *testing.T) {
+	h := NewHome(Config{
+		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"),
+		Version: "1.2.3", Repository: "dono/repo",
+		SystemInfo: func() []Fact { return []Fact{{"model", "PocketBook 741"}, {"storage", "1.0 GB / 4.0 GB"}} },
+		Home:       application.Home{Apps: registry{apps: apps(3)}, Launcher: &launcher{}, SelfID: "launcher"},
+		IconFor:    func(domain.Tile) image.Image { return image.NewGray(image.Rect(0, 0, 128, 128)) },
+		Catalog:    catalog{list: listings(2)},
+	})
+	open(h)
+	scroll, ok := find(h, "settings-scroll").(*widget.Scroll)
+	if !ok {
+		t.Fatal("the settings cards are in a Scroll")
+	}
+	scroll.ScrollIntoView(find(h, "settings-about"))
+	h.Doc.Layout()
+	tap(h.Doc, find(h, "settings-about"))
+	h.Doc.Layout()
+	if !h.Doc.HasModal() || !strings.Contains(texts(h), "Versão 1.2.3") || !strings.Contains(texts(h), "github.com/dono/repo") {
+		t.Fatalf("About tells the version and where the releases are: %s", texts(h))
+	}
+	h.Doc.Modal().Close()
+	scroll.ScrollIntoView(find(h, "settings-system"))
+	h.Doc.Layout()
+	tap(h.Doc, find(h, "settings-system"))
+	h.Doc.Layout()
+	table, ok := find(h, "system-table").(*widget.Table)
+	if !ok {
+		t.Fatal("the system information is a table")
+	}
+	got := map[string]string{}
+	for _, row := range table.Rows {
+		got[row[0]] = row[1]
+	}
+	for item, want := range map[string]string{"Apps instalados": "3", "Apps listados": "5", "Aparelho": "PocketBook 741", "Armazenamento (livre / total)": "1.0 GB / 4.0 GB", "Idioma": "pt-BR"} {
+		if got[item] != want {
+			t.Errorf("%s = %q, want %q (all: %v)", item, got[item], want, got)
+		}
+	}
+}

@@ -27,6 +27,9 @@ O `apps/launcher` é o App Launcher do ecossistema: a tela inicial dos apps feit
 - Um **campo de busca** filtra a grade inteira em tempo real (a cada mudança do texto) por título, descrição e id, sem ligar para maiúsculas e acentos.
 - As **Configurações** também listam os apps: **Gerenciar apps** (uma `Table` dos apps visíveis, instalados ou não; selecione um e abra a janela dele, como o toque
   longo faz) e **Apps escondidos** (uma `Table` dos escondidos, com **Mostrar de novo o app selecionado**). Os ids escondidos ficam em `launcher.json`.
+- As **Configurações** também têm **Sobre** (o que é o Launcher, a versão e o repositório das releases) e **Informações do sistema** (uma `Table`: a versão do
+  Launcher, o modelo do aparelho, a tela, o armazenamento livre e total, a pasta dos apps, o idioma e quantos apps estão instalados, listados e escondidos). Os
+  cartões das configurações não cabem na tela, então ficam num `Scroll` (arraste a página ou a barra da direita).
 - **Configurações** (o botão *Configurações* no rodapé, ou a tecla Menu; a tecla esquerda sai sem salvar): a **grade** (colunas e linhas, de 1 a 8), o **tamanho dos ícones**
   (96 a 240), o **idioma** (compartilhado por todos os apps: os outros o leem ao abrir) e uma **imagem de fundo**, escolhida entre as imagens
   (PNG, JPG, GIF, BMP) que a pessoa copiou para `applications/backgrounds` no leitor. As preferências ficam em `applications/.pbgo/launcher.json`; a imagem

@@ -267,6 +267,13 @@ func paintTreeIn(c *gfx.Canvas, w Widget, area geom.Rect) {
 		paintBox(c, b)
 		w.Paint(c)
 	}
+	if cl, ok := w.(clipper); ok {
+		for _, k := range b.children {
+			paintClipped(c, k, cl.clipRect(), area)
+		}
+		c.ResetClip()
+		return
+	}
 	for _, k := range b.children {
 		paintTreeIn(c, k, area)
 	}

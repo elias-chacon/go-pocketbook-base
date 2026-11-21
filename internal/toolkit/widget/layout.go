@@ -60,7 +60,11 @@ func contentSize(w Widget, availW float64, definiteW bool) geom.Size {
 	if len(w.Elem().children) == 0 {
 		return w.Measure(availW)
 	}
-	return arrange(w, geom.Rect{W: availW, H: unbounded}, definiteW, false, false)
+	size := arrange(w, geom.Rect{W: availW, H: unbounded}, definiteW, false, false)
+	if _, window := w.(clipper); window {
+		size.H = 0 // a window onto its content: its height is not the content's (Height or FlexGrow give it one)
+	}
+	return size
 }
 
 // layoutWidget places w in r (its border box) and lays out its subtree.
@@ -69,6 +73,9 @@ func layoutWidget(w Widget, r geom.Rect) {
 	b.Bounds = r
 	if len(b.children) > 0 {
 		arrange(w, r.Inset(b.Style.boxInsets()), true, true, true)
+		if a, ok := w.(afterLayouter); ok {
+			a.afterLayout()
+		}
 	}
 }
 

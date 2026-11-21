@@ -97,7 +97,7 @@ func (a *App) choicesPage() widget.Widget {
 		widget.MenuItem{Label: a.t("choices.action.delete"), Icon: gfx.IconClose, OnSelect: func() { a.say(a.t("say.deleted")) }},
 		widget.MenuItem{Label: a.t("choices.action.archive"), Disabled: true})
 
-	return twoColPage(
+	grid := twoColPage(
 		widget.NewCard(a.t("choices.card.check.title"), a.t("choices.card.check.subtitle"), checks),
 		widget.NewCard(a.t("choices.card.radio.title"), a.t("choices.card.radio.subtitle"), radios),
 		widget.NewCard(a.t("choices.card.switch.title"), a.t("choices.card.switch.subtitle"), switches),
@@ -106,7 +106,13 @@ func (a *App) choicesPage() widget.Widget {
 			field(a.t("choices.field.dropdown"), withID(actions, "dropdown-actions"))),
 		widget.NewCard(a.t("choices.card.chips.title"), a.t("choices.card.chips.subtitle"), a.chips()),
 		widget.NewCard(a.t("choices.card.slider.title"), a.t("choices.card.slider.subtitle"), a.sliders()),
+		a.longListCard(),
 	)
+	// The page is taller than the screen: the Scroll shows a window onto it.
+	page := widget.NewScroll(grid)
+	page.ID = "choices-scroll"
+	page.Style.FlexGrow = 1
+	return page
 }
 
 // chipGroup builds a group of three chips named choices keyed prefix.1..n.

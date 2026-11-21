@@ -13,6 +13,9 @@ var ErrNotOnDevice = errors.New("inkview: only available when built for PocketBo
 // Desktop stubs: there is no InkView here, so these do nothing (they exist so
 // the packages that use them compile and can be tested on any machine).
 
+// DeviceModel is empty off-device.
+func DeviceModel() string { return "" }
+
 // Run always fails off-device.
 func Run(App) error { return ErrNotOnDevice }
 

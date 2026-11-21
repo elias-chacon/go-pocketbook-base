@@ -47,6 +47,12 @@ type Config struct {
 	// LoadBackground opens one by name (nil: there are no backgrounds).
 	Backgrounds    func() []string
 	LoadBackground func(name string) (image.Image, error)
+	// Version is the version of the Launcher and Repository the "owner/name" of the repository that
+	// publishes the releases: both are shown in About. SystemInfo gives the lines of the system
+	// information that only the reader knows (its model, its storage...); each key is translated as
+	// "system.<key>". All optional.
+	Version, Repository string
+	SystemInfo          func() []Fact
 	// Catalog lists the apps of the release (nil: the home shows only the installed ones). It is
 	// asked in the background when the screen opens; a failure is silent (the apps already shown stay).
 	Catalog domain.Catalog

@@ -833,6 +833,48 @@ func ImageExample() widget.Widget {
 }
 ```
 
+## Scroll
+
+![scroll](../components/scroll.png)
+
+`Scroll` is a **panel with a fixed height** whose content can be taller: it shows a window onto the content and a **scroll bar** on the right. The
+content moves by **dragging a finger** over it (on a part that is not a button or a field), by **dragging the thumb** of the bar, or by **tapping the bar**
+above or below the thumb (a page at a time). Elements cut by the window are drawn cut; the ones outside it are not drawn and do not get touches.
+Use it for a **page of cards** that does not fit the screen (the *Choices* page of the hello app); for a long list of rows prefer `Pager`, which does
+not repaint on every step of a drag.
+
+The height must be **definite**: give it `Style.Height`, or `Style.FlexGrow` inside a column that has one (a window has no height of its own: it is not
+the content's). The content is as wide as the panel minus the bar.
+
+| | |
+|---|---|
+| Create | `widget.NewScroll(children...)` |
+| Properties | `Content` (the column the children are in), `Offset` (pixels of the content above the window), `MaxOffset()`, `PageSize()` |
+| Methods | `ScrollTo(y)`, `ScrollBy(dy)`, `ScrollIntoView(w)` (call it after a layout) |
+| Events | `OnScroll` |
+| Tests | `widget.InView(w)` tells whether an element is inside the window of the Scrolls above it: the touch-accuracy rule only applies to what is in sight |
+
+```go
+// examples/components/scroll.go#ScrollExample
+// ScrollExample is a panel of a fixed height with more content than fits: a window with a scroll
+// bar. The content moves by dragging a finger over it, by dragging the thumb of the bar or by
+// tapping the bar above or below the thumb.
+func ScrollExample() widget.Widget {
+	var cards []widget.Widget
+	for i := 1; i <= 6; i++ {
+		cards = append(cards, widget.NewCard(fmt.Sprintf("Card %d", i), "Content taller than the window"))
+	}
+	more := widget.NewButton("A button in the content")
+	more.OnClick = func(e *widget.Event) { fmt.Println("tapped") }
+	cards = append(cards, more)
+
+	scroll := widget.NewScroll(cards...)
+	scroll.Style.Height = widget.Px(560) // a definite height: the window
+	scroll.OnScroll = func(e *widget.Event) { fmt.Println("offset", scroll.Offset) }
+	return scroll
+}
+```
+
 ## OAuth sign-in (Google, Microsoft)
 
 ![oauthlogin](../components/oauthlogin.png) ![code](../components/oauthlogin-code.png) ![qr](../components/oauthlogin-qr.png)

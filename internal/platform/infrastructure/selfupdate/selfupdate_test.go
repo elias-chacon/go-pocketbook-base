@@ -117,3 +117,17 @@ func TestInstallRefusesWhatIsCorruptIncompleteOrNotAProgramAndKeepsTheOldApp(t *
 		}
 	}
 }
+
+func TestUnpackFindsTheAppWhereverTheZipKeptItAndNamesWhatItHadWhenItIsMissing(t *testing.T) {
+	elf := "\x7fELF-program"
+	for _, name := range []string{"hello.app", "./hello.app", "dist/hello.app", `applications\Hello.app`} {
+		bin, err := unpack(zipOf(t, map[string]string{name: elf, "app.json": "{}"}), "hello")
+		if err != nil || string(bin) != elf {
+			t.Errorf("%q: %v", name, err)
+		}
+	}
+	_, err := unpack(zipOf(t, map[string]string{"tasks.app": elf, "app.json": "{}"}), "hello")
+	if err == nil || !strings.Contains(err.Error(), "tasks.app") {
+		t.Errorf("the error says what the zip has: %v", err)
+	}
+}

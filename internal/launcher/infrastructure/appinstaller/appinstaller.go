@@ -92,11 +92,13 @@ func unpack(data []byte, id string) (binary, manifest []byte, err error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("not a valid zip: %w", err)
 	}
+	var names []string
 	for _, f := range zr.File {
-		switch f.Name {
-		case id + ".app":
+		names = append(names, f.Name)
+		switch {
+		case isEntry(f.Name, id+".app"):
 			binary, err = readEntry(f)
-		case "app.json":
+		case isEntry(f.Name, "app.json"):
 			manifest, err = readEntry(f)
 		}
 		if err != nil {
@@ -104,7 +106,7 @@ func unpack(data []byte, id string) (binary, manifest []byte, err error) {
 		}
 	}
 	if binary == nil {
-		return nil, nil, fmt.Errorf("the zip has no %s.app", id)
+		return nil, nil, fmt.Errorf("the zip has no %s.app (it has: %s)", id, strings.Join(names, ", "))
 	}
 	m, err := platform.ParseManifest(manifest)
 	if err != nil {
@@ -114,6 +116,14 @@ func unpack(data []byte, id string) (binary, manifest []byte, err error) {
 		return nil, nil, fmt.Errorf("the zip's app.json is for %q, not %q", m.ID, id)
 	}
 	return binary, manifest, nil
+}
+
+// isEntry reports whether the zip entry name is the file want, wherever the zip kept it: a leading
+// "./" or folders, and Windows separators, do not make it another file. Nothing is written from the
+// zip's own paths: only the name decides which entry is read.
+func isEntry(name, want string) bool {
+	name = strings.ReplaceAll(name, "\\", "/")
+	return strings.EqualFold(name[strings.LastIndex(name, "/")+1:], want)
 }
 
 // readEntry reads a zip entry, refusing one that expands beyond maxApp.

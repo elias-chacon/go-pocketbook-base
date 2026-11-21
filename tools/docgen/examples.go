@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"go-pocketbook-base/examples/custom"
@@ -60,6 +61,7 @@ func examples() []example {
 		{"toggle", 760, 0, toggleExample, nil},
 		{"combobox", 640, 250, comboExample, func(d *widget.Document, w widget.Widget) { tapCenter(d, w.Elem().Children()[1]) }},
 		{"longcombobox", 900, 1750, longComboExample, func(d *widget.Document, w widget.Widget) { tapCenter(d, w.Elem().Children()[1]) }},
+		{"scroll", 640, 0, scrollExample, func(d *widget.Document, w widget.Widget) { w.(*widget.Scroll).ScrollTo(230) }},
 		{"oauthlogin", 760, 0, oauthExample, nil},
 		{"oauthlogin-code", 760, 0, oauthExample, func(d *widget.Document, w widget.Widget) { tapCenter(d, d.GetElementByID("oauth-microsoft")) }},
 		{"oauthlogin-qr", 760, 0, oauthExample, func(d *widget.Document, w widget.Widget) { tapCenter(d, d.GetElementByID("oauth-google")) }},
@@ -198,13 +200,28 @@ func longComboExample() widget.Widget {
 	return captioned("Combo-box de lista longa: busca e páginas dentro do popup, na página da opção atual", cb)
 }
 
+func scrollExample() widget.Widget {
+	var cards []widget.Widget
+	for i := 1; i <= 6; i++ {
+		cards = append(cards, widget.NewCard(fmt.Sprintf("Card %d", i), "Conteúdo mais alto que a janela"))
+	}
+	cards = append(cards, widget.NewButton("Um botão no conteúdo"))
+	s := widget.NewScroll(cards...)
+	s.Style.Height = widget.Px(560)
+	return s
+}
+
 func oauthExample() widget.Widget {
 	login := widget.NewOAuthLogin(
 		widget.OAuthProvider{ID: "google", Label: "Google",
-			Start:    func() (widget.OAuthChallenge, error) { return widget.OAuthChallenge{URL: "https://accounts.google.com/o/oauth2/v2/auth?client_id=demo"}, nil },
+			Start: func() (widget.OAuthChallenge, error) {
+				return widget.OAuthChallenge{URL: "https://accounts.google.com/o/oauth2/v2/auth?client_id=demo"}, nil
+			},
 			Complete: func(widget.OAuthChallenge, string) (bool, error) { return false, nil }},
 		widget.OAuthProvider{ID: "microsoft", Label: "Microsoft",
-			Start:    func() (widget.OAuthChallenge, error) { return widget.OAuthChallenge{URL: "https://microsoft.com/devicelogin", Code: "AB12-CD34"}, nil },
+			Start: func() (widget.OAuthChallenge, error) {
+				return widget.OAuthChallenge{URL: "https://microsoft.com/devicelogin", Code: "AB12-CD34"}, nil
+			},
 			Complete: func(widget.OAuthChallenge, string) (bool, error) { return false, nil }})
 	login.Root.Style.Padding = geom.All(12)
 	return captioned("Login OAuth: escolha do provedor", login.Root)

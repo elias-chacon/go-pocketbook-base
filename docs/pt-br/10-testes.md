@@ -50,7 +50,10 @@ func Tap(doc *widget.Document, w widget.Widget) { TapAt(doc, w.Elem().Bounds.Cen
 func Interactive(doc *widget.Document) []widget.Widget {
 	var out []widget.Widget
 	doc.Walk(func(w widget.Widget) bool {
-		if _, ok := w.(widget.PointerHandler); ok && w.Elem().Visible() {
+		if _, isScroll := w.(*widget.Scroll); isScroll {
+			return true // a window onto other elements: its own center is theirs
+		}
+		if _, ok := w.(widget.PointerHandler); ok && w.Elem().Visible() && widget.InView(w) {
 			out = append(out, w)
 		}
 		return true

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"go-pocketbook-base/internal/device/desktop"
+	"go-pocketbook-base/internal/device/diskspace"
 	"go-pocketbook-base/internal/device/inkview"
 	"go-pocketbook-base/internal/device/network"
 	"go-pocketbook-base/internal/platform/application"
@@ -149,6 +150,15 @@ func IconPath(root, id string) string {
 
 // HTTPClient is the network client of the reader (see device/network).
 func HTTPClient(timeout time.Duration) *http.Client { return network.New(timeout) }
+
+// DeviceModel is the model name the firmware reports ("" off the reader).
+func DeviceModel() string { return inkview.DeviceModel() }
+
+// DiskSpace is the total and the free bytes of the volume that holds path (ok false when unknown).
+func DiskSpace(path string) (total, free uint64, ok bool) {
+	s, ok := diskspace.Of(path)
+	return s.Total, s.Free, ok
+}
 
 // Logf writes a trace line to the app's log, only in verbose mode (see SetVerbose).
 func Logf(format string, args ...interface{}) { inkview.Logf(format, args...) }

@@ -27,6 +27,9 @@ other (it follows the [contract](13-apps-and-the-contract.md)) and the compositi
 - A **search field** filters the whole grid in real time (as the text changes) by title, description and id, ignoring case and accents.
 - **Settings** also lists the apps: **Manage apps** (a `Table` of the visible apps, installed or not; select one and open its window, as the long press does)
   and **Hidden apps** (a `Table` of the hidden ones, with **Show the selected app again**). The hidden ids are kept in `launcher.json`.
+- **Settings** also has **About** (what the Launcher is, its version and the repository of the releases) and **System information** (a `Table`: the Launcher version, the
+  device model, the screen, the free and total storage, the folder of the apps, the language and how many apps are installed, listed and hidden). The settings
+  cards do not fit the screen, so they are in a `Scroll` (drag the page or the bar on the right).
 - **Settings** (the *Settings* button in the footer, or the Menu key; left leaves without saving): the **grid** (columns and rows, 1 to 8), the **icon size**
   (96 to 240), the **language** (shared by every app: the others read it when they start) and a **background image**, chosen among the pictures
   (PNG, JPG, GIF, BMP) the person copied to `applications/backgrounds` on the reader. The preferences are kept in `applications/.pbgo/launcher.json`; a

@@ -15,27 +15,86 @@ func newApp(exit func()) (*App, *widget.FakeKeyboard) {
 	return New(1404, 1872, Config{Version: "1.2.3", Keyboard: kb, Exit: exit}), kb
 }
 
-// walkVisible visits the visible elements of the current page.
+// walkVisible visits the visible elements of the current page that are in sight (an element
+// scrolled out of the window of a Scroll is not).
 func walkVisible(app *App, fn func(w widget.Widget)) {
 	app.Doc.Layout()
 	app.Doc.Walk(func(w widget.Widget) bool {
-		if w.Elem().Visible() {
+		if w.Elem().Visible() && widget.InView(w) {
 			fn(w)
 		}
 		return true
 	})
 }
 
+// scrollOf is the Scroll of the current page (nil when the page has none).
+func scrollOf(app *App) *widget.Scroll {
+	var found *widget.Scroll
+	app.Doc.Walk(func(w widget.Widget) bool {
+		if s, ok := w.(*widget.Scroll); ok && found == nil {
+			found = s
+		}
+		return true
+	})
+	return found
+}
+
+// eachScrollPosition runs fn with the page at every position of its Scroll, a page at a time
+// from the top to the end (once when the page does not scroll), and puts it back at the top.
+func eachScrollPosition(app *App, fn func()) {
+	app.Doc.Layout()
+	s := scrollOf(app)
+	if s == nil {
+		fn()
+		return
+	}
+	defer func() { s.ScrollTo(0); app.Doc.Layout() }()
+	for y := 0.0; ; y += s.PageSize() {
+		s.ScrollTo(y)
+		app.Doc.Layout()
+		fn()
+		if y >= s.MaxOffset() {
+			return
+		}
+	}
+}
+
 func TestEveryInteractiveElementReceivesItsOwnTouch(t *testing.T) {
 	app, _ := newApp(nil)
 	for i, title := range app.Pages() {
 		app.ShowPage(i)
-		checked := 0
+		checked := map[widget.Widget]bool{}
+		eachScrollPosition(app, func() { checkTouches(t, app, title, checked) })
+		all := 0
+		app.Doc.Walk(func(w widget.Widget) bool {
+			if _, isScroll := w.(*widget.Scroll); !isScroll && w.Elem().Visible() {
+				if _, ok := w.(widget.PointerHandler); ok {
+					all++
+					if !checked[w] {
+						t.Errorf("%s: %T (id %q) was never reachable, even scrolling", title, w, w.Elem().ID)
+					}
+				}
+			}
+			return true
+		})
+		if all < 3 {
+			t.Errorf("%s: only %d interactive elements found", title, all)
+		}
+	}
+}
+
+// checkTouches checks the touch-accuracy rule on the interactive elements in sight and records them.
+func checkTouches(t *testing.T, app *App, title string, checked map[widget.Widget]bool) {
+	t.Helper()
+	{
 		walkVisible(app, func(w widget.Widget) {
 			if _, ok := w.(widget.PointerHandler); !ok {
 				return
 			}
-			checked++
+			if _, isScroll := w.(*widget.Scroll); isScroll {
+				return // a window onto the others: its own center is theirs
+			}
+			checked[w] = true
 			b := w.Elem()
 			c := b.Bounds.Center()
 			if got := app.Doc.TargetAt(c); got != w {
@@ -45,9 +104,6 @@ func TestEveryInteractiveElementReceivesItsOwnTouch(t *testing.T) {
 				t.Errorf("%s: %T (id %q) is %.0fx%.0f, smaller than a %v px touch target", title, w, b.ID, b.Bounds.W, b.Bounds.H, minTarget)
 			}
 		})
-		if checked < 3 {
-			t.Errorf("%s: only %d interactive elements found", title, checked)
-		}
 	}
 }
 
@@ -62,14 +118,16 @@ func TestNothingOverflowsTheScreenOrCoversTheFooter(t *testing.T) {
 			t.Errorf("%s: the footer is pushed off the screen (bottom %.0f > %.0f): the page is too tall", title, footer.Bottom(), d.H)
 		}
 		body := app.body.Bounds
-		walkVisible(app, func(w widget.Widget) {
-			b := w.Elem().Bounds
-			if b.Right() > d.W+0.01 || b.X < -0.01 {
-				t.Errorf("%s: %T (id %q) is outside horizontally: %+v", title, w, w.Elem().ID, b)
-			}
-			if _, ok := w.(widget.PointerHandler); ok && b.Bottom() > body.Bottom()+0.01 {
-				t.Errorf("%s: %T (id %q) hangs below the page area: bottom %.0f > %.0f", title, w, w.Elem().ID, b.Bottom(), body.Bottom())
-			}
+		eachScrollPosition(app, func() {
+			walkVisible(app, func(w widget.Widget) {
+				b := w.Elem().Bounds
+				if b.Right() > d.W+0.01 || b.X < -0.01 {
+					t.Errorf("%s: %T (id %q) is outside horizontally: %+v", title, w, w.Elem().ID, b)
+				}
+				if _, ok := w.(widget.PointerHandler); ok && b.Bottom() > body.Bottom()+0.01 {
+					t.Errorf("%s: %T (id %q) hangs below the page area: bottom %.0f > %.0f", title, w, w.Elem().ID, b.Bottom(), body.Bottom())
+				}
+			})
 		})
 	}
 }
@@ -344,7 +402,27 @@ func TestAccountPageSignsInWithTheSimulatedProviders(t *testing.T) {
 			t.Errorf("check %d: %q, want %q", i+1, got, want)
 		}
 	}
-	tapPoint(app, byID(t, app, "combo-language").Elem().Bounds.Center())
+}
+
+func TestChoicesPageScrollsAndHoldsTheLongListCard(t *testing.T) {
+	app, _ := newApp(nil)
+	app.SetLang("en")
+	app.ShowPage(1)
+	app.Doc.Layout()
+	s := scrollOf(app)
+	if s == nil || s.MaxOffset() <= 0 {
+		t.Fatal("the Choices page is taller than the screen and scrolls")
+	}
+	combo := byID(t, app, "combo-language")
+	if widget.InView(combo) {
+		t.Fatal("the long list card is below the first window")
+	}
+	s.ScrollIntoView(combo)
+	app.Doc.Layout()
+	if !widget.InView(combo) {
+		t.Fatal("scrolling brings it into view")
+	}
+	tapPoint(app, combo.Elem().Bounds.Center())
 	if app.Doc.HasModal() {
 		t.Error("the long combo box opens a popup, not a window")
 	}

@@ -19,10 +19,12 @@ func newOAuthFixture() *oauthFixture {
 	f := &oauthFixture{}
 	f.login = NewOAuthLogin(
 		OAuthProvider{ID: "microsoft", Label: "Microsoft",
-			Start: func() (OAuthChallenge, error) { return OAuthChallenge{URL: "https://ms.example/device", Code: "AB12CD"}, nil },
+			Start: func() (OAuthChallenge, error) {
+				return OAuthChallenge{URL: "https://ms.example/device", Code: "AB12CD"}, nil
+			},
 			Complete: func(OAuthChallenge, string) (bool, error) { return f.pending, f.err }},
 		OAuthProvider{ID: "google", Label: "Google",
-			Start: func() (OAuthChallenge, error) { return OAuthChallenge{URL: "https://g.example/auth"}, nil },
+			Start:    func() (OAuthChallenge, error) { return OAuthChallenge{URL: "https://g.example/auth"}, nil },
 			Complete: func(_ OAuthChallenge, typed string) (bool, error) { f.typed = typed; return false, f.err }},
 		OAuthProvider{ID: "other", Label: "Other"},
 	)

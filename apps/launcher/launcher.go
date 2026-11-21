@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"image"
 	"net/http"
 	"os"
@@ -77,7 +78,9 @@ func newLauncher(env platform.Env) platform.App {
 		},
 		IconFor: iconFor,
 		Notice:  env.Notice,
-		Catalog: catalog, After: env.After,
+		Version: env.Version, Repository: repoOwner + "/" + repoName,
+		SystemInfo: func() []presentation.Fact { return systemFacts(env, root) },
+		Catalog:    catalog, After: env.After,
 		CachedCatalog: func(lang string) []domain.Listing {
 			list, _ := catalog.Cached(lang)
 			return list
@@ -94,6 +97,34 @@ func newLauncher(env platform.Env) platform.App {
 			return img
 		},
 	})}
+}
+
+// systemFacts are the lines of the system information that only the reader knows.
+func systemFacts(env platform.Env, root string) []presentation.Fact {
+	facts := []presentation.Fact{{Key: "version", Value: env.Version}}
+	if model := platform.DeviceModel(); model != "" {
+		facts = append(facts, presentation.Fact{Key: "model", Value: model})
+	}
+	if total, free, ok := platform.DiskSpace(root); ok {
+		facts = append(facts, presentation.Fact{Key: "storage", Value: formatBytes(free) + " / " + formatBytes(total)})
+	}
+	return append(facts,
+		presentation.Fact{Key: "folder", Value: filepath.Join(root, "applications")},
+		presentation.Fact{Key: "repository", Value: repoOwner + "/" + repoName})
+}
+
+// formatBytes writes a size the way a person reads it (1.5 GB).
+func formatBytes(n uint64) string {
+	const unit = 1024
+	if n < unit {
+		return fmt.Sprintf("%d B", n)
+	}
+	div, exp := uint64(unit), 0
+	for m := n / unit; m >= unit; m /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(n)/float64(div), "KMGTPE"[exp])
 }
 
 // iconPrefetch fetches the icon of every listing after the catalog answers, so the grid finds

@@ -60,6 +60,9 @@ func Repaint() { C.Repaint() }
 // panel the canvas is the whole screen. Call it in Init, before drawing.
 func DisablePanel() { C.SetPanelType(0) }
 
+// DeviceModel is the model name the firmware reports ("PocketBook 741"...).
+func DeviceModel() string { return C.GoString(C.GetDeviceModel()) }
+
 // Info describes the screen/canvas/panel state, for diagnostics.
 func Info() string {
 	s := fmt.Sprintf("screen=%dx%d orientation=%d panelHeight=%d panelType=%d model=%q",

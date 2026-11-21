@@ -99,6 +99,13 @@ func paintTree(c *gfx.Canvas, w Widget) {
 	}
 	paintBox(c, b)
 	w.Paint(c)
+	if cl, ok := w.(clipper); ok {
+		for _, k := range b.children {
+			paintClipped(c, k, cl.clipRect(), geom.Rect{})
+		}
+		c.ResetClip()
+		return
+	}
 	for _, k := range b.children {
 		paintTree(c, k)
 	}

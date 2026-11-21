@@ -109,6 +109,10 @@ func (h *Home) buildSettings() widget.Widget {
 	hidden := h.button("settings-hidden", tr.T("settings.apps.hidden"), h.OpenHidden)
 	appsCard := widget.NewCard(tr.T("settings.apps"), "", widget.NewRow(12, manage, hidden))
 
+	about := h.button("settings-about", tr.T("about.title"), h.OpenAbout)
+	system := h.button("settings-system", tr.T("system.title"), h.OpenSystemInfo)
+	aboutCard := widget.NewCard(tr.T("settings.about"), "", widget.NewRow(12, about, system))
+
 	f.problem = widget.NewLabel("")
 	f.problem.ID = "settings-problem"
 	f.problem.Style.Color = widget.Muted
@@ -122,8 +126,11 @@ func (h *Home) buildSettings() widget.Widget {
 	title.Style.FontSize, title.Style.Bold = widget.FontTitle, true
 	title.Style.Padding = geom.XY(28, 28)
 
-	body := widget.NewColumn(20, grid, icons, language, bgCard, appsCard, f.problem)
-	body.Style.Padding = geom.XY(0, 28)
+	// The cards are taller than the screen: a window with a scroll bar shows them.
+	body := widget.NewScroll(grid, icons, language, bgCard, appsCard, aboutCard, f.problem)
+	body.ID = "settings-scroll"
+	body.Content.Style.Gap = 20
+	body.Content.Style.Padding = geom.XY(0, 28)
 	body.Style.FlexGrow = 1
 	buttons.Style.Padding = geom.XY(20, 28)
 

@@ -6,13 +6,20 @@ import (
 	"go-pocketbook-base/internal/toolkit/widget"
 )
 
-// ---- Conta: long combo box and the sign-in with Google and Microsoft ----
+// ---- Conta: the sign-in with Google and Microsoft (and the long list of languages, on Escolhas) ----
 
 // languages are sample data (not translated): enough of them that the combo box needs its search and
 // its pages.
 var languages = []string{"Afrikaans", "Alemão", "Árabe", "Armênio", "Basco", "Búlgaro", "Catalão", "Chinês", "Coreano", "Croata", "Dinamarquês", "Eslovaco", "Esloveno", "Espanhol", "Estoniano", "Finlandês", "Francês", "Galego", "Georgiano", "Grego", "Hebraico", "Hindi", "Holandês", "Húngaro", "Indonésio", "Inglês", "Irlandês", "Islandês", "Italiano", "Japonês", "Latim", "Letão", "Lituano", "Norueguês", "Persa", "Polonês", "Português", "Romeno", "Russo", "Sérvio", "Sueco", "Tailandês", "Tcheco", "Turco", "Ucraniano", "Vietnamita"}
 
 func (a *App) accountPage() widget.Widget {
+	return twoColPage(
+		widget.NewCard(a.t("account.card.login.title"), a.t("account.card.login.subtitle"), a.signIn()),
+	)
+}
+
+// longListCard is a combo box with 46 languages: it gets its search field and its pages by itself.
+func (a *App) longListCard() widget.Widget {
 	var options []widget.Option
 	for _, name := range languages {
 		options = append(options, widget.Option{Label: name, Value: name})
@@ -21,12 +28,8 @@ func (a *App) accountPage() widget.Widget {
 	lang.SearchPlaceholder, lang.NoMatchText = a.t("account.language.search"), a.t("account.language.none")
 	lang.SetValue("Português")
 	lang.OnChange = func(e *widget.Event) { a.say(a.t("say.language", lang.Value())) }
-
-	return twoColPage(
-		widget.NewCard(a.t("account.card.combo.title"), a.t("account.card.combo.subtitle"),
-			field(a.t("account.field.language"), withID(lang, "combo-language"))),
-		widget.NewCard(a.t("account.card.login.title"), a.t("account.card.login.subtitle"), a.signIn()),
-	)
+	return widget.NewCard(a.t("account.card.combo.title"), a.t("account.card.combo.subtitle"),
+		field(a.t("account.field.language"), withID(lang, "combo-language")))
 }
 
 // signIn is the OAuthLogin with two simulated providers: nothing leaves the reader. A real app gives

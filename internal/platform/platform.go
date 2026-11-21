@@ -73,6 +73,14 @@ const checkTimeout = 15 * time.Second
 // DefaultRoot is the user storage of the reader (what RegisterOnDrive takes on the reader itself).
 const DefaultRoot = application.DefaultRoot
 
+// DeviceModel is the model the reader reports ("PocketBook 741"...; empty on the desktop).
+func DeviceModel() string { return reader.DeviceModel() }
+
+// DiskSpace is the total and the free bytes of the volume that holds path (ok false when unknown).
+func DiskSpace(path string) (total, free uint64, ok bool) {
+	return reader.DiskSpace(path)
+}
+
 // Logf writes a trace line to the app's log (applications/<id>.log). Nothing is
 // written unless verbose mode is on: create the file applications/.pbgo/debug on
 // the reader (or set PBGO_DEBUG=1) and the log traces every event and step.

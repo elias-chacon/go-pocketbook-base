@@ -11,7 +11,7 @@ func TestEveryComponentExampleRendersAndRespondsToTouch(t *testing.T) {
 	examples := map[string]func() widget.Widget{
 		"FlexRow": FlexRow, "FlexGrow": FlexGrow, "FlexWrap": FlexWrap, "FlexColumn": FlexColumn,
 		"GridLayout": GridLayout, "LabelExample": LabelExample, "ButtonExample": ButtonExample,
-		"ToggleExample": ToggleExample, "ComboBoxExample": ComboBoxExample, "LongComboBoxExample": LongComboBoxExample, "OAuthLoginExample": OAuthLoginExample, "DropdownExample": DropdownExample,
+		"ToggleExample": ToggleExample, "ComboBoxExample": ComboBoxExample, "LongComboBoxExample": LongComboBoxExample, "OAuthLoginExample": OAuthLoginExample, "ScrollExample": ScrollExample, "DropdownExample": DropdownExample,
 		"MenuBarExample": MenuBarExample, "TextInputExample": TextInputExample, "NumberInputExample": NumberInputExample,
 		"MaskedInputExample": MaskedInputExample, "SearchInputExample": SearchInputExample,
 		"TextAreaExample": TextAreaExample, "TableExample": TableExample, "ProgressExample": ProgressExample,

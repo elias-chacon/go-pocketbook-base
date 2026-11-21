@@ -181,8 +181,10 @@ func unpack(data []byte, id string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("not a valid zip: %w", err)
 	}
+	var names []string
 	for _, f := range zr.File {
-		if f.Name != id+".app" {
+		names = append(names, f.Name)
+		if !isEntry(f.Name, id+".app") {
 			continue
 		}
 		rc, err := f.Open()
@@ -202,7 +204,14 @@ func unpack(data []byte, id string) ([]byte, error) {
 		}
 		return bin, nil
 	}
-	return nil, fmt.Errorf("the zip has no %s.app", id)
+	return nil, fmt.Errorf("the zip has no %s.app (it has: %s)", id, strings.Join(names, ", "))
+}
+
+// isEntry reports whether the zip entry name is the file want, wherever the zip kept it: a leading
+// "./" or folders, and Windows separators, do not make it another file.
+func isEntry(name, want string) bool {
+	name = strings.ReplaceAll(name, "\\", "/")
+	return strings.EqualFold(name[strings.LastIndex(name, "/")+1:], want)
 }
 
 // get is a GET that checks the status and reads at most limit bytes.
