@@ -88,7 +88,7 @@ component goes to the **shared toolkit**, never inside an app: the toolkit's `Ca
 | Verified | How |
 |---|---|
 | Rules, screens, a touch at the center of every element, nothing overflows the screen | automated tests on the PC |
-| Everything builds and passes on **ARMv7 with Go 1.17**, without zoneinfo | `.\scripts\arm-test.ps1` (QEMU in user mode) |
+| Everything builds and passes on **ARMv7 with Go 1.17**, without zoneinfo | script ARM, já removido (QEMU in user mode) |
 | The apps build for the reader | `.\build.ps1 -App <id>` |
 | IMAP, SMTP and Graph | against **fake** servers |
 

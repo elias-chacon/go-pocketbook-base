@@ -88,7 +88,7 @@ For reading, the toolkit got three generic additions (they know nothing about th
 - **Tested on the PC:** the domain, the use cases, the database (on disk and in memory), the API client against a fake server, the
   screens (every page fits the screen and every element gets its touch) and the full cycle in `apps/bible`: download → read → close →
   reopen with no network, with the position, the progress, the read verse and the settings in place.
-- **Compiled and tested on ARMv7** (`.\scripts\arm-test.ps1`, Go 1.17 + qemu) and compiled with the reader's SDK.
+- **Compiled and tested on ARMv7** (script ARM, já removido, Go 1.17 + qemu) and compiled with the reader's SDK.
 - **The clock:** the reader keeps its time zone in `system/timezone` (a TZif file; `timezone=Buenos Aires` in `global.cfg`), and its Linux has no
   zone database for a program to find, so the app loads that file (`time.LoadLocationFromTZData`): the day of the verse of the day and the time on
   the Status window follow it.

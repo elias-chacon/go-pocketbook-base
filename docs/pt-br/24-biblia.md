@@ -86,7 +86,7 @@ o tipo de letra escolhido por `gfx.SetFamily` e a tela em negativo com `Document
 - **Testado no PC:** domínio, casos de uso, banco (em arquivo e na memória), o cliente da API contra um servidor de mentira, as telas
   (cada página cabe na tela e cada elemento recebe o seu toque) e o ciclo completo no `apps/bible`: baixar → ler → fechar → reabrir
   sem rede, com a posição, o progresso, o versículo lido e as configurações no lugar.
-- **Compilado e testado em ARMv7** (`.\scripts\arm-test.ps1`, Go 1.17 + qemu) e compilado com o SDK do leitor.
+- **Compilado e testado em ARMv7** (script ARM, já removido, Go 1.17 + qemu) e compilado com o SDK do leitor.
 - **O relógio:** o leitor guarda o fuso em `system/timezone` (um arquivo TZif; `timezone=Buenos Aires` no `global.cfg`) e o Linux dele não
   tem um banco de fusos que um programa encontre, então o app carrega esse arquivo (`time.LoadLocationFromTZData`): o dia do versículo do
   dia e a hora da janela Status seguem esse fuso.

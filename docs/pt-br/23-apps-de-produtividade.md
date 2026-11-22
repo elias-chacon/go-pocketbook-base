@@ -88,7 +88,7 @@ tela novo vai para o **toolkit compartilhado**, nunca para dentro de um app: o `
 | Verificado | Como |
 |---|---|
 | Regras, telas, toque no centro de cada elemento, nada estoura a tela | testes automáticos na máquina |
-| Tudo compila e passa em **ARMv7 com Go 1.17**, sem zoneinfo | `.\scripts\arm-test.ps1` (QEMU em modo usuário) |
+| Tudo compila e passa em **ARMv7 com Go 1.17**, sem zoneinfo | script ARM, já removido (QEMU em modo usuário) |
 | Os apps compilam para o leitor | `.\build.ps1 -App <id>` |
 | IMAP, SMTP e Graph | contra servidores **de mentira** |
 

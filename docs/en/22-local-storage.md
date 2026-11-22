@@ -24,7 +24,7 @@ The database does not know what a message or an event is: each context writes it
 
 ## What has not been verified yet
 
-**The real reader.** SQLite is verified on **emulated ARMv7** (all the storage tests pass under `qemu-arm` with the SDK's Go 1.17: `scripts/arm-test.ps1`),
+**The real reader.** SQLite is verified on **emulated ARMv7** (all the storage tests pass under `qemu-arm` with the SDK's Go 1.17: script ARM, já removido),
 but it has not run on the PocketBook itself, and the emulation cannot check the **FAT volume** the database will live on. It is the first thing to
 validate when an app uses it; if it fails, the fallback is our own file behind the same port.
 

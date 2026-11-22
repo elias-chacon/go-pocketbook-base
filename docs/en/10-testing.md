@@ -199,12 +199,11 @@ packages that run on the PC, and keep the reader glue thin.
 
 Next: [Troubleshooting →](11-troubleshooting.md)
 
-## Testing on an emulated reader (ARM)
+## Testing on the reader's firmware (emulator)
 
-Everything that does not touch the screen can be tested on the reader's own processor without the reader: `.\scripts\arm-test.ps1`
-compiles the tests of every pure-Go package (`internal/**`) for **ARMv7 with the SDK's Go 1.17** and runs them under `qemu-arm` in an Alpine
-container (no privileges, no changes to Docker). The container has **no zoneinfo and no system libraries**, like the reader, so a test that
-forgot to carry what it needs fails there: that is how the time zone database was found missing in the calendar domain.
+The pure-Go packages are tested on the PC with `go test ./...`. For what only the reader's own libraries show (InkView, the home screen,
+the 24-bit canvas, touch) use the firmware emulator of [chapter 25](25-emulator-and-engineering.md): it runs the real PB741 firmware and
+your `.app` on it. The old script that ran the tests under `qemu-arm` with Go 1.17 (`arm-test.ps1`) was removed; the emulator replaced it.
 
 | It checks | It cannot check |
 |---|---|

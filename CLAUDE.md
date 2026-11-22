@@ -18,7 +18,6 @@ go run ./tools/docsync                          # refill code blocks in docs/ fr
 go run ./tools/bumpversion build|minor|major    # edit .version
 .\build.ps1 [-App name]                         # Windows build -> dist/applications/<app>.app (bumps BUILD)
 make dist [APP=name]                            # same on Linux/macOS/WSL
-.\scripts\arm-test.ps1                          # every internal/** package's tests on emulated ARMv7 (Go 1.17 + qemu-arm, no privileges): catches what only fails on the reader
 .\scripts\sonar.ps1                             # tests with -coverpkg + SonarQube scan (needs SONAR_GLOBAL_TOKEN)
 .\scripts\install.ps1 -Drive F: [-All]          # developer copy of the built .app(s) to a USB-mounted reader
 go run ./tools/appicons                         # write apps/<id>/icon.png from the icons the apps draw in code (a test fails when stale)

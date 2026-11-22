@@ -26,7 +26,7 @@ O banco não sabe o que é uma mensagem ou um evento: cada contexto escreve as s
 ## O que ainda não foi verificado
 
 **O leitor de verdade.** O SQLite está verificado em **ARMv7 emulado** (todos os testes do armazenamento passam no `qemu-arm` com o Go 1.17 do SDK:
-`scripts/arm-test.ps1`), mas não rodou no PocketBook em si, e a emulação não confere o **volume FAT** onde o banco vai ficar. É a primeira coisa a validar
+script ARM, já removido), mas não rodou no PocketBook em si, e a emulação não confere o **volume FAT** onde o banco vai ficar. É a primeira coisa a validar
 quando um app o usar; se falhar, a alternativa é um arquivo próprio atrás da mesma porta.
 
 ## O código

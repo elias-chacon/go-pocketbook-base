@@ -199,12 +199,11 @@ no PC e a cola do leitor bem fina.
 
 Próxima: [Solução de problemas →](11-solucao-de-problemas.md)
 
-## Testando num leitor emulado (ARM)
+## Testando no firmware do leitor (emulador)
 
-Tudo o que não toca a tela pode ser testado no processador do próprio leitor, sem o leitor: o `.\scripts\arm-test.ps1` compila os testes de
-todo pacote em Go puro (`internal/**`) para **ARMv7 com o Go 1.17 do SDK** e os executa com o `qemu-arm` num contêiner Alpine (sem privilégios e
-sem mexer no Docker). O contêiner **não tem zoneinfo nem bibliotecas do sistema**, como o leitor, então um teste que esqueceu de levar o que precisa
-falha ali: foi assim que se descobriu a falta do banco de fusos no domínio do calendário.
+Os pacotes em Go puro são testados no PC com `go test ./...`. Para o que só as bibliotecas do próprio leitor mostram (InkView, a tela
+inicial, o canvas de 24 bits, o toque), use o emulador do firmware do [capítulo 25](25-emulador-e-engenharia.md): ele roda o firmware real do
+PB741 e o seu `.app` nele. O script antigo que rodava os testes sob `qemu-arm` com o Go 1.17 (`arm-test.ps1`) foi removido; o emulador o substituiu.
 
 | O que ele confere | O que ele não confere |
 |---|---|
