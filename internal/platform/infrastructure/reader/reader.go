@@ -49,6 +49,7 @@ func PointerOf(kind inkview.PointerKind) widget.PointerType {
 // the app asked to close (as opposed to the system closing it with Home).
 type Screen struct {
 	closed bool
+	mode   inkview.UpdateMode // how the repaints of the platform refresh the panel
 	// BeforeClose, when set, runs as the app asks to close and before InkView is
 	// told to exit (InkView ends the process itself, so nothing can run after
 	// the event loop). It may replace the process, as returning to the Launcher does.
@@ -62,8 +63,12 @@ func (*Screen) Show(img *image.Gray) {
 }
 
 // ShowRect implements application.Screen.
-func (*Screen) ShowRect(img *image.Gray, r image.Rectangle) {
-	inkview.BlitRect(img.Pix, img.Stride, r.Min.X, r.Min.Y, r.Dx(), r.Dy())
+func (s *Screen) ShowRect(img *image.Gray, r image.Rectangle) {
+	if s.mode == inkview.UpdatePartial {
+		inkview.BlitRect(img.Pix, img.Stride, r.Min.X, r.Min.Y, r.Dx(), r.Dy())
+		return
+	}
+	inkview.BlitGrayMode(img.Pix, img.Stride, r.Min.X, r.Min.Y, r.Dx(), r.Dy(), s.mode)
 }
 
 // RequestRepaint implements application.Screen.
@@ -174,3 +179,32 @@ func SetVerbose(on bool) { inkview.Verbose = on }
 
 // ResetLog empties a log that has grown too big.
 func ResetLog() { inkview.ResetLog() }
+
+// Info implements application.Panel: what the reader says about its panel.
+func (*Screen) Info() application.PanelInfo {
+	return application.PanelInfo{
+		Model: inkview.DeviceModel(), Depth: inkview.HardwareDepth(), Waveform: inkview.Waveform(), Canvas: inkview.Info(),
+	}
+}
+
+// DrawGray implements application.Panel.
+func (*Screen) DrawGray(img *image.Gray, r image.Rectangle, m application.UpdateMode) {
+	inkview.BlitGrayMode(img.Pix, img.Stride, r.Min.X, r.Min.Y, r.Dx(), r.Dy(), inkview.UpdateMode(m))
+}
+
+// DrawColor implements application.Panel.
+func (*Screen) DrawColor(img *image.RGBA, r image.Rectangle, m application.UpdateMode) {
+	inkview.BlitColorMode(img.Pix, img.Stride, r.Min.X, r.Min.Y, r.Dx(), r.Dy(), inkview.UpdateMode(m))
+}
+
+// SetMode implements application.Panel.
+func (s *Screen) SetMode(m application.UpdateMode) { s.mode = inkview.UpdateMode(m) }
+
+// Wait implements application.Panel.
+func (*Screen) Wait() { inkview.WaitUpdate() }
+
+// Settle implements application.Panel.
+func (*Screen) Settle() {
+	inkview.ExitA2()
+	inkview.WaitUpdate()
+}

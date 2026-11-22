@@ -44,6 +44,7 @@ Ele traz:
 | 22 | [Armazenamento local](22-armazenamento-local.md) | o banco SQLite compartilhado: migrações por módulo e apagar uma conta |
 | 23 | [Os apps de produtividade](23-apps-de-produtividade.md) | **comece por aqui para E-mail, Tarefas e Calendário**: o que cada um faz, como usar, o que falta |
 | 24 | [O app Bíblia](24-biblia.md) | versões baixadas da API Midvash, leitura offline, progresso unificado, versículo do dia, configurações, memória e o que falta |
+| 25 | [O emulador e o app Engenharia](25-emulador-e-engenharia.md) | o emulador do firmware (pbemu) e o app que testa tela, cores, toque e velocidade e grava tudo num registro |
 
 ## Uma olhada rápida
 

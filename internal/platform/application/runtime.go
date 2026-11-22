@@ -51,6 +51,9 @@ func (r *Runtime) Start(width, height int, keyboard widget.Keyboard) {
 	r.env.Exit = r.screen.Close
 	r.env.Flush = r.flush
 	r.env.After = r.screen.After
+	if p, ok := r.screen.(Panel); ok {
+		r.env.Panel = p
+	}
 	r.app = r.factory(r.env)
 	r.doc = r.app.Document()
 	r.doc.OnInvalidate = r.requestRepaint
@@ -96,6 +99,9 @@ func (r *Runtime) Draw() {
 // paint sends what changed to the panel.
 func (r *Runtime) paint() {
 	r.pending = false
+	if r.painted() {
+		return
+	}
 
 	f := r.doc.Update()
 	switch {
@@ -108,6 +114,15 @@ func (r *Runtime) paint() {
 		}
 		r.partials++
 	}
+}
+
+// painted lets an app that draws the panel itself (Raw) do it instead of the platform.
+func (r *Runtime) painted() bool {
+	raw, ok := r.app.(Raw)
+	if !ok || r.env.Panel == nil {
+		return false
+	}
+	return raw.Raw(r.env.Panel)
 }
 
 // Key handles a hardware key. Back keys close an open popup, then an open modal.

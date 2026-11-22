@@ -1,0 +1,12 @@
+{
+  "id": "eng",
+  "title": {
+    "pt-BR": "Engenharia",
+    "en": "Engineering"
+  },
+  "description": {
+    "pt-BR": "Menu de engenharia: testa cores, tela, toque, modos de atualização e velocidade de rolagem, e grava tudo num registro.",
+    "en": "Engineering menu: tests colors, screen, touch, update modes and scroll speed, and writes everything to a log."
+  },
+  "group": "@General"
+}

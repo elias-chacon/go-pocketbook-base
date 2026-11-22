@@ -58,6 +58,9 @@ type Env struct {
 	// repaint, so f may change the widgets. An app does a long job (a download) in small steps,
 	// each one scheduled by the one before, and the reader keeps answering touches in between.
 	After func(d time.Duration, f func())
+	// Panel is the reader's display beyond the repaint the platform does by itself: the update
+	// modes, color and the panel's own details. Only the engineering app uses it. Nil in tests.
+	Panel Panel
 	// HTTP is the client to use for the network: it works on the reader's Linux
 	// (no resolv.conf, no IPv6), which the standard one does not. Nil in tests.
 	HTTP *http.Client
@@ -72,6 +75,51 @@ type App interface {
 // KeyHandler is optionally implemented by an App to handle hardware keys the
 // platform does not: return true when the key was handled.
 type KeyHandler interface{ Key(k Key) bool }
+
+// Raw is optionally implemented by an App that sometimes draws the panel itself (the screen tests
+// of the engineering app): when Raw returns true it painted, and the platform skips its own paint.
+type Raw interface{ Raw(p Panel) bool }
+
+// UpdateMode is how a part of the panel is refreshed after it was drawn.
+type UpdateMode int
+
+// The update modes, from the default one to the fast ones that trade quality for speed.
+const (
+	UpdatePartial UpdateMode = iota
+	UpdateDynamic
+	UpdateA2
+	UpdateDU4
+	UpdateBW
+	UpdateHQ
+	UpdateFull
+)
+
+// UpdateModes is how many update modes there are.
+const UpdateModes = int(UpdateFull) + 1
+
+// PanelInfo is what the reader says about its panel.
+type PanelInfo struct {
+	Model    string // "PocketBook 741"
+	Depth    int    // bits per pixel of the framebuffer: 8 gray, 24 color
+	Waveform string // the waveform file
+	Canvas   string // the canvas, as InkView describes it
+}
+
+// Panel is the reader's display, as an app that tests the screen needs it. The infrastructure
+// implements it with InkView.
+type Panel interface {
+	Info() PanelInfo
+	// DrawGray draws the part r of a grayscale image and refreshes it with the mode.
+	DrawGray(img *image.Gray, r image.Rectangle, m UpdateMode)
+	// DrawColor draws the part r of a color image and refreshes it with the mode.
+	DrawColor(img *image.RGBA, r image.Rectangle, m UpdateMode)
+	// SetMode is the mode the platform's own repaints use from now on.
+	SetMode(m UpdateMode)
+	// Wait blocks until the panel finished the updates asked for.
+	Wait()
+	// Settle leaves the fast (A2) state with a clean update and waits for the panel.
+	Settle()
+}
 
 // Factory builds the app once the screen size is known.
 type Factory func(env Env) App

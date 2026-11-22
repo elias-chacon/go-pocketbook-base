@@ -46,6 +46,23 @@ type (
 	InstalledApp = domain.InstalledApp
 	Settings     = domain.Settings
 	Intent       = domain.Intent
+	// Panel, Raw and the update modes are for an app that tests the screen (the engineering app).
+	Panel      = application.Panel
+	PanelInfo  = application.PanelInfo
+	Raw        = application.Raw
+	UpdateMode = application.UpdateMode
+)
+
+// The update modes of the panel, from the default one to the fast ones.
+const (
+	UpdatePartial = application.UpdatePartial
+	UpdateDynamic = application.UpdateDynamic
+	UpdateA2      = application.UpdateA2
+	UpdateDU4     = application.UpdateDU4
+	UpdateBW      = application.UpdateBW
+	UpdateHQ      = application.UpdateHQ
+	UpdateFull    = application.UpdateFull
+	UpdateModes   = application.UpdateModes
 )
 
 // The keys an app may handle in its KeyHandler.

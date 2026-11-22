@@ -84,6 +84,7 @@
 //	              open, migrate per module, erase an account. A single package, depending
 //	              on nothing but the kernel; each context keeps its own tables in it.
 //	showcase      the content of the hello app: every widget on four pages.
+//	engineering   the content of the eng app: tests of the panel, colors, touch and speed, logged as JSON lines.
 //
 // Outside internal/: apps/ (one composition root per app, free to wire any
 // context), examples/ (documentation samples, by the context they teach), tools/
@@ -137,6 +138,7 @@ const (
 	applicationDir    = platformDir + applicationLayer
 	infrastructureDir = platformDir + infrastructureLayer
 	showcaseDir       = "internal/showcase"
+	engineeringDir    = "internal/engineering"
 	launcherDir       = "internal/launcher"
 	launcherDomain    = launcherDir + domainLayer
 	launcherApp       = launcherDir + applicationLayer
@@ -191,6 +193,8 @@ var Rules = []Rule{
 	// The package platform itself: the composition root of the context.
 	{platformDir, []string{kernelDir, localizationDir, toolkitDir, platformDir}},
 	{showcaseDir, []string{kernelDir, localizationDir, toolkitDir, showcaseDir}},
+	// The engineering tests: the toolkit and its own port to the panel only.
+	{engineeringDir, []string{kernelDir, localizationDir, toolkitDir, engineeringDir}},
 	// The Launcher: its own vocabulary, and the platform's only through the domain.
 	{launcherDomain, []string{kernelDir, localizationDir, domainDir, launcherDomain}},
 	{launcherApp, []string{kernelDir, localizationDir, domainDir, launcherDomain, launcherApp}},
@@ -233,7 +237,7 @@ var Rules = []Rule{
 
 // Contexts are the folders allowed directly under internal/. A new one must be
 // added here (and to the documentation above) on purpose.
-var Contexts = []string{"architecture", "accounts", "bible", "calendar", "device", "installer", "kernel", "launcher", "localization", "mail", "platform", "showcase", "storage", "tasks", "toolkit"}
+var Contexts = []string{"architecture", "accounts", "bible", "calendar", "device", "engineering", "installer", "kernel", "launcher", "localization", "mail", "platform", "showcase", "storage", "tasks", "toolkit"}
 
 // within reports whether dir is base or a folder below it.
 func within(dir, base string) bool { return dir == base || strings.HasPrefix(dir, base+"/") }
