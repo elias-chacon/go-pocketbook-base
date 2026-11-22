@@ -79,6 +79,32 @@ func TestScrollSwipeOnAnInertPartMovesTheContentAndAButtonStillClicks(t *testing
 	}
 }
 
+func TestScrollSwipeThatStartsOnAButtonScrollsAndDoesNotClickIt(t *testing.T) {
+	d, s, btn := scrollFixture(6)
+	clicks := counter{}
+	btn.OnClick = clicks.handler()
+	s.ScrollTo(s.MaxOffset())
+	d.Layout()
+	at := btn.Bounds.Center()
+	d.HandlePointer(PointerDown, at.X, at.Y)
+	d.HandlePointer(PointerMove, at.X, at.Y+10) // a tremor is not a swipe
+	d.HandlePointer(PointerMove, at.X, at.Y+200)
+	d.HandlePointer(PointerUp, at.X, at.Y+200)
+	d.Layout()
+	if want := s.MaxOffset() - 200; s.Offset != want {
+		t.Errorf("a swipe down of 200 from a button: offset %v, want %v", s.Offset, want)
+	}
+	if clicks.n != 0 {
+		t.Error("a swipe must not click the button it began on")
+	}
+	s.ScrollTo(s.MaxOffset()) // the button is back in the window
+	d.Layout()
+	tap(d, btn)
+	if clicks.n != 1 {
+		t.Error("a plain tap still clicks")
+	}
+}
+
 func TestScrollElementsOutsideTheWindowAreNotTouchedNorDrawn(t *testing.T) {
 	d, s, btn := scrollFixture(6)
 	if got := d.TargetAt(btn.Bounds.Center()); got == Widget(btn) {

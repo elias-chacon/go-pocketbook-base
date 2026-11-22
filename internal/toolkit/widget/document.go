@@ -37,6 +37,8 @@ type Document struct {
 	capture    Widget
 	swallow    bool        // the current touch only dismissed a popup
 	pressedAt  time.Time   // when the current touch went down
+	downAt     geom.Point  // where the current touch went down
+	scrolling  bool        // the current touch became a swipe of a Scroll (see handOverToScroll)
 	canvas     *gfx.Canvas // reused between frames: a screen-size RGBA is 10 MB
 
 	// partial repaint (see Update)

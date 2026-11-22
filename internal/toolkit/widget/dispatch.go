@@ -74,6 +74,7 @@ func (d *Document) HandlePointer(t PointerType, deviceX, deviceY float64) {
 	case PointerDown:
 		d.pointerDown(p)
 	case PointerMove:
+		d.handOverToScroll(p)
 		d.deliver(d.capture, &PointerEvent{Type: PointerMove, X: p.X, Y: p.Y})
 	case PointerUp:
 		d.pointerUp(p)
@@ -81,7 +82,7 @@ func (d *Document) HandlePointer(t PointerType, deviceX, deviceY float64) {
 }
 
 func (d *Document) pointerDown(p geom.Point) {
-	d.swallow = false
+	d.swallow, d.scrolling, d.downAt = false, false, p
 	if d.HasPopup() && !d.insidePopup(p) {
 		d.ClosePopups()
 		d.swallow = true // this touch only dismissed the popup
@@ -100,6 +101,9 @@ func (d *Document) pointerUp(p geom.Point) {
 		return
 	}
 	d.deliver(target, &PointerEvent{Type: PointerUp, X: p.X, Y: p.Y})
+	if d.scrolling {
+		return // the touch was a swipe: it clicks nothing
+	}
 	if !target.Elem().Bounds.Contains(p) {
 		return
 	}
@@ -107,6 +111,40 @@ func (d *Document) pointerUp(p geom.Point) {
 		return
 	}
 	d.click(target, p)
+}
+
+// swipeSlop is how far (design pixels) a finger must travel, mostly vertically, for a touch that
+// began on a button, field or card inside a Scroll to become a swipe of that Scroll.
+const swipeSlop = 24
+
+// handOverToScroll turns a touch that began on an interactive element inside a Scroll into a swipe
+// of the Scroll once the finger moved vertically past swipeSlop: otherwise only the bare parts of
+// the window would scroll it. The element never receives the rest of the touch, and nothing is clicked.
+func (d *Document) handOverToScroll(p geom.Point) {
+	if d.scrolling || d.capture == nil {
+		return
+	}
+	dy, dx := p.Y-d.downAt.Y, p.X-d.downAt.X
+	if dy < 0 {
+		dy = -dy
+	}
+	if dx < 0 {
+		dx = -dx
+	}
+	if dy < swipeSlop || dy < dx {
+		return
+	}
+	for w := d.capture; w != nil; w = w.Elem().parent {
+		sc, ok := w.(*Scroll)
+		if !ok {
+			continue
+		}
+		if sc.MaxOffset() > 0 && w != d.capture {
+			d.capture, d.scrolling = sc, true
+			sc.HandlePointer(&PointerEvent{Type: PointerDown, X: d.downAt.X, Y: d.downAt.Y})
+		}
+		return
+	}
 }
 
 func (d *Document) now() time.Time {
