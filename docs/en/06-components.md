@@ -841,7 +841,10 @@ func ImageExample() widget.Widget {
 content moves by **dragging a finger** over it (on a part that is not a button or a field), by **dragging the thumb** of the bar, or by **tapping the bar**
 above or below the thumb (a page at a time). Elements cut by the window are drawn cut; the ones outside it are not drawn and do not get touches.
 Use it for a **page of cards** that does not fit the screen (the *Choices* page of the hello app); for a long list of rows prefer `Pager`, which does
-not repaint on every step of a drag.
+not repaint on every step of a drag. When the window only moves, `Document.Update` **slides the pixels it already has** and paints just the strip that
+the move uncovered (plus the bar), instead of painting the page again; the offset is rounded to whole device pixels so that the slid pixels are the same ones a
+full paint would give (a popup or a modal over the window, or a jump past the window, still repaint it whole). `Document.LastUpdate()` says what the last
+Update cost (layout, snapshot, diff, paint) and how much it painted and sent.
 
 The height must be **definite**: give it `Style.Height`, or `Style.FlexGrow` inside a column that has one (a window has no height of its own: it is not
 the content's). The content is as wide as the panel minus the bar.

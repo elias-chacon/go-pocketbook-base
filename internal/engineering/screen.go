@@ -42,6 +42,8 @@ type Config struct {
 	After func(d time.Duration, f func())
 	// Flush paints the pending changes of the document now.
 	Flush func()
+	// Watch registers the function to call after every repaint of the platform (nil: none).
+	Watch func(f func(Paint))
 	// Now is the clock (time.Now when nil).
 	Now func() time.Time
 	// Facts are the lines of the system page that only the reader knows.
@@ -78,6 +80,8 @@ type Screen struct {
 	table  *widget.Table // the results of the update benchmark
 	auto   *autoScroll
 	bench  *benchmark
+
+	paint Paint // the last repaint of the platform
 }
 
 // NewScreen builds the app on its menu and records the start.
@@ -89,6 +93,9 @@ func NewScreen(cfg Config) *Screen {
 		cfg.Now = time.Now
 	}
 	s := &Screen{cfg: cfg, doc: cfg.Doc, mode: Partial}
+	if cfg.Watch != nil {
+		cfg.Watch(s.onPaint)
+	}
 	s.cfg.Rec.Event("start", s.factFields()...)
 	s.showMenu()
 	return s

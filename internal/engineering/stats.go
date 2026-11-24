@@ -49,3 +49,21 @@ func (s Stats) String() string {
 	return fmt.Sprintf("n=%d mean=%.1fms p95=%.1fms min=%.1fms max=%.1fms rate=%.1f/s",
 		s.Count, Millis(s.Mean), Millis(s.P95), Millis(s.Min), Millis(s.Max), s.PerSecond())
 }
+
+// onPaint keeps the last repaint of the platform and, on the pages that scroll or follow a finger,
+// writes it down: what a frame cost, step by step, tells where the time goes.
+func (s *Screen) onPaint(p Paint) {
+	s.paint = p
+	if s.page == pageScroll || s.page == pageTouch {
+		s.cfg.Rec.Event("paint", append([]interface{}{"page", s.page}, p.fields()...)...)
+	}
+}
+
+// fields are the numbers of a repaint as fields of a log event.
+func (p Paint) fields() []interface{} {
+	return []interface{}{
+		"layout_ms", Millis(p.Layout), "snapshot_ms", Millis(p.Snapshot), "diff_ms", Millis(p.Diff),
+		"paint_ms", Millis(p.Paint), "show_ms", Millis(p.Show),
+		"full", p.Full, "slid", p.Slid, "painted_px", p.Painted, "sent_px", p.Sent, "areas", p.Areas,
+	}
+}

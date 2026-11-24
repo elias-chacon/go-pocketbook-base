@@ -839,7 +839,10 @@ O `Scroll` é um **painel de altura fixa** cujo conteúdo pode ser mais alto: el
 conteúdo se move **arrastando o dedo** sobre ele (numa parte que não seja botão nem campo), **arrastando o marcador** da barra, ou **tocando na barra** acima
 ou abaixo do marcador (uma página por vez). Os elementos cortados pela janela são desenhados cortados; os de fora não são desenhados nem recebem toques.
 Use para uma **página de cards** que não cabe na tela (a página *Escolhas* do app hello); para uma lista longa de linhas prefira o `Pager`, que não
-repinta a cada passo de um arrasto.
+repinta a cada passo de um arrasto. Quando a janela só se move, o `Document.Update` **desliza os pixels que já tem** e pinta só a faixa que o movimento
+descobriu (e a barra), em vez de pintar a página de novo; o deslocamento é arredondado para pixels inteiros do aparelho, para que os pixels deslizados
+sejam os mesmos que uma pintura completa daria (um popup ou um modal sobre a janela, ou um salto além dela, ainda repintam tudo).
+`Document.LastUpdate()` diz quanto o último Update custou (layout, snapshot, diff, pintura) e quanto pintou e enviou.
 
 A altura precisa ser **definida**: dê `Style.Height`, ou `Style.FlexGrow` dentro de uma coluna que tenha uma (a janela não tem altura própria: ela não é a
 do conteúdo). O conteúdo tem a largura do painel menos a barra.

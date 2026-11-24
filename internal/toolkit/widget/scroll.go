@@ -1,6 +1,8 @@
 package widget
 
 import (
+	"math"
+
 	"go-pocketbook-base/internal/kernel/geom"
 	"go-pocketbook-base/internal/toolkit/gfx"
 )
@@ -68,13 +70,26 @@ func (s *Scroll) PageSize() float64 { return geom.Max(1, s.viewport().H-96) }
 
 // ScrollTo moves the content so that y design pixels of it are above the window.
 func (s *Scroll) ScrollTo(y float64) {
-	y = geom.Clamp(y, 0, s.MaxOffset())
+	y = s.wholePixels(geom.Clamp(y, 0, s.MaxOffset()))
 	if y == s.Offset {
 		return
 	}
 	s.Offset = y
 	s.Invalidate()
 	Fire(s.OnScroll, s)
+}
+
+// wholePixels rounds y to a whole number of device pixels (down, when that is past the end), so
+// that the screen can slide the pixels it has instead of painting them again.
+func (s *Scroll) wholePixels(y float64) float64 {
+	if s.doc == nil || s.doc.Scale <= 0 {
+		return y
+	}
+	k := s.doc.Scale
+	if r := math.Round(y*k) / k; r <= s.MaxOffset() {
+		return r
+	}
+	return math.Floor(s.MaxOffset()*k) / k
 }
 
 // ScrollBy moves the content by dy design pixels (positive: down).
@@ -115,10 +130,10 @@ func translate(w Widget, dx, dy float64) {
 func (s *Scroll) Measure(avail float64) geom.Size { return geom.Size{W: avail} }
 
 // bar is the track of the scroll bar, and thumb the part of it that shows where the window is.
-func (s *Scroll) bar() geom.Rect {
-	v := s.viewport()
-	return geom.R(v.Right()+10, v.Y, scrollThumbW, v.H)
-}
+func (s *Scroll) bar() geom.Rect { return barRect(s.viewport()) }
+
+// barRect is the track of the bar of a window v.
+func barRect(v geom.Rect) geom.Rect { return geom.R(v.Right()+10, v.Y, scrollThumbW, v.H) }
 
 func (s *Scroll) thumb() geom.Rect {
 	track, total := s.bar(), s.Content.Bounds.H

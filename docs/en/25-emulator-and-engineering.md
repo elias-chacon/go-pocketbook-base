@@ -51,7 +51,7 @@ fields), to be read over USB and analysed later.
 | **Screen** | plain fills, 1 px and 8 px checkers, 1 px lines, a 100 px grid with edges, diagonals and corners (dead pixels, ghosting, geometry) | `pattern` |
 | **Touch** | an area that draws the path of the finger and shows events, events per second, the longest pause and the pixels | `touch` (phase, x, y and the time since the last event) and `touch_stroke` (the summary of the stroke) |
 | **Update modes** | redraws the lower half of the screen in each InkView mode (`partial`, `dynamic`, `a2`, `du4`, `bw`, `hq`, `full`) and measures the call, the time until the screen is done and until it settles; *Samples by mode* shows pictures in each mode to compare by eye | `bench` (each call) and `bench_mode` (mean, p95, min, max, total and settle) |
-| **Scrolling** | a list of 300 rows that is dragged with a finger; the *Mode* button chooses how the screen is refreshed while it scrolls and *Auto-scroll* makes 40 steps of 160 px timing each one | `scroll` (each change by touch, with the interval) and `scroll_step`/`scroll_run` (mean, p95, frames per second) |
+| **Scrolling** | a list of 300 rows that is dragged with a finger; the *Mode* button chooses how the screen is refreshed while it scrolls and *Auto-scroll* makes 40 steps of 160 px timing each one | `scroll` (each change by touch, with the interval) and `scroll_step`/`scroll_run` (mean, p95, frames per second) and `paint` (every repaint of the page: `layout_ms`, `snapshot_ms`, `diff_ms`, `paint_ms`, `show_ms`, whether it was `full`, whether the pixels `slid`, `painted_px`, `sent_px` and `areas`); each `scroll_step` carries the same fields |
 | **System** | model, hardware depth, the waveform file, the canvas, the screen, the version, free space and the log folder | `system` |
 | **Log** | the last lines of the log and a button to clear it | |
 
@@ -82,6 +82,14 @@ grep touch_stroke eng.log
 ```
 
 Every line is JSON: `jq` works, or any JSON Lines reader.
+
+### Where a repaint's time goes
+
+The first log of the device (v1.50.1) showed the scroll at ~1.3 s per step. A full repaint of the page was the suspect: scrolling changed the
+position of every row, so `Document.Update` found the whole window changed and painted it again. Since v1.50.2 a scroll only slides the pixels and
+paints the uncovered strip. **The gain was measured on the PC only** (about 3x less time per step with 300 rows); on the reader the `paint` and
+`scroll_step` lines now say how long each step really takes (`layout_ms`, `snapshot_ms`, `diff_ms`, `paint_ms`, then `show_ms` for the blit and the
+update call).
 
 ### Limits
 

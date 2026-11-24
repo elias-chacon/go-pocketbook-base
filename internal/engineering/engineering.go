@@ -10,6 +10,7 @@ package engineering
 
 import (
 	"image"
+	"time"
 )
 
 // Mode is how a part of the panel is refreshed after it was drawn (the update functions of
@@ -43,6 +44,13 @@ func (m Mode) String() string {
 
 // Next is the mode after m, in order, coming back to the first one.
 func (m Mode) Next() Mode { return (m + 1) % modes }
+
+// Paint is what one repaint of the platform cost, step by step.
+type Paint struct {
+	Layout, Snapshot, Diff, Paint, Show time.Duration
+	Full, Slid                          bool // the whole screen was repainted / a Scroll slid its pixels
+	Painted, Sent, Areas                int  // device pixels repainted and sent to the panel; areas sent
+}
 
 // Info is what the reader says about its panel.
 type Info struct {

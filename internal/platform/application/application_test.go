@@ -395,3 +395,29 @@ func TestACountOfRequestsThatNeverArrivesExpires(t *testing.T) {
 		t.Errorf("an old request is forgotten, the next draw is the system's: %d", rec.shows)
 	}
 }
+
+func TestWatchHearsOfEveryRepaintWithItsCost(t *testing.T) {
+	var env Env
+	btn := widget.NewButton("Tap me")
+	doc := widget.NewDocument(1404, 1872)
+	doc.SetRoot(widget.NewColumn(0, btn))
+	rec := &recorder{}
+	rt := NewRuntime(Env{}, func(e Env) App { env = e; return &fakeApp{doc: doc} }, rec)
+	rt.Start(1404, 1872, &widget.FakeKeyboard{})
+	var seen []PaintStats
+	env.Watch(func(p PaintStats) { seen = append(seen, p) })
+
+	env.Flush() // the first frame: the whole screen
+	if len(seen) != 1 || !seen[0].Full || seen[0].Painted == 0 {
+		t.Fatalf("first frame: %+v", seen)
+	}
+	env.Flush() // nothing changed: nothing was shown, nothing to report
+	if len(seen) != 1 {
+		t.Errorf("an empty frame is not reported: %d", len(seen))
+	}
+	btn.Text = "Tapped"
+	env.Flush()
+	if len(seen) != 2 || seen[1].Full || seen[1].Areas == 0 || seen[1].Sent == 0 {
+		t.Errorf("partial frame: %+v", seen)
+	}
+}

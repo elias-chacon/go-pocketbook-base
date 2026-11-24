@@ -11,7 +11,7 @@ import (
 
 // Recorder writes what the tests measure: one JSON object per line, with the time and the kind of
 // event and the fields it was given. A nil Recorder records nothing. Every event reaches the file
-// at once, except the touch and scroll ones (see bulk), which wait for Flush.
+// at once, except the touch, scroll and paint ones (see bulk), which wait for Flush.
 type Recorder struct {
 	mu  sync.Mutex
 	w   *bufio.Writer
@@ -66,7 +66,7 @@ func (r *Recorder) Event(kind string, fields ...interface{}) {
 
 // bulk are the events that come many times a second while a finger moves: they are kept in the
 // buffer (writing each one would slow the very thing being measured) until a test ends.
-var bulk = map[string]bool{"touch": true, "scroll": true}
+var bulk = map[string]bool{"touch": true, "scroll": true, "paint": true}
 
 // Flush writes what is buffered to the file; call it when a test ends.
 func (r *Recorder) Flush() {

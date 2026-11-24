@@ -61,9 +61,20 @@ type Env struct {
 	// Panel is the reader's display beyond the repaint the platform does by itself: the update
 	// modes, color and the panel's own details. Only the engineering app uses it. Nil in tests.
 	Panel Panel
+	// Watch registers f to be called after every repaint the platform does, with what it cost
+	// (step by step). Only the engineering app uses it.
+	Watch func(f func(PaintStats))
 	// HTTP is the client to use for the network: it works on the reader's Linux
 	// (no resolv.conf, no IPv6), which the standard one does not. Nil in tests.
 	HTTP *http.Client
+}
+
+// PaintStats is what one repaint cost: the document's own steps (layout, snapshot, diff and paint)
+// and the time to hand the areas to the panel.
+type PaintStats struct {
+	widget.UpdateStats
+	Show  time.Duration // Screen.Show / ShowRect: the blit and the update call
+	Areas int           // how many areas went to the panel
 }
 
 // App is what an app gives the platform: the screen.

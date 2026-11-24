@@ -51,6 +51,7 @@ type (
 	PanelInfo  = application.PanelInfo
 	Raw        = application.Raw
 	UpdateMode = application.UpdateMode
+	PaintStats = application.PaintStats
 )
 
 // The update modes of the panel, from the default one to the fast ones.

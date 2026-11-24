@@ -44,6 +44,8 @@ type Document struct {
 	// partial repaint (see Update)
 	frame     *image.Gray
 	snap      map[Widget]snap
+	scrollOff map[*Scroll]float64 // the offset of every Scroll at the last Update
+	stats     UpdateStats
 	forceFull bool
 }
 

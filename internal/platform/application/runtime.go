@@ -27,7 +27,8 @@ type Runtime struct {
 	app      App
 	doc      *widget.Document
 	pending  bool // a change is waiting to be painted
-	partials int  // partial panel updates since the last full one
+	watcher  func(PaintStats)
+	partials int // partial panel updates since the last full one
 
 	// queued is how many repaint events we asked the reader for that have not arrived yet. When
 	// one arrives it is ours (a cheap partial update, often nothing at all); only a draw that
@@ -51,6 +52,7 @@ func (r *Runtime) Start(width, height int, keyboard widget.Keyboard) {
 	r.env.Exit = r.screen.Close
 	r.env.Flush = r.flush
 	r.env.After = r.screen.After
+	r.env.Watch = func(f func(PaintStats)) { r.watcher = f }
 	if p, ok := r.screen.(Panel); ok {
 		r.env.Panel = p
 	}
@@ -104,6 +106,7 @@ func (r *Runtime) paint() {
 	}
 
 	f := r.doc.Update()
+	shown := time.Now()
 	switch {
 	case f.Full || r.partials >= fullRefreshEvery:
 		r.screen.Show(f.Image)
@@ -113,6 +116,11 @@ func (r *Runtime) paint() {
 			r.screen.ShowRect(f.Image, rect)
 		}
 		r.partials++
+	default:
+		return
+	}
+	if r.watcher != nil {
+		r.watcher(PaintStats{UpdateStats: r.doc.LastUpdate(), Show: time.Since(shown), Areas: len(f.Rects)})
 	}
 }
 

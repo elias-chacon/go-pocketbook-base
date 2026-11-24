@@ -41,6 +41,7 @@ type rig struct {
 	log   *bytes.Buffer
 	queue []func()
 	clock time.Time
+	watch func(Paint) // what the screen asked to hear about every repaint
 }
 
 func newRig(t *testing.T, withPanel bool) *rig {
@@ -50,6 +51,7 @@ func newRig(t *testing.T, withPanel bool) *rig {
 	cfg := Config{
 		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), Rec: NewRecorder(r.log, now), Now: now,
 		After: func(_ time.Duration, f func()) { r.queue = append(r.queue, f) },
+		Watch: func(f func(Paint)) { r.watch = f },
 		Flush: func() {}, LogPath: "/mnt/ext1/applications/.pbgo/eng.log",
 		Facts:    func() []Fact { return []Fact{{"version", "1.2.3"}} },
 		LogLines: func(n int) []string { return strings.Split(strings.TrimSpace(r.log.String()), "\n") },
@@ -432,5 +434,35 @@ func TestEveryEnglishAndPortugueseTextIsThere(t *testing.T) {
 		if tr.T("pat."+p.ID) == "pat."+p.ID {
 			t.Errorf("no text for the pattern %s", p.ID)
 		}
+	}
+}
+
+func TestEveryRepaintOfAScrollingPageIsLoggedStepByStep(t *testing.T) {
+	r := newRig(t, true)
+	if r.watch == nil {
+		t.Fatal("the screen must ask to hear about the repaints")
+	}
+	r.tap(t, "eng-scroll")
+	r.watch(Paint{Layout: 3 * time.Millisecond, Snapshot: 4 * time.Millisecond, Paint: 5 * time.Millisecond,
+		Show: 6 * time.Millisecond, Slid: true, Painted: 1000, Sent: 5000, Areas: 2})
+	r.s.cfg.Rec.Flush()
+	paints := r.kinds(t, "paint")
+	if len(paints) != 1 {
+		t.Fatalf("paints: %v", paints)
+	}
+	p := paints[0]
+	if p["page"] != "scroll" || p["layout_ms"].(float64) != 3 || p["show_ms"].(float64) != 6 || p["slid"] != true || p["sent_px"].(float64) != 5000 {
+		t.Errorf("paint: %v", p)
+	}
+	r.tap(t, "scroll-auto")
+	r.drain(t)
+	if steps := r.kinds(t, "scroll_step"); len(steps) == 0 || steps[0]["layout_ms"] == nil || steps[0]["show_ms"] == nil {
+		t.Errorf("each auto step carries the cost of the last repaint: %v", steps)
+	}
+	r.tap(t, "eng-menu")
+	r.watch(Paint{Layout: time.Millisecond})
+	r.s.cfg.Rec.Flush()
+	if got := len(r.kinds(t, "paint")); got != 1 {
+		t.Errorf("a repaint outside the scroll and touch pages is not logged (%d paints)", got)
 	}
 }

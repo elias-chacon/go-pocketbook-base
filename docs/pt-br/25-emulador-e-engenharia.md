@@ -50,7 +50,7 @@ para ler pelo USB e analisar depois.
 | **Tela** | fundos lisos, xadrez de 1 px e de 8 px, linhas de 1 px, grade de 100 px com bordas, diagonais e cantos (pixels mortos, fantasmas, geometria) | `pattern` |
 | **Toque** | uma área que desenha o caminho do dedo e mostra eventos, eventos por segundo, a maior pausa e os pixels | `touch` (fase, x, y e o tempo desde o evento anterior) e `touch_stroke` (o resumo do traço) |
 | **Modos de atualização** | redesenha a metade de baixo da tela em cada modo do InkView (`partial`, `dynamic`, `a2`, `du4`, `bw`, `hq`, `full`) e mede a chamada, o tempo até a tela ficar pronta e até assentar; *Amostras por modo* mostra imagens em cada modo para comparar a olho | `bench` (cada chamada) e `bench_mode` (média, p95, mínimo, máximo, total e assentar) |
-| **Rolagem** | uma lista de 300 linhas que se arrasta com o dedo; o botão *Modo* escolhe como a tela é atualizada durante a rolagem e *Rolar sozinho* faz 40 passos de 160 px medindo cada um | `scroll` (cada mudança por toque, com o intervalo) e `scroll_step`/`scroll_run` (média, p95, quadros por segundo) |
+| **Rolagem** | uma lista de 300 linhas que se arrasta com o dedo; o botão *Modo* escolhe como a tela é atualizada durante a rolagem e *Rolar sozinho* faz 40 passos de 160 px medindo cada um | `scroll` (cada mudança por toque, com o intervalo) e `scroll_step`/`scroll_run` (média, p95, quadros por segundo) e `paint` (cada repintura da página: `layout_ms`, `snapshot_ms`, `diff_ms`, `paint_ms`, `show_ms`, se foi `full`, se os pixels `slid` (deslizaram), `painted_px`, `sent_px` e `areas`); cada `scroll_step` leva os mesmos campos |
 | **Sistema** | modelo, profundidade do hardware, arquivo da forma de onda, canvas, tela, versão, espaço livre e a pasta do registro | `system` |
 | **Registro** | as últimas linhas do registro e um botão para limpá-lo | |
 
@@ -81,6 +81,14 @@ grep touch_stroke eng.log
 ```
 
 Cada linha é JSON: `jq` serve, ou qualquer leitor de JSON Lines.
+
+### Para onde vai o tempo de uma repintura
+
+O primeiro registro do aparelho (v1.50.1) mostrou a rolagem a ~1,3 s por passo. A suspeita era a repintura completa da página: rolar mudava a
+posição de todas as linhas, então o `Document.Update` achava a janela inteira alterada e a pintava de novo. Desde a v1.50.2 a rolagem só desliza os pixels
+e pinta a faixa descoberta. **O ganho foi medido só no PC** (cerca de 3 vezes menos tempo por passo com 300 linhas); no leitor, as linhas `paint` e
+`scroll_step` agora dizem quanto cada passo leva de verdade (`layout_ms`, `snapshot_ms`, `diff_ms`, `paint_ms`, e `show_ms` para o blit e a chamada de
+atualização).
 
 ### Limites
 

@@ -99,7 +99,7 @@ func (s *Screen) autoStep() {
 	d := s.now().Sub(t0)
 	a.samples = append(a.samples, d)
 	a.n++
-	s.cfg.Rec.Event("scroll_step", "mode", s.mode.String(), "i", a.n, "offset", int(s.scroll.Offset), "ms", Millis(d))
+	s.cfg.Rec.Event("scroll_step", append([]interface{}{"mode", s.mode.String(), "i", a.n, "offset", int(s.scroll.Offset), "ms", Millis(d)}, s.paint.fields()...)...)
 	if a.n >= autoSteps {
 		s.autoDone(a)
 		return

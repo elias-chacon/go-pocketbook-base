@@ -52,6 +52,11 @@ func newEng(env platform.Env) platform.App {
 	if env.Panel != nil {
 		cfg.Panel = panel{env.Panel}
 	}
+	if env.Watch != nil {
+		cfg.Watch = func(f func(engineering.Paint)) {
+			env.Watch(func(p platform.PaintStats) { f(paintOf(p)) })
+		}
+	}
 	a.screen = engineering.NewScreen(cfg)
 	return a
 }
@@ -148,6 +153,14 @@ func bytes(n uint64) string {
 		exp++
 	}
 	return fmt.Sprintf("%.1f %cB", float64(n)/float64(div), "KMGT"[exp])
+}
+
+// paintOf is the cost of a repaint, as the tests of the engineering app see it.
+func paintOf(p platform.PaintStats) engineering.Paint {
+	return engineering.Paint{
+		Layout: p.Layout, Snapshot: p.Snapshot, Diff: p.Diff, Paint: p.UpdateStats.Paint, Show: p.Show,
+		Full: p.Full, Slid: p.Slid, Painted: p.Painted, Sent: p.Sent, Areas: p.Areas,
+	}
 }
 
 // panel adapts the platform's panel to the one the tests use.
