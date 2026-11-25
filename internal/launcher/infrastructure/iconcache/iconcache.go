@@ -23,7 +23,7 @@ const maxIcon = 256 << 10
 var ErrNoIcon = errors.New("iconcache: the app has no icon")
 
 // Cache downloads icons through Client and keeps them in Dir: one file per app (<id>.png) and
-// beside it the address it came from (<id>.url), so a new release replaces the old picture instead
+// beside it the address it came from (<id>.src: never .url, which Windows shows as an Internet Shortcut), so a new release replaces the old picture instead
 // of adding another one, and Prune drops what the catalog no longer lists.
 type Cache struct {
 	Client github.Doer
@@ -44,7 +44,7 @@ func (c Cache) Cached(l domain.Listing) (image.Image, bool) {
 func (c Cache) path(l domain.Listing) string { return filepath.Join(c.Dir, l.ID+".png") }
 
 // urlPath is where the address of the kept picture is written.
-func (c Cache) urlPath(l domain.Listing) string { return filepath.Join(c.Dir, l.ID+".url") }
+func (c Cache) urlPath(l domain.Listing) string { return filepath.Join(c.Dir, l.ID+".src") }
 
 // fresh reports whether the kept picture came from the address the listing has now (every release
 // publishes its icons under its own address).
@@ -84,15 +84,15 @@ func (c Cache) Image(l domain.Listing) (image.Image, error) {
 }
 
 // Prune deletes every kept picture that is not of one of the listings: what an older release
-// listed and the files an older version of this cache named by version. It only touches .png and
-// .url files, and does nothing for an empty list (a catalog that did not come must not empty it).
+// listed and the files an older version of this cache named by version or with .url. It only
+// touches .png, .src and .url files, and does nothing for an empty list (a catalog that did not come must not empty it).
 func (c Cache) Prune(keep []domain.Listing) {
 	if len(keep) == 0 {
 		return
 	}
 	wanted := map[string]bool{}
 	for _, l := range keep {
-		wanted[l.ID+".png"], wanted[l.ID+".url"] = true, true
+		wanted[l.ID+".png"], wanted[l.ID+".src"] = true, true
 	}
 	entries, err := os.ReadDir(c.Dir)
 	if err != nil {
@@ -100,7 +100,7 @@ func (c Cache) Prune(keep []domain.Listing) {
 	}
 	for _, e := range entries {
 		ext := filepath.Ext(e.Name())
-		if !e.IsDir() && (ext == ".png" || ext == ".url") && !wanted[e.Name()] {
+		if !e.IsDir() && (ext == ".png" || ext == ".src" || ext == ".url") && !wanted[e.Name()] {
 			os.Remove(filepath.Join(c.Dir, e.Name()))
 		}
 	}

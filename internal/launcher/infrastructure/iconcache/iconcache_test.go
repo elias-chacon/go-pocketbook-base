@@ -64,18 +64,18 @@ func TestTheIconIsDownloadedOnceAndThenComesFromTheCache(t *testing.T) {
 		t.Errorf("a new address is a new icon: %d", hits)
 	}
 	files, _ := os.ReadDir(c.Dir)
-	if len(files) != 2 { // hello.png and hello.url: the new picture took the place of the old
+	if len(files) != 2 { // hello.png and hello.src: the new picture took the place of the old
 		t.Errorf("one picture per app, got %d files", len(files))
 	}
 }
 
 func TestPruneDropsWhatTheCatalogNoLongerListsAndTheOldNames(t *testing.T) {
 	c := Cache{Dir: t.TempDir()}
-	for _, n := range []string{"hello.png", "hello.url", "gone.png", "gone.url", "hello-1.0.0.png", "notes.txt"} {
+	for _, n := range []string{"hello.png", "hello.src", "gone.png", "gone.src", "hello.url", "hello-1.0.0.png", "notes.txt"} {
 		os.WriteFile(filepath.Join(c.Dir, n), []byte("x"), 0o644)
 	}
 	c.Prune(nil)
-	if files, _ := os.ReadDir(c.Dir); len(files) != 6 {
+	if files, _ := os.ReadDir(c.Dir); len(files) != 7 {
 		t.Errorf("an empty catalog must not empty the cache: %d", len(files))
 	}
 	c.Prune([]domain.Listing{{ID: "hello"}})
@@ -84,7 +84,7 @@ func TestPruneDropsWhatTheCatalogNoLongerListsAndTheOldNames(t *testing.T) {
 	for _, f := range files {
 		left = append(left, f.Name())
 	}
-	if len(left) != 3 || left[0] != "hello.png" || left[1] != "hello.url" || left[2] != "notes.txt" {
+	if len(left) != 3 || left[0] != "hello.png" || left[1] != "hello.src" || left[2] != "notes.txt" {
 		t.Errorf("left = %v", left)
 	}
 }
@@ -94,7 +94,7 @@ func TestADamagedCacheFileIsFetchedAgain(t *testing.T) {
 	srv := server(t, pngBytes(t, 40), &hits)
 	c := Cache{Client: srv.Client(), Dir: t.TempDir()}
 	os.WriteFile(filepath.Join(c.Dir, "hello.png"), []byte("garbage"), 0o644)
-	os.WriteFile(filepath.Join(c.Dir, "hello.url"), []byte(srv.URL+"/x.png"), 0o644)
+	os.WriteFile(filepath.Join(c.Dir, "hello.src"), []byte(srv.URL+"/x.png"), 0o644)
 
 	if _, err := c.Image(domain.Listing{ID: "hello", Version: "1", IconURL: srv.URL + "/x.png"}); err != nil || hits != 1 {
 		t.Errorf("hits=%d err=%v", hits, err)
