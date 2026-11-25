@@ -201,7 +201,8 @@ func (h *Home) build() {
 	h.body.ID = "home-body"
 
 	h.note = widget.NewLabel(cfg.Notice)
-	h.note.Style.FontSize, h.note.Style.Color, h.note.Style.FlexGrow = widget.FontSmall, widget.Muted, 1
+	h.note.Style.FontSize, h.note.Style.Color = widget.FontSmall, widget.Muted
+	h.note.Hidden = cfg.Notice == ""
 	h.indicator = widget.NewLabel("")
 	h.indicator.Style.FontSize, h.indicator.Style.Bold = widget.FontSmall, true
 	h.indicator.Style.TextAlign, h.indicator.Style.Width = gfx.AlignCenter, widget.Px(110)
@@ -213,7 +214,11 @@ func (h *Home) build() {
 	settings.ID = "home-settings"
 	settings.OnClick = func(*widget.Event) { h.OpenSettings() }
 
-	footer := widget.NewRow(12, h.note, settings, h.prev, h.indicator, h.next)
+	// The message has a line of its own, wrapping: a long one must not push the buttons off the screen.
+	push := widget.NewPanel()
+	push.Style.FlexGrow = 1
+	buttons := widget.NewRow(12, push, settings, h.prev, h.indicator, h.next)
+	footer := widget.NewColumn(10, h.note, buttons)
 	footer.Style.Padding = geom.XY(14, 28)
 	paper(footer)
 
@@ -303,7 +308,7 @@ func (h *Home) startupDone(out application.Outcome) {
 		h.listings = out.Listings
 	}
 	if n := len(out.Removed); n > 0 {
-		h.note.Text = h.cfg.Tr.T("startup.pruned", n)
+		h.say(h.cfg.Tr.T("startup.pruned", n))
 	}
 	if h.settings == nil {
 		h.Refresh()
@@ -441,7 +446,7 @@ func (h *Home) open(t domain.Tile) {
 }
 
 func (h *Home) say(text string) {
-	h.note.Text = text
+	h.note.Text, h.note.Hidden = text, text == ""
 	h.Doc.Invalidate()
 }
 

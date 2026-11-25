@@ -137,3 +137,18 @@ func TestTheHomeSaysWhenTheStartupTookEntriesOutOfTheHomeScreen(t *testing.T) {
 		t.Errorf("the note says how many entries went: %q", texts(h))
 	}
 }
+
+func TestALongMessageWrapsAndLeavesTheButtonsOnTheScreen(t *testing.T) {
+	h := newHome(3, domain.Grid{Columns: 3, Rows: 3}, &launcher{})
+	h.say(strings.Repeat("uma mensagem muito comprida que não cabe numa linha só ", 6))
+	h.Doc.Layout()
+	for _, id := range []string{"home-settings", "home-prev", "home-next"} {
+		b := find(h, id).Elem().Bounds
+		if b.X < 0 || b.X+b.W > 1404 {
+			t.Errorf("%s is out of the screen: %+v", id, b)
+		}
+	}
+	if note := h.note.Bounds; note.X+note.W > 1404 || note.H < 60 {
+		t.Errorf("the message must wrap inside the screen: %+v", note)
+	}
+}
