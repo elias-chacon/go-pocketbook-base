@@ -1,5 +1,6 @@
-// Package oauthconfig reads the client ids of the apps registered at the providers, from
-// oauth.json next to the accounts:
+// Package oauthconfig has the client ids of the apps registered at the providers. The ones of this
+// project are built in (Default), so a person who installs the apps signs in with nothing to set up;
+// oauth.json next to the accounts overrides them, for whoever registers their own app:
 //
 //	{"microsoft": "<client id>", "google": "<client id>", "google_secret": "<client secret>"}
 //
@@ -22,6 +23,12 @@ import (
 // File is the name of the file.
 const File = "oauth.json"
 
+// Default is the registration of this project, built into the apps: the Microsoft one is the
+// "Go-PocketBook-Base Apps" registration in Entra ID (a public client with the device code flow
+// allowed, any directory and personal accounts). Google has none yet: it needs the oauth.json of
+// whoever creates a Cloud project. A fork puts its own ids here.
+var Default = Config{Microsoft: "a628414c-889d-4436-b259-c583bf213757"}
+
 // Config holds the client ids ("" for a provider that is not set).
 type Config struct {
 	Microsoft    string `json:"microsoft"`
@@ -29,17 +36,24 @@ type Config struct {
 	GoogleSecret string `json:"google_secret"`
 }
 
-// Load reads the file of a data folder; a missing or broken file gives no providers.
+// Load is Default with what the file of a data folder sets on top of it. A missing or broken
+// file changes nothing; an id left empty in the file keeps the built-in one.
 func Load(dir string) Config {
+	c := Default
 	data, err := os.ReadFile(filepath.Join(dir, File))
 	if err != nil {
-		return Config{}
+		return c
 	}
-	var c Config
-	if json.Unmarshal(data, &c) != nil {
-		return Config{}
+	var f Config
+	if json.Unmarshal(data, &f) != nil {
+		return c
 	}
-	c.Microsoft, c.Google, c.GoogleSecret = strings.TrimSpace(c.Microsoft), strings.TrimSpace(c.Google), strings.TrimSpace(c.GoogleSecret)
+	if v := strings.TrimSpace(f.Microsoft); v != "" {
+		c.Microsoft = v
+	}
+	if v := strings.TrimSpace(f.Google); v != "" {
+		c.Google, c.GoogleSecret = v, strings.TrimSpace(f.GoogleSecret)
+	}
 	return c
 }
 

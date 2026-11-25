@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"go-pocketbook-base/internal/accounts/infrastructure/oauthconfig"
 	"go-pocketbook-base/internal/platform"
 	"go-pocketbook-base/internal/platform/infrastructure/jsonfiles"
 	"go-pocketbook-base/internal/toolkit/widget"
@@ -74,6 +75,9 @@ func TestHelloIsAnAppWithKeysAndTheLanguageIsSharedThroughTheSettings(t *testing
 }
 
 func TestTheAccountPageUsesTheRealSignInsWhenTheClientIDsExist(t *testing.T) {
+	old := oauthconfig.Default
+	oauthconfig.Default = oauthconfig.Config{} // nothing built in: only the file sets a provider
+	t.Cleanup(func() { oauthconfig.Default = old })
 	env, _ := testEnv(t, "en")
 	dir := t.TempDir()
 	for _, p := range oauthProviders(env, dir, func() string { return "" }) {

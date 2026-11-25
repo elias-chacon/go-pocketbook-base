@@ -10,6 +10,7 @@ import (
 	accountsapp "go-pocketbook-base/internal/accounts/application"
 	accounts "go-pocketbook-base/internal/accounts/domain"
 	"go-pocketbook-base/internal/accounts/infrastructure/jsonaccounts"
+	"go-pocketbook-base/internal/accounts/infrastructure/oauthconfig"
 	"go-pocketbook-base/internal/accounts/infrastructure/securefile"
 	"go-pocketbook-base/internal/mail/infrastructure/imapmail"
 	"go-pocketbook-base/internal/mail/infrastructure/smtpsend"
@@ -220,6 +221,9 @@ func TestAnOutlookAccountUsesGraphWithTheRenewedToken(t *testing.T) {
 }
 
 func TestTheClientIDComesFromTheDataFolder(t *testing.T) {
+	old := oauthconfig.Default
+	oauthconfig.Default = oauthconfig.Config{} // nothing built in: only the file sets a provider
+	t.Cleanup(func() { oauthconfig.Default = old })
 	dir := t.TempDir()
 	if authorizer(dir, nil) != nil {
 		t.Error("no file must mean no OAuth")

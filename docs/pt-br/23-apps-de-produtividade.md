@@ -26,7 +26,7 @@ Depois de instalar pelo Launcher, o ícone aparece na tela inicial quando o cabo
 1. Na primeira vez o app pergunta o **provedor** e depois pede uma conta:
    - **Gmail, iCloud:** o **endereço** e uma **senha de app** (a senha normal não funciona neles); os servidores são preenchidos sozinhos.
    - **Outro servidor (IMAP):** o endereço, a senha e os servidores IMAP e SMTP.
-   - **Outlook.com / Microsoft 365:** um código aparece para digitar em outro aparelho (OAuth2, sem senha aqui). Precisa do app registrado na Microsoft e do client id em `applications/.pbgo/oauth.json` (ver [capítulo 18](18-contas-e-segredos.md)); sem ele o botão avisa.
+   - **Outlook.com / Microsoft 365:** um código aparece para digitar em outro aparelho (OAuth2, sem senha aqui). O registro da Microsoft do projeto vem **embutido nos apps** (`oauthconfig.Default`), então não há nada a configurar; um fork ou quem tem o próprio registro põe o client id em `applications/.pbgo/oauth.json` (ver [capítulo 18](18-contas-e-segredos.md)).
 2. Toque em **Sincronizar** para trazer as **50 mensagens mais novas** de cada pasta. O resto fica no servidor.
 3. A lista mostra **7 mensagens por página** (remetente, data, assunto e prévia; não lidas em negrito). As teclas de página do leitor e as setas viram a página.
 4. Tocar numa mensagem a abre **página a página** e a marca como lida. Ali há **Responder**, **Responder a todos**, **Encaminhar**, **Sinalizar**, **Marcar não lida** e **Apagar**.
@@ -126,7 +126,9 @@ Como funciona: o leitor continua sendo o que as telas leem (funciona offline). A
 
 O que cada serviço guarda: o Microsoft To Do sincroniza título, notas, concluída, importância, data e lembrete; o Google Tasks sincroniza título, notas, concluída e data. **Passos, repetição, Meu Dia e o e-mail de origem ficam só no leitor.** Concluir/reabrir e apagar são sincronizados.
 
-### Os client ids (`applications/.pbgo/oauth.json`)
+### Os client ids (embutidos; `applications/.pbgo/oauth.json` os substitui)
+
+O id da **Microsoft** do projeto está no código (`oauthconfig.Default`): um client id identifica o app, não é segredo, e toda cópia instalada entra pelo mesmo registro (cada pessoa autoriza a própria conta). O **Google** ainda não tem id embutido. O arquivo é só para quem registra o próprio app: o que ele define substitui o valor embutido, e o que deixa vazio mantém o embutido.
 
 ```json
 {"microsoft": "<client id>", "google": "<client id>", "google_secret": "<client secret>"}

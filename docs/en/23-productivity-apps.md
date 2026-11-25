@@ -26,7 +26,7 @@ After installing from the Launcher, the icon shows up on the home screen when th
 1. The first time, the app asks for the **provider** and then for an account:
    - **Gmail, iCloud:** the **address** and an **app password** (the normal password does not work on them); the servers are filled in for you.
    - **Another server (IMAP):** the address, the password and the IMAP and SMTP servers.
-   - **Outlook.com / Microsoft 365:** a code is shown to type on another device (OAuth2, no password here). It needs the app registered at Microsoft and its client id in `applications/.pbgo/oauth.json` (see [chapter 18](18-accounts-and-secrets.md)); without it the button says so.
+   - **Outlook.com / Microsoft 365:** a code is shown to type on another device (OAuth2, no password here). The project's Microsoft registration is **built into the apps** (`oauthconfig.Default`), so nothing has to be set up; a fork or a person with their own registration puts its client id in `applications/.pbgo/oauth.json` (see [chapter 18](18-accounts-and-secrets.md)).
 2. Tap **Sync** to bring the **50 newest messages** of each folder. The rest stays on the server.
 3. The list shows **7 messages a page** (sender, date, subject and preview; unread in bold). The reader's page keys and the arrows turn the page.
 4. Tapping a message opens it **page by page** and marks it read. There you have **Reply**, **Reply all**, **Forward**, **Flag**, **Mark unread** and **Delete**.
@@ -126,7 +126,9 @@ How it works: the reader stays what the screens read (it works offline). Lists a
 
 What each service keeps: Microsoft To Do syncs title, notes, done, importance, due date and reminder; Google Tasks syncs title, notes, done and due date. **Steps, repetition, My Day and the e-mail a task came from stay only on the reader.** Reopening/completing and deleting are synchronized.
 
-### The client ids (`applications/.pbgo/oauth.json`)
+### The client ids (built in, `applications/.pbgo/oauth.json` overrides them)
+
+The **Microsoft** id of the project is in the code (`oauthconfig.Default`): a client id identifies the app, it is not a secret, and every installed copy signs in through the same registration (each person authorizes their own account). **Google** has no built-in id yet. The file is only for someone who registers their own app: what it sets replaces the built-in value, and what it leaves empty keeps it.
 
 ```json
 {"microsoft": "<client id>", "google": "<client id>", "google_secret": "<client secret>"}

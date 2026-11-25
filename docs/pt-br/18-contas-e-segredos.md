@@ -73,8 +73,8 @@ nunca aparece numa mensagem.
 celular ou no computador e digita o código, e toca em **Já aprovei** (o `CheckOAuth` pergunta ao provedor uma vez; "ainda não" é uma resposta, não um erro).
 O `RegisterOAuth` então guarda a conta e os tokens no cofre, e o `AccessToken` entrega um token de acesso válido, renovando-o com o refresh token (e guardando
 os novos) quando está perto de vencer. Isso precisa de um **app registrado na Microsoft** (Entra ID, um *cliente público* com "permitir fluxos de cliente
-público"): o client id vai em `applications/.pbgo/oauth.json` como `{"microsoft": "<client id>"}`. **Sem esse arquivo o botão do Outlook explica isso em vez
-de entrar.** O Google não permite o fluxo por código para o Gmail, então o Gmail usa senha de app.
+público"): o client id do projeto vem **embutido** (`oauthconfig.Default`); `applications/.pbgo/oauth.json` com `{"microsoft": "<client id>"}` o substitui para um fork
+ou para o seu próprio registro. O Google não permite o fluxo por código para o Gmail, então o Gmail usa senha de app.
 
 ## O código
 
@@ -104,5 +104,5 @@ O `oauthcode` entra com o código de autorização e **PKCE** para os provedores
 Toda tela que entra numa conta Google ou Microsoft é o [`OAuthLogin`](06-componentes.md) do toolkit (um botão por provedor, depois o código para digitar ou o QR code para ler): o app
 **Mail** (Outlook.com), o app **Tasks** e o app **Calendar** (**Conectar conta** no rodapé; os dois provedores) e o blueprint **hello** (a página *Conta*). O
 `accountsui.OAuthProviders` adapta os dois logins deste contexto (`Authorizer` por device code, `CodeAuthorizer` por código de autorização) ao widget, e o
-`oauthconfig.Sources(dir, client)` os monta a partir de `applications/.pbgo/oauth.json` (`{"microsoft": "...", "google": "...", "google_secret": "..."}`): um provedor sem client id aparece
+`oauthconfig.Sources(dir, client)` os monta a partir de `oauthconfig.Default` com `applications/.pbgo/oauth.json` por cima (`{"microsoft": "...", "google": "...", "google_secret": "..."}`): um provedor sem client id aparece
 **desabilitado** e a tela diz onde colocar os ids. O endereço precisa ser digitado antes do login começar (ele dá nome à conta). O app **Mail** entra na Microsoft (Graph) e no **Google** (o botão *Google*: Gmail por IMAP/SMTP com **XOAUTH2**, o token renovado quando preciso; o escopo do Gmail é *restrito*, então até o projeto do Cloud ser publicado ele funciona para os usuários de teste do projeto, ou seja, a própria pessoa, e os tokens duram uma semana). O preset `gmail` (senha de app) continua. O app **Calendar** **sincroniza só leitura**: *Sincronizar* traz os calendários e os eventos de uma janela (30 dias para trás, um ano à frente) da conta conectada pelo Microsoft Graph (`graphcal`) ou pelo Google Calendar (`googlecal`), já expandidos (um evento por ocorrência), para calendários marcados como somente leitura; o que o serviço apagou é removido; o que se muda no leitor **não** volta para o serviço. A página do **hello** adiciona a conta (o endereço digitado lá, os tokens no cofre). Limites honestos: nada disso foi testado com contas reais do Google ou da Microsoft nem no leitor, só com servidores falsos.
