@@ -40,3 +40,21 @@ func TestProgressNeverPassesItsTotalAndIsSafeWhenNil(t *testing.T) {
 		t.Errorf("nil = %v %v", f, on)
 	}
 }
+
+func TestTheProgressSaysWhatItIsDoingAndForgetsItWhenAJobBegins(t *testing.T) {
+	var p Progress
+	p.Begin(2)
+	p.SetPhase("removing", "old")
+	if ph, d := p.Phase(); ph != "removing" || d != "old" {
+		t.Errorf("phase = %q %q", ph, d)
+	}
+	p.Begin(1)
+	if ph, d := p.Phase(); ph != "" || d != "" {
+		t.Errorf("a new job starts with no phase: %q %q", ph, d)
+	}
+	var none *Progress
+	none.SetPhase("x", "y")
+	if ph, _ := none.Phase(); ph != "" {
+		t.Error("nil is silent")
+	}
+}

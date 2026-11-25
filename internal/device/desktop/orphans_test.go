@@ -23,8 +23,9 @@ func TestOrphanEntriesAreTakenOutAndTheOnesWithAProgramStay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	gone, err := RemoveOrphans(c.Root)
-	if err != nil || len(gone) != 1 || gone[0] != "hello" {
+	var told []string
+	gone, err := RemoveOrphans(c.Root, func(id string) { told = append(told, id) })
+	if err != nil || len(gone) != 1 || gone[0] != "hello" || len(told) != 1 || told[0] != "hello" {
 		t.Fatalf("removed %v, %v", gone, err)
 	}
 	data, _ := os.ReadFile(p)
@@ -51,7 +52,7 @@ func TestNothingIsWrittenWhenThereAreNoOrphans(t *testing.T) {
 	orig, _ := os.ReadFile("testdata/view.json")
 	c, p := setup(t, string(orig))
 	before, _ := os.ReadFile(p)
-	gone, err := RemoveOrphans(c.Root)
+	gone, err := RemoveOrphans(c.Root, nil)
 	if err != nil || len(gone) != 0 {
 		t.Fatalf("%v %v", gone, err)
 	}

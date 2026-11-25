@@ -23,9 +23,9 @@ func onDisk(root, p string) string {
 // RemoveOrphans takes out of view.json the entries of user apps (keys "U_...") whose program is no
 // longer there, and deletes their icons: what an app removed by hand, or by an old version, leaves
 // behind. An entry without a path is left alone, and so is every entry whose program exists. It
-// returns the ids of the apps it took out; view.json is backed up, validated and replaced atomically
+// returns the ids of the apps it took out (report, when not nil, is told each as its turn comes); view.json is backed up, validated and replaced atomically
 // like Register does it, and nothing is written when there is nothing to take out.
-func RemoveOrphans(root string) ([]string, error) {
+func RemoveOrphans(root string, report func(id string)) ([]string, error) {
 	view, err := findView(root)
 	if err != nil {
 		return nil, err
@@ -55,6 +55,9 @@ func RemoveOrphans(root string) ([]string, error) {
 
 	text := string(data)
 	for _, id := range gone {
+		if report != nil {
+			report(id)
+		}
 		if text, err = withoutKey(text, "U_"+id); err != nil {
 			return nil, err
 		}

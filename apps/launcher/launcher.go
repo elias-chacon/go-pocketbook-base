@@ -137,8 +137,8 @@ func formatBytes(n uint64) string {
 // homeScreen is the Launcher's port to the home screen of the reader.
 type homeScreen struct{ root string }
 
-func (h homeScreen) RemoveOrphans() ([]string, error) {
-	removed, err := platform.PruneHomeScreen(h.root)
+func (h homeScreen) RemoveOrphans(report func(id string)) ([]string, error) {
+	removed, err := platform.PruneHomeScreen(h.root, report)
 	if err != nil {
 		platform.Errorf("home screen: %v", err)
 	} else if len(removed) > 0 {

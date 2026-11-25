@@ -315,6 +315,18 @@ func (h *Home) startupDone(out application.Outcome) {
 	}
 }
 
+// barText is the title of the bar: what the startup is doing now, in real time, and how far it is.
+func (h *Home) barText(pct int) string {
+	phase, detail := h.cfg.Progress.Phase()
+	switch phase {
+	case application.PhaseRemoving:
+		return h.cfg.Tr.T("startup.removing", detail, pct)
+	case application.PhaseCatalog:
+		return h.cfg.Tr.T("startup.catalog", pct)
+	}
+	return h.cfg.Tr.T("startup.checking", pct)
+}
+
 // moveBar puts the progress of the fetch on the bar (and repaints it only when it moved).
 func (h *Home) moveBar() {
 	if !h.loading || h.bar == nil || h.settings != nil {
@@ -322,10 +334,10 @@ func (h *Home) moveBar() {
 	}
 	f, _ := h.cfg.Progress.State()
 	pct := int(f*100 + 0.5)
-	if h.bar.Value == float64(pct) {
+	if text := h.barText(pct); h.bar.Value == float64(pct) && h.bar.Text == text {
 		return
 	}
-	h.bar.Value, h.bar.Text = float64(pct), h.cfg.Tr.T("home.loading", pct)
+	h.bar.Value, h.bar.Text = float64(pct), h.barText(pct)
 	h.Doc.Invalidate()
 }
 
@@ -370,7 +382,7 @@ func (h *Home) show() {
 	if h.loading {
 		h.bar = widget.NewProgress(0)
 		h.bar.ID, h.bar.Style.Width = "home-loading", widget.Pct(100)
-		h.bar.Text = h.cfg.Tr.T("home.loading", 0)
+		h.bar.Text = h.barText(0)
 		h.body.AppendChild(paper(h.bar))
 	}
 	tiles := h.grid().Page(h.tiles, h.page)

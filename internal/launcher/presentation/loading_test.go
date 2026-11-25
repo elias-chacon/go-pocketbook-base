@@ -120,7 +120,12 @@ func TestTheBarWaitsAreShortSoItMovesButTheTotalWaitIsTheSame(t *testing.T) {
 
 type fakeHome struct{ removed []string }
 
-func (f fakeHome) RemoveOrphans() ([]string, error) { return f.removed, nil }
+func (f fakeHome) RemoveOrphans(report func(string)) ([]string, error) {
+	for _, id := range f.removed {
+		report(id)
+	}
+	return f.removed, nil
+}
 
 func TestTheHomeSaysWhenTheStartupTookEntriesOutOfTheHomeScreen(t *testing.T) {
 	var lp loop

@@ -4,6 +4,13 @@ import (
 	"go-pocketbook-base/internal/launcher/domain"
 )
 
+// The phases a startup tells its Progress it is in (the screen turns them into text).
+const (
+	PhaseHomeScreen = "home-screen" // looking at the home screen
+	PhaseRemoving   = "removing"    // taking an entry out of it (the detail is the id)
+	PhaseCatalog    = "catalog"     // bringing the catalog
+)
+
 // The names of the startup tasks, to read their result in an Outcome.
 const (
 	TaskHomeScreen = "home-screen"
@@ -59,6 +66,7 @@ func (s Startup) Execute(lang string, p *domain.Progress) Outcome {
 // its catalog.json; the catalog adds one per icon it fetches).
 func FetchCatalog(cat domain.Catalog) Task {
 	return Task{Name: TaskCatalog, Weight: 2, Run: func(c *Context) error {
+		c.Progress.SetPhase(PhaseCatalog, "")
 		list, err := cat.List(c.Lang)
 		c.Listings = list
 		return err
@@ -66,10 +74,16 @@ func FetchCatalog(cat domain.Catalog) Task {
 }
 
 // PruneHomeScreen is the task that takes out of the home screen the entries of apps that are no
-// longer on the reader (1 step).
+// longer on the reader (1 step to look, one more for each entry it takes out, told to the Progress
+// as it goes).
 func PruneHomeScreen(h domain.HomeScreen) Task {
 	return Task{Name: TaskHomeScreen, Weight: 1, Run: func(c *Context) error {
-		removed, err := h.RemoveOrphans()
+		c.Progress.SetPhase(PhaseHomeScreen, "")
+		removed, err := h.RemoveOrphans(func(id string) {
+			c.Progress.Add(1)
+			c.Progress.SetPhase(PhaseRemoving, id)
+			c.Progress.Step()
+		})
 		c.Removed = removed
 		c.Progress.Step()
 		return err

@@ -269,9 +269,9 @@ func Chrome(env Env) widget.AppChrome { return application.Chrome(env) }
 
 // PruneHomeScreen takes out of the home screen of the reader whose storage is root the entries of
 // apps whose program is no longer there (an app removed by hand leaves its icon behind). It returns
-// the ids it took out. The home screen shows the change when the cable is next unplugged.
-func PruneHomeScreen(root string) ([]string, error) {
-	return reader.DesktopRegistrar{Root: root}.RemoveOrphans()
+// the ids it took out (report is told each as its turn comes). The home screen shows the change when the cable is next unplugged.
+func PruneHomeScreen(root string, report func(id string)) ([]string, error) {
+	return reader.DesktopRegistrar{Root: root}.RemoveOrphans(report)
 }
 
 // Uninstall removes an app and everything it left on the reader (see application.Uninstall):

@@ -10,6 +10,7 @@ type Progress struct {
 	mu          sync.Mutex
 	done, total int
 	active      bool
+	phase, what string
 }
 
 // Begin starts a job of total steps.
@@ -19,7 +20,7 @@ func (p *Progress) Begin(total int) {
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.done, p.total, p.active = 0, total, true
+	p.done, p.total, p.active, p.phase, p.what = 0, total, true, "", ""
 }
 
 // Add makes the job longer by n steps (what it has to do was learned on the way).
@@ -54,6 +55,27 @@ func (p *Progress) Advance(n int) {
 	if p.done += n; p.done > p.total {
 		p.done = p.total
 	}
+}
+
+// SetPhase says what the job is doing now: a short name of the phase (the screen translates it)
+// and, when it has one, what it is working on (the id of the entry being removed).
+func (p *Progress) SetPhase(phase, detail string) {
+	if p == nil {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.phase, p.what = phase, detail
+}
+
+// Phase is what the job is doing now ("" before it says).
+func (p *Progress) Phase() (phase, detail string) {
+	if p == nil {
+		return "", ""
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.phase, p.what
 }
 
 // End finishes the job, whatever was left.
