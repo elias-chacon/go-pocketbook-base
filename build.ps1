@@ -37,7 +37,7 @@ foreach ($a in $apps) {
     $out = "dist/applications/$a.app"
     $own = (go run ./tools/bumpversion -app $a auto).Trim()
     if ($LASTEXITCODE -or -not $own) { throw "could not version $a" }
-    Dk run --rm -v "${src}:/app" -v pbgo-cache:/gopath $Image build "-ldflags=-X=go-pocketbook-base/internal/kernel/version.Value=$own" -o $out "./apps/$a"
+    Dk run --rm -v "${src}:/app" -v pbgo-cache:/gopath $Image build -trimpath "-ldflags=-s -w -buildid= -X=go-pocketbook-base/internal/kernel/version.Value=$own" -o $out "./apps/$a"
     if (-not (Test-Path $out)) { throw "Build finished but $out was not created (see the docker output above)." }
     Write-Host "Done: $a v$own (release v$version) $out ($([math]::Round((Get-Item $out).Length/1MB,1)) MB) - copy this single file to <device>/applications (USB)."
 }

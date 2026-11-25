@@ -59,7 +59,7 @@ jobs:
             [ -f "apps/$app/main.go" ] || continue
             version="$(head -n1 "apps/$app/.version" | tr -d '\r')"
             docker run --rm -v "$PWD":/app -v pbgo-cache:/gopath go-pocketbook-base-sdk \
-              build "-ldflags=-X=go-pocketbook-base/internal/kernel/version.Value=$version" \
+              build -trimpath "-ldflags=-s -w -buildid= -X=go-pocketbook-base/internal/kernel/version.Value=$version" \
               -o "dist/applications/$app.app" "./apps/$app"
           done
 

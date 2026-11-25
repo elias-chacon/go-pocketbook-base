@@ -85,6 +85,8 @@ go run ./tools/bumpversion -app hello check   # sai com 1 se mudou e a versão n
 go run ./tools/bumpversion -app hello minor   # uma tarefa concluída desse app (também build e major)
 ```
 
+Os apps são compilados com `-trimpath -ldflags "-s -w -buildid="`: sem isso dois builds do mesmo código diferem, e o atualizador (que compara o SHA-256 do `.app`) ofereceria todos os apps a cada release.
+
 Um app cujo código não mudou mantém a versão, então a release não o oferece como atualização. O código comum a todos os apps
 (o toolkit, a plataforma) muda todos eles, e aí todos sobem.
 
