@@ -35,6 +35,7 @@ O `apps/launcher` é o App Launcher do ecossistema: a tela inicial dos apps feit
   (PNG, JPG, GIF, BMP) que a pessoa copiou para `applications/backgrounds` no leitor. As preferências ficam em `applications/.pbgo/launcher.json`; a imagem
   é reduzida à tela ao carregar, e os blocos mantêm o fundo branco para continuar legíveis sobre ela.
 - **O catálogo mais recente chega com uma barra de progresso**: assim que o Launcher abre, uma barra no topo da grade acompanha a busca (a release, o `catalog.json`, depois um passo por ícone; `domain.Progress`, lido no laço de eventos a cada 0,4 s enquanto a rede roda numa goroutine) e some quando os apps chegam. Sem apps instalados e sem rede a tela pede para conectar ao Wi-Fi, não para copiar arquivos. Ainda não visto no aparelho.
+- **Instalar e atualizar têm uma janela**: Instalar/Atualizar (da janela de gerenciar ou do toque num app que falta) abre uma janela com o nome do app, uma barra que acompanha os bytes do download (`github.GetWithProgress` -> `domain.Progress`) e, no fim, o que aconteceu, com o erro se houver, até ser fechada. O download roda numa goroutine e o laço de eventos a consulta a cada 0,3 s, então a tela não congela. Ainda não visto no aparelho.
 - Textos em português (pt-BR) com inglês como fallback, no idioma escolhido nas configurações compartilhadas.
 
 ## Como um app é executado, e como volta

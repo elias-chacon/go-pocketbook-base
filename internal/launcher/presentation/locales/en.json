@@ -9,6 +9,7 @@
   "search.none": "No results for “%s”.",
   "install.downloading": "Downloading “%s”…",
   "install.done": "“%s” installed. It is now under Installed.",
+  "install.progress": "%d%%",
   "install.failed": "Could not install “%s”: %s",
   "home.tile.install": "Tap to install",
   "update.downloading": "Updating “%s”…",

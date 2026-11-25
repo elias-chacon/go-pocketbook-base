@@ -159,6 +159,11 @@ func (c *Catalog) latest() (release, error) {
 
 // Get is a GET that checks the status and reads at most limit bytes.
 func Get(client Doer, url string, limit int64) ([]byte, error) {
+	return GetWithProgress(client, url, limit, nil)
+}
+
+// GetWithProgress is Get that tells p how many bytes came (p may be nil).
+func GetWithProgress(client Doer, url string, limit int64, p *domain.Progress) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -173,7 +178,7 @@ func Get(client Doer, url string, limit int64) ([]byte, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("github: %s answered %s", url, resp.Status)
 	}
-	data, err := io.ReadAll(io.LimitReader(resp.Body, limit+1))
+	data, err := io.ReadAll(io.LimitReader(&counting{r: resp.Body, p: p}, limit+1))
 	if err != nil {
 		return nil, err
 	}
@@ -181,4 +186,16 @@ func Get(client Doer, url string, limit int64) ([]byte, error) {
 		return nil, fmt.Errorf("github: %s is larger than %d bytes", url, limit)
 	}
 	return data, nil
+}
+
+// counting reports to a Progress the bytes that pass through it.
+type counting struct {
+	r io.Reader
+	p *domain.Progress
+}
+
+func (c *counting) Read(b []byte) (int, error) {
+	n, err := c.r.Read(b)
+	c.p.Advance(n)
+	return n, err
 }

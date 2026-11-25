@@ -83,7 +83,7 @@ func TestUpdateIsOfferedOnlyWhenTheChecksumOfTheInstalledFileDiffers(t *testing.
 		t.Fatalf("another checksum can be updated: %s", texts(e.h))
 	}
 	tap(e.h.Doc, find(e.h, "manage-update"))
-	if len(e.inst.installed) != 1 || e.inst.installed[0] != "app00" || e.h.Doc.HasModal() {
+	if len(e.inst.installed) != 1 || e.inst.installed[0] != "app00" {
 		t.Errorf("the update installs the listing: %v", e.inst.installed)
 	}
 	if !strings.Contains(texts(e.h), "“App app00” atualizado") {

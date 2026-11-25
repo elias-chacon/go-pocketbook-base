@@ -65,6 +65,9 @@ type Config struct {
 	// Progress is how far the background fetch of the catalog (and its icons) got; the home shows a
 	// bar while it runs (nil: no bar, a fetch is silent).
 	Progress *domain.Progress
+	// InstallProgress is how far the install running now is (the Installer advances it; nil: the
+	// window of the install shows no movement).
+	InstallProgress *domain.Progress
 	// Installer installs (or updates) an app of the catalog (nil: it cannot be done).
 	Installer domain.Installer
 	// Uninstaller removes an app and all its data (nil: the Remove action is not offered).
@@ -421,7 +424,7 @@ func (h *Home) activate(t domain.Tile) {
 		return
 	}
 	if t.Listing != nil && h.cfg.Installer != nil {
-		h.install(*t.Listing, false)
+		h.install(*t.Listing, false, nil)
 	}
 }
 
@@ -452,23 +455,4 @@ func (h *Home) muted(id, text string) widget.Widget {
 	l := widget.NewLabel(text)
 	l.ID, l.Style.Color = id, widget.Muted
 	return paper(l)
-}
-
-// install downloads and installs (or updates) an app of the catalog. The download blocks, so the
-// screen says so first; afterwards the list is rebuilt and the app is installed.
-func (h *Home) install(l domain.Listing, update bool) {
-	downloading, done := "install.downloading", "install.done"
-	if update {
-		downloading, done = "update.downloading", "update.done"
-	}
-	h.say(h.cfg.Tr.T(downloading, l.Title))
-	if h.cfg.Flush != nil {
-		h.cfg.Flush()
-	}
-	if err := h.cfg.Installer.Install(l); err != nil {
-		h.say(h.cfg.Tr.T("install.failed", l.Title, err.Error()))
-		return
-	}
-	h.Refresh()
-	h.say(h.cfg.Tr.T(done, l.Title))
 }

@@ -61,7 +61,8 @@ func newLauncher(env platform.Env) platform.App {
 	// The catalog: GitHub, with the icons fetched along (so they are in the cache when the grid is
 	// drawn) and the last answer kept on the reader (so the apps that are not installed show at
 	// once, and offline).
-	progress := &domain.Progress{} // what the home shows while the latest catalog comes
+	installing := &domain.Progress{} // the install of an app, for its window
+	progress := &domain.Progress{}   // what the home shows while the latest catalog comes
 	catalog := &catalogcache.Catalog{
 		Inner: iconPrefetch{inner: &loggedCatalog{inner: &github.Catalog{Client: client, Owner: repoOwner, Repo: repoName, Progress: progress}}, icons: icons, progress: progress},
 		Path:  filepath.Join(root, "applications", ".pbgo", "cache", "catalog.json"),
@@ -81,13 +82,13 @@ func newLauncher(env platform.Env) platform.App {
 		Notice:  env.Notice,
 		Version: env.Version, Repository: repoOwner + "/" + repoName,
 		SystemInfo: func() []presentation.Fact { return systemFacts(env, root) },
-		Catalog:    catalog, After: env.After, Progress: progress,
+		Catalog:    catalog, After: env.After, Progress: progress, InstallProgress: installing,
 		CachedCatalog: func(lang string) []domain.Listing {
 			list, _ := catalog.Cached(lang)
 			return list
 		},
 		Installer: loggedInstaller{inner: appinstaller.Installer{
-			Client: client, Root: root, Register: registrar.register,
+			Client: client, Root: root, Register: registrar.register, Progress: installing,
 		}},
 		Uninstaller:  uninstaller{root: root},
 		InstalledSum: func(id string) string { return fileSum(filepath.Join(root, "applications", id+".app")) },

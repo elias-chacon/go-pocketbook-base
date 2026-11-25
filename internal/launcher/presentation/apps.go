@@ -55,10 +55,10 @@ func (h *Home) Manage(t domain.Tile, back func()) {
 		body = append(body, b)
 	}
 	if !t.Installed && t.Listing != nil && h.cfg.Installer != nil {
-		add("manage-install", "app.install", func() { m.Close(); h.install(*t.Listing, false); h.after(back) })
+		add("manage-install", "app.install", func() { m.Close(); h.install(*t.Listing, false, back) })
 	}
 	if h.updatable(t) {
-		add("manage-update", "app.update", func() { m.Close(); h.install(*t.Listing, true); h.after(back) })
+		add("manage-update", "app.update", func() { m.Close(); h.install(*t.Listing, true, back) })
 	}
 	add("manage-hide", "app.hide", func() { m.Close(); h.SetHidden(t, true); h.after(back) })
 	if t.Installed && h.cfg.Uninstaller != nil {

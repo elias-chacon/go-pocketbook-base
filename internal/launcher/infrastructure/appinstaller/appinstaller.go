@@ -36,13 +36,18 @@ type Installer struct {
 	Client   github.Doer
 	Root     string // the reader's storage, e.g. /mnt/ext1
 	Register RegisterFunc
+	// Progress, when set, follows the install: the bytes of the zip, then one last step for
+	// unpacking and registering.
+	Progress *domain.Progress
 }
 
 // Install downloads the zip, checks its size and SHA-256 against the catalog,
 // extracts <id>.app through a temporary file (an interrupted install never leaves
 // half an app) and registers it with the manifest that came in the zip.
 func (i Installer) Install(l domain.Listing) error {
-	data, err := github.Get(i.Client, l.URL, maxApp)
+	i.Progress.Begin(int(l.Size) + 1)
+	defer i.Progress.End()
+	data, err := github.GetWithProgress(i.Client, l.URL, maxApp, i.Progress)
 	if err != nil {
 		return err
 	}

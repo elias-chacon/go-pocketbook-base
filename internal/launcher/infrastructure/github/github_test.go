@@ -184,3 +184,18 @@ func TestTheCatalogReportsOneStepForTheReleaseAndOneForTheCatalog(t *testing.T) 
 		t.Errorf("after the release and the catalog.json the 2 steps are done, got %v", f)
 	}
 }
+
+func TestGetWithProgressCountsTheBytesThatCome(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(strings.Repeat("x", 1000)))
+	}))
+	defer srv.Close()
+	var p domain.Progress
+	p.Begin(2000)
+	if _, err := GetWithProgress(srv.Client(), srv.URL, 1<<20, &p); err != nil {
+		t.Fatal(err)
+	}
+	if f, _ := p.State(); f != 0.5 {
+		t.Errorf("1000 of 2000 bytes = %v", f)
+	}
+}

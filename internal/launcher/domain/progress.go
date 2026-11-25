@@ -44,6 +44,18 @@ func (p *Progress) Step() {
 	}
 }
 
+// Advance is n more units done (bytes, when the steps are bytes).
+func (p *Progress) Advance(n int) {
+	if p == nil {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.done += n; p.done > p.total {
+		p.done = p.total
+	}
+}
+
 // End finishes the job, whatever was left.
 func (p *Progress) End() {
 	if p == nil {
