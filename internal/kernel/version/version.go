@@ -4,6 +4,11 @@
 //   - MINOR is incremented when a task is finished (BUILD restarts at 0).
 //   - MAJOR is incremented only for a big change (MINOR and BUILD restart at 0).
 //
+// The repository's .version names the release (the tag); every app has its own apps/<id>/.version,
+// bumped only when that app changed (tools/bumpversion), so a release does not make the apps that
+// did not change look updated. The first line of a .version file is the version; what follows is the
+// tool's own note.
+//
 // The reference is the .version file at the repository root. The binary gets it
 // through -ldflags "-X go-pocketbook-base/internal/kernel/version.Value=<version>".
 package version
@@ -85,13 +90,24 @@ func (v Version) Bump(k Kind) (Version, error) {
 	return v, nil
 }
 
-// BumpFile increments the version stored in path and returns the new one.
+// ReadFile reads the version on the first line of path.
+func ReadFile(path string) (Version, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return Version{}, err
+	}
+	first := strings.SplitN(strings.ReplaceAll(string(data), "\r", ""), "\n", 2)[0]
+	return Parse(first)
+}
+
+// BumpFile increments the version stored in path and returns the new one. The lines after the
+// first are kept.
 func BumpFile(path string, k Kind) (Version, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return Version{}, err
 	}
-	cur, err := Parse(string(data))
+	cur, err := ReadFile(path)
 	if err != nil {
 		return Version{}, err
 	}
@@ -99,5 +115,9 @@ func BumpFile(path string, k Kind) (Version, error) {
 	if err != nil {
 		return Version{}, err
 	}
-	return next, os.WriteFile(path, []byte(next.String()+"\n"), 0o644)
+	rest := ""
+	if i := strings.Index(string(data), "\n"); i >= 0 {
+		rest = string(data)[i+1:]
+	}
+	return next, os.WriteFile(path, []byte(next.String()+"\n"+rest), 0o644)
 }

@@ -269,6 +269,8 @@ go run ./tools/bumpversion major   # 1.3.0 -> 2.0.0
 
 A versão é gravada no binário por `-ldflags -X …/internal/kernel/version.Value` e aparece no rodapé do app.
 
+**Cada app tem a sua versão** em `apps/<id>/.version` (o `.version` da raiz é o da release): ela só sobe quando o código desse app muda (`go run ./tools/bumpversion -app <id> auto`, o `build.ps1` faz isso), então uma release não oferece como atualização um app que não mudou.
+
 ## Arquitetura
 
 O código segue **DDD**: contextos delimitados, cada um com suas camadas, e uma regra de dependência

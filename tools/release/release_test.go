@@ -270,3 +270,19 @@ func checkAppChecksum(t *testing.T, entry github.IndexEntry) {
 		t.Errorf("app checksum %q", entry.AppSHA256)
 	}
 }
+
+func TestAnAppIsPublishedWithItsOwnVersion(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "a"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "a", ".version"), []byte("1.7.2\r\nsources abc\r\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := appVersion(dir, "a", "9.9.9"); got != "1.7.2" {
+		t.Errorf("own version = %q", got)
+	}
+	if got := appVersion(dir, "none", "9.9.9"); got != "9.9.9" {
+		t.Errorf("an app without one takes the release version, got %q", got)
+	}
+}

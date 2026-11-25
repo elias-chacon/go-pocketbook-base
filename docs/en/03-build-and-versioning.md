@@ -73,6 +73,22 @@ go run ./tools/bumpversion major    # 1.3.0 -> 2.0.0
 The tool prints the new version. The build embeds it in the binary (`internal/kernel/version.Value`) and the
 demo shows it in the footer, so you always know which build is on the reader.
 
+### Each app has its own version
+
+`.version` is the version of the **release** (the tag `vMAJOR.MINOR.BUILD`, the installer). Each app has its own
+`apps/<id>/.version`: its first line is the version, the second (`sources <hash>`) fingerprints the code that
+version was given to (every file of the module the app is built from, `go.mod` and `go.sum`; line endings do not count).
+The build embeds the app's version in its binary, and `catalog.json` publishes it per app.
+
+```sh
+go run ./tools/bumpversion -app hello auto    # BUILD + 1 only if the app's code changed (build.ps1 does this)
+go run ./tools/bumpversion -app hello check   # exit 1 when it changed and the version was not bumped (the release workflow runs it)
+go run ./tools/bumpversion -app hello minor   # a finished task of that app (also build and major)
+```
+
+An app whose code did not change keeps its version, so a release does not offer it as an update. Code shared by
+every app (the toolkit, the platform) changes all of them, and then all of them go up.
+
 In your own code:
 
 ```go

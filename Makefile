@@ -9,18 +9,20 @@ all: dist
 image:            ## build the SDK + Go toolchain docker image
 	docker build -t $(IMAGE) docker
 
-# Every build increments BUILD in .version and embeds the version in the binary.
+# Every build increments BUILD in .version (the release); the app has its own apps/<id>/.version,
+# bumped only when its sources changed, and embedded in the binary.
 app: image        ## cross-compile the .app (linux/arm, cgo + libinkview)
-	v=$$(go run ./tools/bumpversion build) && echo "Version: $$v" && \
+	go run ./tools/bumpversion build >/dev/null && v=$$(go run ./tools/bumpversion -app $(APP) auto) && echo "$(APP) $$v" && \
 	docker run --rm -v "$(CURDIR)":/app -v pbgo-cache:/gopath $(IMAGE) \
 		build -ldflags=-X=$(PKG).Value=$$v -o $(DIST)/applications/$(APP).app ./apps/$(APP)
 
 dist: app         ## single file to copy to the device: dist/applications/$(APP).app
 
-dist-all: image   ## every app of apps/ (one version bump): dist/applications/<id>.app
-	v=$(go run ./tools/bumpversion build) && echo "Version: $v" && \
-	for a in $(ls apps); do [ -d apps/$a ] && docker run --rm -v "$(CURDIR)":/app -v pbgo-cache:/gopath $(IMAGE) \
-		build -ldflags=-X=$(PKG).Value=$v -o $(DIST)/applications/$a.app ./apps/$a; done
+dist-all: image   ## every app of apps/ (one release bump, an own version per app): dist/applications/<id>.app
+	go run ./tools/bumpversion build >/dev/null; \
+	for a in $$(ls apps); do [ -f apps/$$a/main.go ] && v=$$(go run ./tools/bumpversion -app $$a auto) && echo "$$a $$v" && \
+		docker run --rm -v "$(CURDIR)":/app -v pbgo-cache:/gopath $(IMAGE) \
+		build -ldflags=-X=$(PKG).Value=$$v -o $(DIST)/applications/$$a.app ./apps/$$a; done
 
 task-done:        ## a task was finished: MINOR+1 (BUILD restarts at 0)
 	go run ./tools/bumpversion minor

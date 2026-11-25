@@ -42,14 +42,22 @@ jobs:
             echo "tag $GITHUB_REF_NAME does not match .version ($version)"; exit 1
           fi
 
+      - name: Every app carries its own version
+        run: |
+          for dir in apps/*/; do
+            app="$(basename "$dir")"
+            [ -f "apps/$app/main.go" ] || continue
+            go run ./tools/bumpversion -app "$app" check
+          done
+
       - name: Build every app for the reader (SDK image)
         run: |
-          version="$(tr -d '\r\n' < .version)"
           docker build -t go-pocketbook-base-sdk docker
           mkdir -p dist/applications
           for dir in apps/*/; do
             app="$(basename "$dir")"
             [ -f "apps/$app/main.go" ] || continue
+            version="$(head -n1 "apps/$app/.version" | tr -d '\r')"
             docker run --rm -v "$PWD":/app -v pbgo-cache:/gopath go-pocketbook-base-sdk \
               build "-ldflags=-X=go-pocketbook-base/internal/kernel/version.Value=$version" \
               -o "dist/applications/$app.app" "./apps/$app"

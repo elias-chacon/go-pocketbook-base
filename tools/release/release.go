@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strings"
 
+	kversion "go-pocketbook-base/internal/kernel/version"
 	"go-pocketbook-base/internal/launcher/infrastructure/github"
 )
 
@@ -184,6 +185,15 @@ func stage(distApps, appsDir, payload, version string) ([]string, error) {
 		ids = append(ids, id)
 	}
 	return ids, os.WriteFile(filepath.Join(payload, "VERSION"), []byte(version+"\n"), 0o644)
+}
+
+// appVersion is the version of an app: the first line of apps/<id>/.version, or the release version
+// when the app has none. Each app has its own, bumped only when it changed.
+func appVersion(appsDir, id, fallback string) string {
+	if v, err := kversion.ReadFile(filepath.Join(appsDir, id, ".version")); err == nil {
+		return v.String()
+	}
+	return fallback
 }
 
 // iconFile is the name of an app's icon inside apps/<id>/.

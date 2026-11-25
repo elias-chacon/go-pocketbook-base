@@ -64,7 +64,7 @@ func run() error {
 	var files []string
 	var entries []github.IndexEntry
 	for _, id := range ids { // one zip per app, for the Launcher (and people) to download
-		entry, err := packageApp(distApps, "apps", outDir, id, version)
+		entry, err := packageApp(distApps, "apps", outDir, id, appVersion("apps", id, version))
 		if err != nil {
 			return err
 		}
