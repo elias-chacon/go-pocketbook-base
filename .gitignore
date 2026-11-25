@@ -12,3 +12,6 @@ cmd/pbinstaller/payload/*
 !cmd/pbinstaller/payload/README.txt
 /release/
 *.syso
+
+# OAuth client files downloaded from Google Cloud (the ids the apps use are in oauthconfig.Default)
+client_secret_*.json
