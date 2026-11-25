@@ -138,9 +138,9 @@ func TestRegisterMissingGroupWritesNothing(t *testing.T) {
 	}
 }
 
-// An install replaces what an older version registered: title, icons and path come from the new
+// A registration replaces what an older version registered: title, icons and path come from the new
 // registration, the position in the file and every other app stay, and doing it again changes nothing.
-func TestInstallReplacesAnOlderEntryAndItsIcons(t *testing.T) {
+func TestRegisteringReplacesAnOlderEntryAndItsIcons(t *testing.T) {
 	orig, _ := os.ReadFile("testdata/view.json")
 	c, p := setup(t, string(orig))
 	if _, err := Register(c); err != nil {
@@ -156,13 +156,9 @@ func TestInstallReplacesAnOlderEntryAndItsIcons(t *testing.T) {
 	iconFile := filepath.Join(c.Root, "applications", "icons", "hello.bmp")
 	os.WriteFile(iconFile, []byte("an old icon"), 0o644)
 
-	if res, err := Register(c); err != nil || res.Changed {
-		t.Fatalf("a plain registration keeps what is listed: %+v %v", res, err)
-	}
-	c.Replace = true
 	res, err := Register(c)
 	if err != nil || !res.Changed {
-		t.Fatalf("an install must replace the entry: %+v %v", res, err)
+		t.Fatalf("a registration must replace the entry: %+v %v", res, err)
 	}
 	now, _ := os.ReadFile(p)
 	if string(now) != string(cur) {
@@ -176,7 +172,7 @@ func TestInstallReplacesAnOlderEntryAndItsIcons(t *testing.T) {
 	}
 }
 
-func TestInstallPutsBackAnAppThatLostItsPlaceInTheGroup(t *testing.T) {
+func TestRegisteringPutsBackAnAppThatLostItsPlaceInTheGroup(t *testing.T) {
 	orig, _ := os.ReadFile("testdata/view.json")
 	c, p := setup(t, string(orig))
 	if _, err := Register(c); err != nil {
@@ -188,7 +184,6 @@ func TestInstallPutsBackAnAppThatLostItsPlaceInTheGroup(t *testing.T) {
 		t.Fatalf("test setup: %d keys", strings.Count(lost, `"U_hello"`))
 	}
 	os.WriteFile(p, []byte(lost), 0o644)
-	c.Replace = true
 	if _, err := Register(c); err != nil {
 		t.Fatal(err)
 	}

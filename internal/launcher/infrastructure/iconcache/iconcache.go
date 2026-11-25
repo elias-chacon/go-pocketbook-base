@@ -22,14 +22,16 @@ const maxIcon = 256 << 10
 // ErrNoIcon is returned for an app that publishes no icon.
 var ErrNoIcon = errors.New("iconcache: the app has no icon")
 
-// Cache downloads icons through Client and keeps them in Dir.
+// Cache downloads icons through Client and keeps them in Dir: one file per app (<id>.png) and
+// beside it the address it came from (<id>.url), so a new release replaces the old picture instead
+// of adding another one, and Prune drops what the catalog no longer lists.
 type Cache struct {
 	Client github.Doer
 	Dir    string
 }
 
-// Cached is the icon of a listing only when it is already kept: it never uses the network, so a
-// screen can draw many of them without waiting for one.
+// Cached is the icon of a listing when one is kept (it may be of an older release: Image replaces
+// it): it never uses the network, so a screen can draw many of them without waiting for one.
 func (c Cache) Cached(l domain.Listing) (image.Image, bool) {
 	data, err := os.ReadFile(c.path(l))
 	if err != nil {
@@ -39,16 +41,26 @@ func (c Cache) Cached(l domain.Listing) (image.Image, bool) {
 	return img, err == nil
 }
 
-func (c Cache) path(l domain.Listing) string { return filepath.Join(c.Dir, l.ID+"-"+l.Version+".png") }
+func (c Cache) path(l domain.Listing) string { return filepath.Join(c.Dir, l.ID+".png") }
 
-// Image is the icon of a listing: from the cache when it is there, otherwise
-// downloaded and kept. A version change is a new file, so a new icon shows up.
+// urlPath is where the address of the kept picture is written.
+func (c Cache) urlPath(l domain.Listing) string { return filepath.Join(c.Dir, l.ID+".url") }
+
+// fresh reports whether the kept picture came from the address the listing has now (every release
+// publishes its icons under its own address).
+func (c Cache) fresh(l domain.Listing) bool {
+	got, err := os.ReadFile(c.urlPath(l))
+	return err == nil && string(got) == l.IconURL
+}
+
+// Image is the icon of a listing: from the cache when it is there and came from the same address,
+// otherwise downloaded and kept in the place of the old one.
 func (c Cache) Image(l domain.Listing) (image.Image, error) {
 	if l.IconURL == "" {
 		return nil, ErrNoIcon
 	}
 	path := c.path(l)
-	if data, err := os.ReadFile(path); err == nil {
+	if data, err := os.ReadFile(path); err == nil && c.fresh(l) {
 		if img, err := png.Decode(bytes.NewReader(data)); err == nil {
 			return img, nil
 		}
@@ -63,7 +75,33 @@ func (c Cache) Image(l domain.Listing) (image.Image, error) {
 		return nil, err
 	}
 	if os.MkdirAll(c.Dir, 0o755) == nil {
-		os.WriteFile(path, data, 0o644) // the cache is an optimization: a failure to keep it is not an error
+		// the cache is an optimization: a failure to keep it is not an error
+		if os.WriteFile(path, data, 0o644) == nil {
+			os.WriteFile(c.urlPath(l), []byte(l.IconURL), 0o644)
+		}
 	}
 	return img, nil
+}
+
+// Prune deletes every kept picture that is not of one of the listings: what an older release
+// listed and the files an older version of this cache named by version. It only touches .png and
+// .url files, and does nothing for an empty list (a catalog that did not come must not empty it).
+func (c Cache) Prune(keep []domain.Listing) {
+	if len(keep) == 0 {
+		return
+	}
+	wanted := map[string]bool{}
+	for _, l := range keep {
+		wanted[l.ID+".png"], wanted[l.ID+".url"] = true, true
+	}
+	entries, err := os.ReadDir(c.Dir)
+	if err != nil {
+		return
+	}
+	for _, e := range entries {
+		ext := filepath.Ext(e.Name())
+		if !e.IsDir() && (ext == ".png" || ext == ".url") && !wanted[e.Name()] {
+			os.Remove(filepath.Join(c.Dir, e.Name()))
+		}
+	}
 }

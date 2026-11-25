@@ -54,14 +54,38 @@ func TestTheIconIsDownloadedOnceAndThenComesFromTheCache(t *testing.T) {
 	if _, err := c.Image(l); err != nil || hits != 1 {
 		t.Errorf("the second one is the cache's: hits=%d err=%v", hits, err)
 	}
-	if _, err := os.Stat(filepath.Join(c.Dir, "hello-1.0.0.png")); err != nil {
+	if _, err := os.Stat(filepath.Join(c.Dir, "hello.png")); err != nil {
 		t.Errorf("kept on disk: %v", err)
 	}
 
-	l.Version = "1.1.0"
+	l.IconURL = srv.URL + "/v2/hello.png" // the next release publishes it under another address
 	c.Image(l)
 	if hits != 2 {
-		t.Errorf("a new version is a new icon: %d", hits)
+		t.Errorf("a new address is a new icon: %d", hits)
+	}
+	files, _ := os.ReadDir(c.Dir)
+	if len(files) != 2 { // hello.png and hello.url: the new picture took the place of the old
+		t.Errorf("one picture per app, got %d files", len(files))
+	}
+}
+
+func TestPruneDropsWhatTheCatalogNoLongerListsAndTheOldNames(t *testing.T) {
+	c := Cache{Dir: t.TempDir()}
+	for _, n := range []string{"hello.png", "hello.url", "gone.png", "gone.url", "hello-1.0.0.png", "notes.txt"} {
+		os.WriteFile(filepath.Join(c.Dir, n), []byte("x"), 0o644)
+	}
+	c.Prune(nil)
+	if files, _ := os.ReadDir(c.Dir); len(files) != 6 {
+		t.Errorf("an empty catalog must not empty the cache: %d", len(files))
+	}
+	c.Prune([]domain.Listing{{ID: "hello"}})
+	var left []string
+	files, _ := os.ReadDir(c.Dir)
+	for _, f := range files {
+		left = append(left, f.Name())
+	}
+	if len(left) != 3 || left[0] != "hello.png" || left[1] != "hello.url" || left[2] != "notes.txt" {
+		t.Errorf("left = %v", left)
 	}
 }
 
@@ -69,7 +93,8 @@ func TestADamagedCacheFileIsFetchedAgain(t *testing.T) {
 	var hits int32
 	srv := server(t, pngBytes(t, 40), &hits)
 	c := Cache{Client: srv.Client(), Dir: t.TempDir()}
-	os.WriteFile(filepath.Join(c.Dir, "hello-1.png"), []byte("garbage"), 0o644)
+	os.WriteFile(filepath.Join(c.Dir, "hello.png"), []byte("garbage"), 0o644)
+	os.WriteFile(filepath.Join(c.Dir, "hello.url"), []byte(srv.URL+"/x.png"), 0o644)
 
 	if _, err := c.Image(domain.Listing{ID: "hello", Version: "1", IconURL: srv.URL + "/x.png"}); err != nil || hits != 1 {
 		t.Errorf("hits=%d err=%v", hits, err)
@@ -90,7 +115,7 @@ func TestMissingBrokenOrUnreachableIconsAreErrors(t *testing.T) {
 	if _, err := c.Image(domain.Listing{ID: "a", Version: "1", IconURL: srv.URL + "/a.png"}); err == nil {
 		t.Error("something that is not a PNG")
 	}
-	if _, err := os.Stat(filepath.Join(c.Dir, "a-1.png")); err == nil {
+	if _, err := os.Stat(filepath.Join(c.Dir, "a.png")); err == nil {
 		t.Error("a broken download is not kept")
 	}
 }

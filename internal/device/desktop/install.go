@@ -7,6 +7,7 @@
 package desktop
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"image"
@@ -30,11 +31,6 @@ type Config struct {
 	Group string // desktop group, e.g. "@General"
 	// Icon renders the launcher icon; focused is the pressed/inverted variant.
 	Icon func(size int, focused bool) image.Image
-	// Replace makes the registration an install: the app entry of view.json is rewritten whole
-	// (path, title, icons) and the icon files are written again, so what an older version left
-	// behind is not kept. Without it a registration only adds what is missing and repairs a path
-	// (an app registers itself that way at every start).
-	Replace bool
 }
 
 // Result reports what Register did.
@@ -44,14 +40,15 @@ type Result struct {
 	Backup  string // backup file, when Changed
 }
 
-// Register is idempotent: it writes missing icons and adds the app to
-// view.json only when it is not already listed (with Replace it rewrites both: see Config). view.json is backed up, the
+// Register is idempotent and replaces: the icon files are written again when they differ and the
+// app entry of view.json (path, title, icons) is rewritten whole in its place, so what an older
+// version left behind is not kept. The same input changes nothing. view.json is backed up, the
 // patched content is validated as JSON, and the file is replaced atomically.
 func Register(c Config) (Result, error) {
 	name := strings.TrimSuffix(filepath.Base(c.Exe), ".app")
 	res := Result{Key: "U_" + name}
 
-	if err := writeIcons(c, name, c.Replace); err != nil {
+	if err := writeIcons(c, name); err != nil {
 		return res, fmt.Errorf("icons: %w", err)
 	}
 
@@ -67,13 +64,9 @@ func Register(c Config) (Result, error) {
 
 	var patched string
 	if regexp.MustCompile(`"` + regexp.QuoteMeta(res.Key) + `"\s*:`).MatchString(text) {
-		// Already registered: repair a wrong launch path (an earlier version wrote a relative
-		// one, which the desktop cannot start) or, for an install, take the whole entry anew.
-		if c.Replace {
-			patched, err = replaceEntry(text, res.Key, entry(c, name), c.Group)
-		} else {
-			patched, err = fixPath(text, res.Key, launchPath(c))
-		}
+		// Already registered: take the whole entry anew (an earlier version may have written
+		// a relative launch path, another title or other icons).
+		patched, err = replaceEntry(text, res.Key, entry(c, name), c.Group)
 		if err != nil {
 			return res, err
 		}
@@ -119,47 +112,6 @@ func findView(root string) (string, error) {
 // starts when tapped (verified on PB741; the MobileRead wiki also uses
 // absolute paths for "path").
 func launchPath(c Config) string { return filepath.ToSlash(c.Exe) }
-
-var rePath = regexp.MustCompile(`("path"\s*:\s*)"[^"]*"`)
-
-// fixPath makes the app's "path" in its existing view.json entry equal want.
-// It returns text unchanged when it already does.
-func fixPath(text, key, want string) (string, error) {
-	// "_comment" is an array in the same object, so decode entries leniently.
-	var raw struct{ Applications map[string]json.RawMessage }
-	if err := json.Unmarshal([]byte(text), &raw); err != nil {
-		return "", fmt.Errorf("view.json is not valid JSON: %w", err)
-	}
-	var cur struct{ Path string }
-	if err := json.Unmarshal(raw.Applications[key], &cur); err != nil {
-		return text, nil // key only in an apps array, or not an entry object: leave it alone
-	}
-	if cur.Path == want {
-		return text, nil
-	}
-
-	// Rewrite the first "path" inside this entry (our own entries put it first).
-	start := regexp.MustCompile(`"` + regexp.QuoteMeta(key) + `"\s*:\s*\{`).FindStringIndex(text)
-	if start == nil {
-		return "", fmt.Errorf("entry %s not found", key)
-	}
-	loc := rePath.FindStringSubmatchIndex(text[start[1]:])
-	if loc == nil {
-		return "", fmt.Errorf("no path in entry %s", key)
-	}
-	a, b := start[1]+loc[3], start[1]+loc[1] // replace only the quoted value after `"path":`
-	out := text[:a] + `"` + want + `"` + text[b:]
-	// Re-check: the new text must be valid and the entry must now point at want.
-	var check struct{ Applications map[string]json.RawMessage }
-	if err := json.Unmarshal([]byte(out), &check); err != nil {
-		return "", fmt.Errorf("patched view.json would be invalid: %w", err)
-	}
-	var v struct{ Path string }
-	if err := json.Unmarshal(check.Applications[key], &v); err != nil || v.Path != want {
-		return "", fmt.Errorf("could not update path of %s", key)
-	}
-	return out, nil
-}
 
 // entry builds the "applications" definition. The icons are relative to the
 // user storage (as documented in the _comment of view.json, and verified);
@@ -250,25 +202,22 @@ func addToGroup(text, key, group string) (string, error) {
 	return text, nil
 }
 
-func writeIcons(c Config, name string, replace bool) error {
+// writeIcons writes the icon files, leaving a file alone when it already holds the picture.
+func writeIcons(c Config, name string) error {
 	dir := filepath.Join(c.Root, "applications", "icons")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 	for suffix, focused := range map[string]bool{"": false, "_f": true} {
 		p := filepath.Join(dir, name+suffix+".bmp")
-		if _, err := os.Stat(p); err == nil && !replace {
-			continue
-		}
-		f, err := os.Create(p)
-		if err != nil {
+		var buf bytes.Buffer
+		if err := bmp.Encode(&buf, c.Icon(IconSize, focused)); err != nil {
 			return err
 		}
-		err = bmp.Encode(f, c.Icon(IconSize, focused))
-		if cerr := f.Close(); err == nil {
-			err = cerr
+		if old, err := os.ReadFile(p); err == nil && bytes.Equal(old, buf.Bytes()) {
+			continue // already this picture: no write (flash, and a quiet start)
 		}
-		if err != nil {
+		if err := os.WriteFile(p, buf.Bytes(), 0o644); err != nil {
 			return err
 		}
 	}

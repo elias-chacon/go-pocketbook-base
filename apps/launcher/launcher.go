@@ -142,12 +142,14 @@ func (c iconPrefetch) List(lang string) ([]domain.Listing, error) {
 	defer c.progress.End()
 	list, err := c.inner.List(lang)
 	c.progress.Add(len(list))
+	if err == nil {
+		c.icons.Prune(list) // what an older release listed goes; one picture per app stays
+	}
 	for _, l := range list {
 		c.progress.Step()
-		if _, ok := c.icons.Cached(l); !ok {
-			if _, ierr := c.icons.Image(l); ierr != nil && ierr != iconcache.ErrNoIcon {
-				platform.Errorf("icon %s: %v", l.ID, ierr)
-			}
+		// Image asks the network only when the kept picture is not of this release's address.
+		if _, ierr := c.icons.Image(l); ierr != nil && ierr != iconcache.ErrNoIcon {
+			platform.Errorf("icon %s: %v", l.ID, ierr)
 		}
 	}
 	return list, err
