@@ -1,6 +1,7 @@
 {
   "home.title": "My apps",
   "home.empty": "No apps installed.\nConnect the reader to Wi-Fi to download the app catalog.",
+  "startup.pruned": "Home screen entries of apps that no longer exist were taken out: %d (shown when the cable is unplugged).",
   "home.loading": "Downloading the latest catalog… %d%%",
   "home.failed": "Could not download the catalog.\nCheck the Wi-Fi and open the Launcher again.",
   "home.page": "%d / %d",

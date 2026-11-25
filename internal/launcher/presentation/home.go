@@ -53,9 +53,10 @@ type Config struct {
 	// "system.<key>". All optional.
 	Version, Repository string
 	SystemInfo          func() []Fact
-	// Catalog lists the apps of the release (nil: the home shows only the installed ones). It is
-	// asked in the background when the screen opens; a failure is silent (the apps already shown stay).
-	Catalog domain.Catalog
+	// Startup is what the Launcher does when it opens (clean the home screen, bring the catalog of
+	// the apps of the release): run in the background when the screen opens, and again when the
+	// language changes. A failure is silent: the apps already shown stay. No tasks: nothing happens.
+	Startup application.Startup
 	// CachedCatalog is the last catalog kept, in lang, to show the apps that are not installed at
 	// once and offline (nil: they show after the first answer of Catalog).
 	CachedCatalog func(lang string) []domain.Listing
@@ -133,7 +134,7 @@ func NewHome(cfg Config) *Home {
 		h.listings = cfg.CachedCatalog(cfg.Tr.Lang())
 	}
 	h.build()
-	h.fetchCatalog()
+	h.runStartup()
 	return h
 }
 
@@ -154,7 +155,7 @@ func (h *Home) Apply(prefs domain.Preferences, lang string) {
 	h.Doc.ResetFrame()
 	h.Doc.Invalidate()
 	if changed {
-		h.fetchCatalog()
+		h.runStartup()
 	}
 }
 
@@ -235,46 +236,44 @@ func (h *Home) Refresh() {
 	h.show()
 }
 
-// catalogResult is the answer of the background fetch, handed to the event loop.
-type catalogResult struct {
+// startResult is the outcome of the startup running in the background, handed to the event loop.
+type startResult struct {
 	mu   sync.Mutex
 	done bool
-	list []domain.Listing
-	err  error
+	out  application.Outcome
 }
 
-func (c *catalogResult) set(list []domain.Listing, err error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.list, c.err, c.done = list, err, true
+func (r *startResult) set(out application.Outcome) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.out, r.done = out, true
 }
 
-func (c *catalogResult) get() ([]domain.Listing, bool, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.list, c.done, c.err
+func (r *startResult) get() (application.Outcome, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.out, r.done
 }
 
-// fetchCatalog asks the catalog in the background (a goroutine does the network, the event loop
+// runStartup runs the startup tasks in the background (a goroutine does the work, the event loop
 // polls and draws: no widget is touched off the loop).
-func (h *Home) fetchCatalog() {
-	if h.cfg.Catalog == nil {
+func (h *Home) runStartup() {
+	if len(h.cfg.Startup.Tasks) == 0 {
 		return
 	}
 	lang := h.cfg.Tr.Lang()
 	if h.cfg.After == nil {
-		list, err := h.cfg.Catalog.List(lang)
-		h.catalogDone(list, err)
+		h.startupDone(h.cfg.Startup.Execute(lang, h.cfg.Progress))
 		return
 	}
-	res := &catalogResult{}
-	go func() { res.set(h.cfg.Catalog.List(lang)) }()
+	res := &startResult{}
+	go func() { res.set(h.cfg.Startup.Execute(lang, h.cfg.Progress)) }()
 	h.loading = true
-	h.Refresh() // the bar is on the screen from the first frame
-	h.pollCatalog(res, lang, 0)
+	h.Refresh()                                                        // the bar is on the screen from the first frame
+	h.cfg.After(h.pollEvery(), func() { h.pollStartup(res, lang, 0) }) // the first look is on the loop too
 }
 
-// pollEvery is the wait between two looks at the fetch: short when a bar is moving.
+// pollEvery is the wait between two looks at the startup: short when a bar is moving.
 func (h *Home) pollEvery() time.Duration {
 	if h.cfg.Progress != nil {
 		return barPoll
@@ -282,23 +281,29 @@ func (h *Home) pollEvery() time.Duration {
 	return catalogPoll
 }
 
-func (h *Home) pollCatalog(res *catalogResult, lang string, n int) {
-	list, done, err := res.get()
+func (h *Home) pollStartup(res *startResult, lang string, n int) {
+	out, done := res.get()
 	switch {
 	case done && lang == h.cfg.Tr.Lang():
-		h.catalogDone(list, err)
+		h.startupDone(out)
 	case !done && n < catalogPolls*int(catalogPoll/h.pollEvery()):
 		h.moveBar()
-		h.cfg.After(h.pollEvery(), func() { h.pollCatalog(res, lang, n+1) })
+		h.cfg.After(h.pollEvery(), func() { h.pollStartup(res, lang, n+1) })
 	}
 }
 
-// catalogDone takes the answer of the catalog: a failure leaves what is shown as it is, and
-// while the settings screen is open the list is kept and drawn when the home comes back.
-func (h *Home) catalogDone(list []domain.Listing, err error) {
-	h.loading, h.failed = false, err != nil
-	if err == nil {
-		h.listings = list
+// startupDone takes what the startup found: the catalog (a failure leaves what is shown as it is)
+// and the home screen entries it took out. While the settings screen is open the list is kept and
+// drawn when the home comes back.
+func (h *Home) startupDone(out application.Outcome) {
+	h.loading = false
+	err := out.Errors[application.TaskCatalog]
+	h.failed = err != nil
+	if err == nil && out.Listings != nil {
+		h.listings = out.Listings
+	}
+	if n := len(out.Removed); n > 0 {
+		h.note.Text = h.cfg.Tr.T("startup.pruned", n)
 	}
 	if h.settings == nil {
 		h.Refresh()

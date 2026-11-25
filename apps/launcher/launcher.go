@@ -82,7 +82,12 @@ func newLauncher(env platform.Env) platform.App {
 		Notice:  env.Notice,
 		Version: env.Version, Repository: repoOwner + "/" + repoName,
 		SystemInfo: func() []presentation.Fact { return systemFacts(env, root) },
-		Catalog:    catalog, After: env.After, Progress: progress, InstallProgress: installing,
+		// What the Launcher does as it opens, in the background and in this order.
+		Startup: application.Startup{Tasks: []application.Task{
+			application.PruneHomeScreen(homeScreen{root: root}),
+			application.FetchCatalog(catalog),
+		}},
+		After: env.After, Progress: progress, InstallProgress: installing,
 		CachedCatalog: func(lang string) []domain.Listing {
 			list, _ := catalog.Cached(lang)
 			return list
@@ -129,17 +134,28 @@ func formatBytes(n uint64) string {
 	return fmt.Sprintf("%.1f %cB", float64(n)/float64(div), "KMGTPE"[exp])
 }
 
+// homeScreen is the Launcher's port to the home screen of the reader.
+type homeScreen struct{ root string }
+
+func (h homeScreen) RemoveOrphans() ([]string, error) {
+	removed, err := platform.PruneHomeScreen(h.root)
+	if err != nil {
+		platform.Errorf("home screen: %v", err)
+	} else if len(removed) > 0 {
+		platform.Errorf("home screen: took out the entries of %v (their programs are gone)", removed)
+	}
+	return removed, err
+}
+
 // iconPrefetch fetches the icon of every listing after the catalog answers, so the grid finds
 // them in the cache. It runs in the background fetch of the home screen, never on the event loop.
 type iconPrefetch struct {
 	inner    domain.Catalog
 	icons    iconcache.Cache
-	progress *domain.Progress // 2 steps for the catalog (the inner one reports them), one per icon
+	progress *domain.Progress // the startup began it: one step per icon is added here (the inner catalog steps its own two)
 }
 
 func (c iconPrefetch) List(lang string) ([]domain.Listing, error) {
-	c.progress.Begin(2)
-	defer c.progress.End()
 	list, err := c.inner.List(lang)
 	c.progress.Add(len(list))
 	if err == nil {

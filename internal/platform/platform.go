@@ -267,6 +267,13 @@ func (f registrarFunc) Register(r domain.Registration) (bool, error) { return f(
 // About and Exit, in the language of the reader (see widget.AppChrome).
 func Chrome(env Env) widget.AppChrome { return application.Chrome(env) }
 
+// PruneHomeScreen takes out of the home screen of the reader whose storage is root the entries of
+// apps whose program is no longer there (an app removed by hand leaves its icon behind). It returns
+// the ids it took out. The home screen shows the change when the cable is next unplugged.
+func PruneHomeScreen(root string) ([]string, error) {
+	return reader.DesktopRegistrar{Root: root}.RemoveOrphans()
+}
+
 // Uninstall removes an app and everything it left on the reader (see application.Uninstall):
 // the home screen entry and icons, the program, its record and log, the data files its manifest
 // lists and what eraseData drops from databases (nil: nothing).

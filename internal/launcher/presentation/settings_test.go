@@ -247,7 +247,7 @@ func TestTheSettingsHaveAboutAndTheSystemInformation(t *testing.T) {
 		SystemInfo: func() []Fact { return []Fact{{"model", "PocketBook 741"}, {"storage", "1.0 GB / 4.0 GB"}} },
 		Home:       application.Home{Apps: registry{apps: apps(3)}, Launcher: &launcher{}, SelfID: "launcher"},
 		IconFor:    func(domain.Tile) image.Image { return image.NewGray(image.Rect(0, 0, 128, 128)) },
-		Catalog:    catalog{list: listings(2)},
+		Startup:    catalogStartup(catalog{list: listings(2)}),
 	})
 	open(h)
 	scroll, ok := find(h, "settings-scroll").(*widget.Scroll)

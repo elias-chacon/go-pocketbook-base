@@ -1,6 +1,7 @@
 {
   "home.title": "Meus aplicativos",
   "home.empty": "Nenhum aplicativo instalado.\nConecte o leitor ao Wi-Fi para baixar o catálogo de aplicativos.",
+  "startup.pruned": "Entradas de apps que já não existem saíram da tela inicial: %d (a mudança aparece quando o cabo for desconectado).",
   "home.loading": "Baixando o catálogo mais recente… %d%%",
   "home.failed": "Não foi possível baixar o catálogo.\nConfira o Wi-Fi e abra o Launcher de novo.",
   "home.page": "%d / %d",

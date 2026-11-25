@@ -26,7 +26,7 @@ func (g gatedInstaller) Install(domain.Listing) error {
 func installingHome(inst domain.Installer, p *domain.Progress, lp *loop) *Home {
 	return NewHome(Config{
 		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"),
-		Catalog: catalog{list: listings(2)}, Installer: inst, InstallProgress: p, After: lp.after,
+		Startup: catalogStartup(catalog{list: listings(2)}), Installer: inst, InstallProgress: p, After: lp.after,
 		Home:    application.Home{Apps: registry{apps: apps(1)}, Launcher: &launcher{}, SelfID: "launcher"},
 		IconFor: func(domain.Tile) image.Image { return image.NewGray(image.Rect(0, 0, 128, 128)) },
 	})

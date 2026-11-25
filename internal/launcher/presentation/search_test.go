@@ -22,7 +22,7 @@ func (c catalog) List(string) ([]domain.Listing, error) { return c.list, c.err }
 
 func searchHome(n int, cat domain.Catalog) *Home {
 	return NewHome(Config{
-		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), Catalog: cat,
+		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), Startup: catalogStartup(cat),
 		Home:    application.Home{Apps: registry{apps: apps(n)}, Launcher: &launcher{}, SelfID: "launcher"},
 		IconFor: func(domain.Tile) image.Image { return image.NewGray(image.Rect(0, 0, 128, 128)) },
 	})
@@ -104,7 +104,7 @@ func TestSearchFiltersTheWholeGridInstalledAndMissing(t *testing.T) {
 func TestTheCatalogIsFetchedInTheBackgroundAndShownWhenItArrives(t *testing.T) {
 	var later []func()
 	h := NewHome(Config{
-		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), Catalog: catalog{list: listings(2)},
+		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), Startup: catalogStartup(catalog{list: listings(2)}),
 		CachedCatalog: func(string) []domain.Listing { return listings(1) },
 		After:         func(_ time.Duration, f func()) { later = append(later, f) },
 		Home:          application.Home{Apps: registry{apps: apps(1)}, Launcher: &launcher{}, SelfID: "launcher"},
@@ -146,7 +146,7 @@ func installHome(inst *installer, flushed *int) (*Home, *registry) {
 	reg := &registry{apps: apps(1)}
 	h := NewHome(Config{
 		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"),
-		Catalog:   catalog{list: listings(2)},
+		Startup:   catalogStartup(catalog{list: listings(2)}),
 		Installer: inst,
 		Flush:     func() { *flushed++ },
 		Home:      application.Home{Apps: reg, Launcher: &launcher{}, SelfID: "launcher"},
@@ -200,7 +200,7 @@ func TestAFailedInstallIsTold(t *testing.T) {
 func TestAMissingAppShowsTheIconOfTheCatalogWhenThereIsOne(t *testing.T) {
 	asked := map[string]bool{}
 	h := NewHome(Config{
-		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), Catalog: catalog{list: listings(2)},
+		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), Startup: catalogStartup(catalog{list: listings(2)}),
 		ListingIcon: func(l domain.Listing) image.Image {
 			asked[l.ID] = true
 			return image.NewGray(image.Rect(0, 0, 128, 128))

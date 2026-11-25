@@ -42,19 +42,28 @@ func Unregister(root, name string) (bool, error) {
 	if patched == text {
 		return false, firstErr
 	}
-	backup := fmt.Sprintf("%s.bak-%s", view, time.Now().Format("20060102-150405"))
-	if err := os.WriteFile(backup, data, 0o644); err != nil {
-		return false, fmt.Errorf("backup: %w", err)
-	}
-	tmp := view + ".tmp"
-	if err := os.WriteFile(tmp, []byte(patched), 0o644); err != nil {
-		return false, err
-	}
-	if err := os.Rename(tmp, view); err != nil {
-		os.Remove(tmp)
+	if err := replaceView(view, data, patched); err != nil {
 		return false, err
 	}
 	return true, firstErr
+}
+
+// replaceView keeps a backup of view.json (data is its content) and replaces it with patched,
+// through a temporary file.
+func replaceView(view string, data []byte, patched string) error {
+	backup := fmt.Sprintf("%s.bak-%s", view, time.Now().Format("20060102-150405"))
+	if err := os.WriteFile(backup, data, 0o644); err != nil {
+		return fmt.Errorf("backup: %w", err)
+	}
+	tmp := view + ".tmp"
+	if err := os.WriteFile(tmp, []byte(patched), 0o644); err != nil {
+		return err
+	}
+	if err := os.Rename(tmp, view); err != nil {
+		os.Remove(tmp)
+		return err
+	}
+	return nil
 }
 
 // withoutKey removes the entry "key": {...} of the applications and every "key" of the apps

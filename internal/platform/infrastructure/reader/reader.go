@@ -148,6 +148,9 @@ func (d DesktopRegistrar) Unregister(appID string) (bool, error) {
 	return desktop.Unregister(d.Root, appID)
 }
 
+// RemoveOrphans takes out of the home screen the entries of apps whose program is gone.
+func (d DesktopRegistrar) RemoveOrphans() ([]string, error) { return desktop.RemoveOrphans(d.Root) }
+
 // IconPath is where Register writes the normal icon of app id under root.
 func IconPath(root, id string) string {
 	return filepath.Join(root, "applications", "icons", id+".bmp")

@@ -38,7 +38,7 @@ func newManageEnv(t *testing.T) *manageEnv {
 		{ID: "app00", Title: "App app00", Version: "2.0.0", AppSHA256: "new"},
 	}}
 	e.h = NewHome(Config{
-		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), Catalog: cat, Installer: e.inst, Uninstaller: e.rm,
+		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), Startup: catalogStartup(cat), Installer: e.inst, Uninstaller: e.rm,
 		InstalledSum: func(id string) string { return e.sums[id] },
 		SavePrefs:    func(p domain.Preferences) error { e.saved = append(e.saved, p); return nil },
 		Home:         application.Home{Apps: registry{apps: apps(2)}, Launcher: &launcher{}, SelfID: "launcher"},

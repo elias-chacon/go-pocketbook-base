@@ -24,6 +24,14 @@ func (c slowCatalog) List(string) ([]domain.Listing, error) {
 	return c.list, c.err
 }
 
+// catalogStartup is the startup of a test: only the catalog.
+func catalogStartup(c domain.Catalog) application.Startup {
+	if c == nil {
+		return application.Startup{}
+	}
+	return application.Startup{Tasks: []application.Task{application.FetchCatalog(c)}}
+}
+
 // loop is the event loop of a test: the timers the screen asks for wait until the test runs them.
 type loop struct{ queue []func() }
 
@@ -40,7 +48,7 @@ func (l *loop) tick() {
 
 func loadingHome(n int, cat domain.Catalog, p *domain.Progress, l *loop) *Home {
 	return NewHome(Config{
-		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), Catalog: cat, Progress: p, After: l.after,
+		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), Startup: catalogStartup(cat), Progress: p, After: l.after,
 		Home:    application.Home{Apps: registry{apps: apps(n)}, Launcher: &launcher{}, SelfID: "launcher"},
 		IconFor: func(domain.Tile) image.Image { return image.NewGray(image.Rect(0, 0, 128, 128)) },
 	})
@@ -107,5 +115,25 @@ func TestTheBarWaitsAreShortSoItMovesButTheTotalWaitIsTheSame(t *testing.T) {
 	}
 	if (&Home{}).pollEvery() != catalogPoll {
 		t.Error("without a progress the poll stays as it was")
+	}
+}
+
+type fakeHome struct{ removed []string }
+
+func (f fakeHome) RemoveOrphans() ([]string, error) { return f.removed, nil }
+
+func TestTheHomeSaysWhenTheStartupTookEntriesOutOfTheHomeScreen(t *testing.T) {
+	var lp loop
+	h := NewHome(Config{
+		Width: 1404, Height: 1872, Tr: NewTranslator("pt-BR"), After: lp.after,
+		Startup: application.Startup{Tasks: []application.Task{application.PruneHomeScreen(fakeHome{removed: []string{"a", "b"}})}},
+		Home:    application.Home{Apps: registry{apps: apps(1)}, Launcher: &launcher{}, SelfID: "launcher"},
+		IconFor: func(domain.Tile) image.Image { return image.NewGray(image.Rect(0, 0, 128, 128)) },
+	})
+	if !settle(&lp, func() bool { return find(h, "home-loading") == nil }) {
+		t.Fatal("the startup must end")
+	}
+	if !strings.Contains(texts(h), "tela inicial: 2") {
+		t.Errorf("the note says how many entries went: %q", texts(h))
 	}
 }
