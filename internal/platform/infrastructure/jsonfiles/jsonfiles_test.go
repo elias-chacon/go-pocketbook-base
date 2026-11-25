@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
 	"go-pocketbook-base/internal/platform/domain"
 )
@@ -101,7 +102,7 @@ func TestSettingsDefaultsAndPersistence(t *testing.T) {
 
 func TestUpdateStateIsRememberedAndABrokenFileIsForgotten(t *testing.T) {
 	root := t.TempDir()
-	s := NewUpdateState(root)
+	s := NewUpdateState(root, "hello")
 	if got := s.Load(); got.Dismissed != "" || !got.CheckedAt.IsZero() {
 		t.Fatalf("nothing remembered yet: %+v", got)
 	}
@@ -111,12 +112,38 @@ func TestUpdateStateIsRememberedAndABrokenFileIsForgotten(t *testing.T) {
 	if got := s.Load(); got.Dismissed != "1.2.3" || got.Available.URL != "u" {
 		t.Errorf("state = %+v", got)
 	}
-	os.WriteFile(filepath.Join(metaDir(root), updateFile), []byte("{broken"), 0o644)
+	os.WriteFile(UpdatePath(root, "hello"), []byte("{broken"), 0o644)
 	if got := s.Load(); got.Dismissed != "" {
 		t.Errorf("a broken file must give an empty state: %+v", got)
 	}
 	if apps := NewApps(root).List(); len(apps) != 0 {
 		t.Errorf("the update file is not an installed app: %+v", apps)
+	}
+}
+
+func TestEachAppRemembersItsOwnUpdateChecks(t *testing.T) {
+	root := t.TempDir()
+	hello, tasks := NewUpdateState(root, "hello"), NewUpdateState(root, "tasks")
+	if err := hello.Save(domain.UpdateState{Dismissed: "aaa", CheckedAt: time.Now()}); err != nil {
+		t.Fatal(err)
+	}
+	if got := tasks.Load(); got.Dismissed != "" || !got.CheckedAt.IsZero() {
+		t.Errorf("another app's check must not count for tasks: %+v", got)
+	}
+	if err := tasks.Save(domain.UpdateState{Dismissed: "bbb"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := hello.Load(); got.Dismissed != "aaa" {
+		t.Errorf("hello lost its own state: %+v", got)
+	}
+	if err := (Files{root: root}).Remove("hello", nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := hello.Load(); got.Dismissed != "" {
+		t.Errorf("removing an app removes its update file: %+v", got)
+	}
+	if got := tasks.Load(); got.Dismissed != "bbb" {
+		t.Errorf("removing hello must keep tasks: %+v", got)
 	}
 }
 

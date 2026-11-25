@@ -197,7 +197,7 @@ func Run(cfg Config, factory Factory) error {
 			data, err := os.ReadFile(exe)
 			return selfupdate.Sum(data), err
 		},
-		State: jsonfiles.NewUpdateState(root),
+		State: jsonfiles.NewUpdateState(root, m.ID),
 		// The new build starts the way this one was started (same intent, same way back).
 		Restart: func() error { return process.Exec(exe, os.Environ()) },
 	}

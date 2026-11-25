@@ -33,7 +33,7 @@ func (f Files) Remove(appID string, dataFiles []string) error {
 	apps := filepath.Join(f.root, "applications")
 	paths := []string{
 		filepath.Join(apps, appID+".app"), filepath.Join(apps, appID+".app.new"), filepath.Join(apps, appID+".log"),
-		RecordPath(f.root, appID),
+		RecordPath(f.root, appID), UpdatePath(f.root, appID),
 	}
 	for _, name := range dataFiles {
 		if name == "" || strings.ContainsAny(name, `/\`) || name == ".." {
