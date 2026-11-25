@@ -252,6 +252,7 @@ func RegisterOnDrive(drive string, manifest []byte, icon domain.IconRenderer, ve
 	}.Execute(application.FirstRunInput{
 		Manifest: m, Lang: jsonfiles.NewSettings(drive).Load().Lang, Version: version, Exe: exe,
 		IconPath: path.Join(application.DefaultRoot, "applications", "icons", m.ID+".bmp"), Icon: icon,
+		Replace: true, // an install (the Launcher's or the installer's): what an older version left is replaced
 	})
 	if notice != "" && !changed {
 		return false, errors.New(notice)

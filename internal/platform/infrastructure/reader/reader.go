@@ -138,7 +138,7 @@ type DesktopRegistrar struct{ Root string }
 // Register implements domain.DesktopRegistrar: icons plus the view.json entry.
 func (d DesktopRegistrar) Register(r domain.Registration) (bool, error) {
 	res, err := desktop.Register(desktop.Config{
-		Root: d.Root, Exe: r.Exe, Title: r.Title, Group: r.Group, Icon: r.Icon,
+		Root: d.Root, Exe: r.Exe, Title: r.Title, Group: r.Group, Icon: r.Icon, Replace: r.Replace,
 	})
 	return res.Changed, err
 }

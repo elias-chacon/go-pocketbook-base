@@ -38,6 +38,7 @@ type FirstRunInput struct {
 	Exe      string              // absolute path of the running <id>.app
 	IconPath string              // where the registrar writes the icon (recorded for the Launcher)
 	Icon     domain.IconRenderer // nil uses DefaultIcon
+	Replace  bool                // an install: replace what an older version registered (see domain.Registration)
 }
 
 // Execute registers the app on the home screen and records it. It returns the
@@ -51,7 +52,7 @@ func (f FirstRun) Execute(in FirstRunInput) string {
 	}
 
 	changed, err := f.Registrar.Register(domain.Registration{
-		Exe: in.Exe, Title: title, Group: in.Manifest.DesktopGroup(), Icon: icon,
+		Exe: in.Exe, Title: title, Group: in.Manifest.DesktopGroup(), Icon: icon, Replace: in.Replace,
 	})
 	f.log("register: changed=%v err=%v", changed, err)
 	if err != nil {

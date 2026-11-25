@@ -32,6 +32,9 @@ type Registration struct {
 	Title string       // name shown under the icon, in the current language
 	Group string       // desktop group
 	Icon  IconRenderer // draws the icons the registrar must write
+	// Replace is an install (the Launcher's, the installer's): the entry and the icons are written
+	// anew, not only completed. An app registering itself at its start leaves it false.
+	Replace bool
 }
 
 // DesktopRegistrar puts an app on the reader's home screen. It is idempotent:

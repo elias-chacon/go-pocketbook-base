@@ -30,6 +30,11 @@ type Config struct {
 	Group string // desktop group, e.g. "@General"
 	// Icon renders the launcher icon; focused is the pressed/inverted variant.
 	Icon func(size int, focused bool) image.Image
+	// Replace makes the registration an install: the app entry of view.json is rewritten whole
+	// (path, title, icons) and the icon files are written again, so what an older version left
+	// behind is not kept. Without it a registration only adds what is missing and repairs a path
+	// (an app registers itself that way at every start).
+	Replace bool
 }
 
 // Result reports what Register did.
@@ -40,13 +45,13 @@ type Result struct {
 }
 
 // Register is idempotent: it writes missing icons and adds the app to
-// view.json only when it is not already listed. view.json is backed up, the
+// view.json only when it is not already listed (with Replace it rewrites both: see Config). view.json is backed up, the
 // patched content is validated as JSON, and the file is replaced atomically.
 func Register(c Config) (Result, error) {
 	name := strings.TrimSuffix(filepath.Base(c.Exe), ".app")
 	res := Result{Key: "U_" + name}
 
-	if err := writeIcons(c, name); err != nil {
+	if err := writeIcons(c, name, c.Replace); err != nil {
 		return res, fmt.Errorf("icons: %w", err)
 	}
 
@@ -62,9 +67,13 @@ func Register(c Config) (Result, error) {
 
 	var patched string
 	if regexp.MustCompile(`"` + regexp.QuoteMeta(res.Key) + `"\s*:`).MatchString(text) {
-		// Already registered: only repair a wrong launch path (an earlier
-		// version wrote a relative one, which the desktop cannot start).
-		patched, err = fixPath(text, res.Key, launchPath(c))
+		// Already registered: repair a wrong launch path (an earlier version wrote a relative
+		// one, which the desktop cannot start) or, for an install, take the whole entry anew.
+		if c.Replace {
+			patched, err = replaceEntry(text, res.Key, entry(c, name), c.Group)
+		} else {
+			patched, err = fixPath(text, res.Key, launchPath(c))
+		}
 		if err != nil {
 			return res, err
 		}
@@ -173,6 +182,32 @@ func entry(c Config, name string) string {
         }`, name, launchPath(c), title, icon(name+".bmp"), icon(name+"_f.bmp"))
 }
 
+// replaceEntry puts def in the place of the existing entry of key, keeping its position, and makes
+// sure the key is in the group's apps array (an old entry may have lost it).
+func replaceEntry(text, key, def, group string) (string, error) {
+	loc := regexp.MustCompile(`"` + regexp.QuoteMeta(key) + `"\s*:\s*\{`).FindStringIndex(text)
+	if loc == nil { // the key is only in an apps array: there is no entry to replace
+		return patch(text, key, def, group)
+	}
+	end, ok := closingBrace(text, loc[1]-1)
+	if !ok {
+		return "", fmt.Errorf("view.json: entry %s is not closed", key)
+	}
+	object := def[strings.Index(def, "{"):]
+	text = text[:loc[1]-1] + object + text[end+1:]
+	if !regexp.MustCompile(`"` + regexp.QuoteMeta(key) + `"\s*[,\]]`).MatchString(text) {
+		var err error
+		if text, err = addToGroup(text, key, group); err != nil {
+			return "", err
+		}
+	}
+	var v interface{}
+	if err := json.Unmarshal([]byte(text), &v); err != nil {
+		return "", fmt.Errorf("patched view.json would be invalid: %w", err)
+	}
+	return text, nil
+}
+
 var reApps = regexp.MustCompile(`("applications"\s*:\s*\{)(\s*\})?`)
 
 // patch inserts def into "applications" and key into the group's "apps" array,
@@ -188,8 +223,21 @@ func patch(text, key, def, group string) (string, error) {
 		text = text[:m[3]] + def + "," + text[m[3]:]
 	}
 
+	text, err := addToGroup(text, key, group)
+	if err != nil {
+		return "", err
+	}
+	var v interface{}
+	if err := json.Unmarshal([]byte(text), &v); err != nil {
+		return "", fmt.Errorf("patched view.json would be invalid: %w", err)
+	}
+	return text, nil
+}
+
+// addToGroup lists key in the apps array of the group.
+func addToGroup(text, key, group string) (string, error) {
 	g := regexp.MustCompile(`("title"\s*:\s*"` + regexp.QuoteMeta(group) + `"[^\]]*?"apps"\s*:\s*\[)(\s*\])?`)
-	m = g.FindStringSubmatchIndex(text)
+	m := g.FindStringSubmatchIndex(text)
 	if m == nil {
 		return "", fmt.Errorf("group %q with an apps array not found in view.json", group)
 	}
@@ -199,22 +247,17 @@ func patch(text, key, def, group string) (string, error) {
 	} else {
 		text = text[:m[3]] + item + "," + text[m[3]:]
 	}
-
-	var v interface{}
-	if err := json.Unmarshal([]byte(text), &v); err != nil {
-		return "", fmt.Errorf("patched view.json would be invalid: %w", err)
-	}
 	return text, nil
 }
 
-func writeIcons(c Config, name string) error {
+func writeIcons(c Config, name string, replace bool) error {
 	dir := filepath.Join(c.Root, "applications", "icons")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 	for suffix, focused := range map[string]bool{"": false, "_f": true} {
 		p := filepath.Join(dir, name+suffix+".bmp")
-		if _, err := os.Stat(p); err == nil {
+		if _, err := os.Stat(p); err == nil && !replace {
 			continue
 		}
 		f, err := os.Create(p)

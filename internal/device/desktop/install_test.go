@@ -5,6 +5,7 @@ import (
 	"image"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -134,5 +135,69 @@ func TestRegisterMissingGroupWritesNothing(t *testing.T) {
 	}
 	if data, _ := os.ReadFile(p); string(data) != in {
 		t.Error("view.json was modified despite the error")
+	}
+}
+
+// An install replaces what an older version registered: title, icons and path come from the new
+// registration, the position in the file and every other app stay, and doing it again changes nothing.
+func TestInstallReplacesAnOlderEntryAndItsIcons(t *testing.T) {
+	orig, _ := os.ReadFile("testdata/view.json")
+	c, p := setup(t, string(orig))
+	if _, err := Register(c); err != nil {
+		t.Fatal(err)
+	}
+	cur, _ := os.ReadFile(p)
+	old := strings.Replace(string(cur), `"title": "Hello Go"`, `"title": "Old name"`, 1)
+	old = strings.Replace(old, `"path": "applications/icons/hello.bmp"`, `"path": "applications/icons/gone.bmp"`, 1)
+	if old == string(cur) {
+		t.Fatal("test setup: nothing to age")
+	}
+	os.WriteFile(p, []byte(old), 0o644)
+	iconFile := filepath.Join(c.Root, "applications", "icons", "hello.bmp")
+	os.WriteFile(iconFile, []byte("an old icon"), 0o644)
+
+	if res, err := Register(c); err != nil || res.Changed {
+		t.Fatalf("a plain registration keeps what is listed: %+v %v", res, err)
+	}
+	c.Replace = true
+	res, err := Register(c)
+	if err != nil || !res.Changed {
+		t.Fatalf("an install must replace the entry: %+v %v", res, err)
+	}
+	now, _ := os.ReadFile(p)
+	if string(now) != string(cur) {
+		t.Errorf("the entry must be what a fresh registration writes, in the same place:\n%s", now)
+	}
+	if data, _ := os.ReadFile(iconFile); string(data) == "an old icon" {
+		t.Error("the icon file must be written again")
+	}
+	if res, err := Register(c); err != nil || res.Changed {
+		t.Errorf("installing twice changes nothing more: %+v %v", res, err)
+	}
+}
+
+func TestInstallPutsBackAnAppThatLostItsPlaceInTheGroup(t *testing.T) {
+	orig, _ := os.ReadFile("testdata/view.json")
+	c, p := setup(t, string(orig))
+	if _, err := Register(c); err != nil {
+		t.Fatal(err)
+	}
+	cur, _ := os.ReadFile(p)
+	lost := regexp.MustCompile(`\s*"U_hello"\s*,`).ReplaceAllString(string(cur), "")
+	if strings.Count(lost, `"U_hello"`) != 1 { // only the entry key is left
+		t.Fatalf("test setup: %d keys", strings.Count(lost, `"U_hello"`))
+	}
+	os.WriteFile(p, []byte(lost), 0o644)
+	c.Replace = true
+	if _, err := Register(c); err != nil {
+		t.Fatal(err)
+	}
+	now, _ := os.ReadFile(p)
+	if strings.Count(string(now), `"U_hello"`) != 2 {
+		t.Errorf("the app must be in the group again:\n%s", now)
+	}
+	var v interface{}
+	if err := json.Unmarshal(now, &v); err != nil {
+		t.Errorf("invalid json: %v", err)
 	}
 }
