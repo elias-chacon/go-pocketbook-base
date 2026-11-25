@@ -62,6 +62,9 @@ type Config struct {
 	// After runs f on the event loop later (platform Env.After); the catalog is fetched in the
 	// background and polled with it. Nil (tests) fetches in one go.
 	After func(d time.Duration, f func())
+	// Progress is how far the background fetch of the catalog (and its icons) got; the home shows a
+	// bar while it runs (nil: no bar, a fetch is silent).
+	Progress *domain.Progress
 	// Installer installs (or updates) an app of the catalog (nil: it cannot be done).
 	Installer domain.Installer
 	// Uninstaller removes an app and all its data (nil: the Remove action is not offered).
@@ -85,6 +88,9 @@ type Config struct {
 const (
 	catalogPoll  = 2 * time.Second
 	catalogPolls = 90
+	// barPoll is how often the bar is looked at while the catalog comes; the wait is the same
+	// catalogPoll * catalogPolls.
+	barPoll = 400 * time.Millisecond
 )
 
 // Home is the main screen: a paged grid of every app of the ecosystem (the installed ones and the
@@ -99,12 +105,15 @@ type Home struct {
 	tiles    []domain.Tile    // what the grid pages through: the visible apps that match the query
 	query    string
 	page     int
+	loading  bool // the catalog is being fetched: the bar shows
+	failed   bool // the last fetch failed
 
 	root            *widget.Panel
 	settings        *settingsForm // non-nil while the settings screen is showing
 	search          *widget.Input
 	body            *widget.Panel
 	indicator, note *widget.Label
+	bar             *widget.Progress
 	prev, next      *widget.Button
 }
 
@@ -257,7 +266,17 @@ func (h *Home) fetchCatalog() {
 	}
 	res := &catalogResult{}
 	go func() { res.set(h.cfg.Catalog.List(lang)) }()
+	h.loading = true
+	h.Refresh() // the bar is on the screen from the first frame
 	h.pollCatalog(res, lang, 0)
+}
+
+// pollEvery is the wait between two looks at the fetch: short when a bar is moving.
+func (h *Home) pollEvery() time.Duration {
+	if h.cfg.Progress != nil {
+		return barPoll
+	}
+	return catalogPoll
 }
 
 func (h *Home) pollCatalog(res *catalogResult, lang string, n int) {
@@ -265,21 +284,36 @@ func (h *Home) pollCatalog(res *catalogResult, lang string, n int) {
 	switch {
 	case done && lang == h.cfg.Tr.Lang():
 		h.catalogDone(list, err)
-	case !done && n < catalogPolls:
-		h.cfg.After(catalogPoll, func() { h.pollCatalog(res, lang, n+1) })
+	case !done && n < catalogPolls*int(catalogPoll/h.pollEvery()):
+		h.moveBar()
+		h.cfg.After(h.pollEvery(), func() { h.pollCatalog(res, lang, n+1) })
 	}
 }
 
 // catalogDone takes the answer of the catalog: a failure leaves what is shown as it is, and
 // while the settings screen is open the list is kept and drawn when the home comes back.
 func (h *Home) catalogDone(list []domain.Listing, err error) {
-	if err != nil {
-		return
+	h.loading, h.failed = false, err != nil
+	if err == nil {
+		h.listings = list
 	}
-	h.listings = list
 	if h.settings == nil {
 		h.Refresh()
 	}
+}
+
+// moveBar puts the progress of the fetch on the bar (and repaints it only when it moved).
+func (h *Home) moveBar() {
+	if !h.loading || h.bar == nil || h.settings != nil {
+		return
+	}
+	f, _ := h.cfg.Progress.State()
+	pct := int(f*100 + 0.5)
+	if h.bar.Value == float64(pct) {
+		return
+	}
+	h.bar.Value, h.bar.Text = float64(pct), h.cfg.Tr.T("home.loading", pct)
+	h.Doc.Invalidate()
 }
 
 // Search filters the screen by query (an empty one shows the whole home again).
@@ -320,9 +354,17 @@ func (h *Home) show() {
 	h.page = domain.ClampPage(h.page, h.Pages())
 	h.body.ClearChildren()
 
+	if h.loading {
+		h.bar = widget.NewProgress(0)
+		h.bar.ID, h.bar.Style.Width = "home-loading", widget.Pct(100)
+		h.bar.Text = h.cfg.Tr.T("home.loading", 0)
+		h.body.AppendChild(paper(h.bar))
+	}
 	tiles := h.grid().Page(h.tiles, h.page)
 	if len(tiles) == 0 {
-		h.body.AppendChild(h.muted("home-empty", h.emptyText()))
+		if !h.loading {
+			h.body.AppendChild(h.muted("home-empty", h.emptyText()))
+		}
 	} else {
 		cols := make([]widget.Track, h.grid().Columns)
 		for i := range cols {
@@ -399,6 +441,9 @@ func (h *Home) say(text string) {
 func (h *Home) emptyText() string {
 	if h.query != "" {
 		return h.cfg.Tr.T("search.none", h.query)
+	}
+	if h.failed {
+		return h.cfg.Tr.T("home.failed")
 	}
 	return h.cfg.Tr.T("home.empty")
 }

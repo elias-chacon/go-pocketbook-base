@@ -34,6 +34,7 @@ O `apps/launcher` é o App Launcher do ecossistema: a tela inicial dos apps feit
   (96 a 240), o **idioma** (compartilhado por todos os apps: os outros o leem ao abrir) e uma **imagem de fundo**, escolhida entre as imagens
   (PNG, JPG, GIF, BMP) que a pessoa copiou para `applications/backgrounds` no leitor. As preferências ficam em `applications/.pbgo/launcher.json`; a imagem
   é reduzida à tela ao carregar, e os blocos mantêm o fundo branco para continuar legíveis sobre ela.
+- **O catálogo mais recente chega com uma barra de progresso**: assim que o Launcher abre, uma barra no topo da grade acompanha a busca (a release, o `catalog.json`, depois um passo por ícone; `domain.Progress`, lido no laço de eventos a cada 0,4 s enquanto a rede roda numa goroutine) e some quando os apps chegam. Sem apps instalados e sem rede a tela pede para conectar ao Wi-Fi, não para copiar arquivos. Ainda não visto no aparelho.
 - Textos em português (pt-BR) com inglês como fallback, no idioma escolhido nas configurações compartilhadas.
 
 ## Como um app é executado, e como volta

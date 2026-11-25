@@ -1,6 +1,8 @@
 {
   "home.title": "Meus aplicativos",
-  "home.empty": "Nenhum aplicativo instalado ainda.\nCopie um arquivo .app para a pasta applications do aparelho e abra-o uma vez: ele aparece aqui.",
+  "home.empty": "Nenhum aplicativo instalado.\nConecte o leitor ao Wi-Fi para baixar o catálogo de aplicativos.",
+  "home.loading": "Baixando o catálogo mais recente… %d%%",
+  "home.failed": "Não foi possível baixar o catálogo.\nConfira o Wi-Fi e abra o Launcher de novo.",
   "home.page": "%d / %d",
   "home.open.failed": "Não foi possível abrir “%s”: %s",
   "search.placeholder": "Buscar aplicativos…",

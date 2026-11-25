@@ -68,6 +68,7 @@ type Catalog struct {
 	Client      Doer
 	Owner, Repo string
 	BaseURL     string           // DefaultBaseURL when empty
+	Progress    *domain.Progress // optional: gets a step for the release and one for the catalog
 	Now         func() time.Time // time.Now when nil (tests)
 
 	mu    sync.Mutex
@@ -97,6 +98,7 @@ func (c *Catalog) List(lang string) ([]domain.Listing, error) {
 	if err != nil {
 		return nil, err
 	}
+	c.Progress.Step()
 	urls := map[string]string{}
 	for _, a := range rel.Assets {
 		urls[a.Name] = a.URL
@@ -109,6 +111,7 @@ func (c *Catalog) List(lang string) ([]domain.Listing, error) {
 	if err != nil {
 		return nil, err
 	}
+	c.Progress.Step()
 	var index Index
 	if err := json.Unmarshal(raw, &index); err != nil {
 		return nil, fmt.Errorf("github: unexpected %s: %w", CatalogAsset, err)

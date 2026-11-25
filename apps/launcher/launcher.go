@@ -61,8 +61,9 @@ func newLauncher(env platform.Env) platform.App {
 	// The catalog: GitHub, with the icons fetched along (so they are in the cache when the grid is
 	// drawn) and the last answer kept on the reader (so the apps that are not installed show at
 	// once, and offline).
+	progress := &domain.Progress{} // what the home shows while the latest catalog comes
 	catalog := &catalogcache.Catalog{
-		Inner: iconPrefetch{inner: &loggedCatalog{inner: &github.Catalog{Client: client, Owner: repoOwner, Repo: repoName}}, icons: icons},
+		Inner: iconPrefetch{inner: &loggedCatalog{inner: &github.Catalog{Client: client, Owner: repoOwner, Repo: repoName, Progress: progress}}, icons: icons, progress: progress},
 		Path:  filepath.Join(root, "applications", ".pbgo", "cache", "catalog.json"),
 	}
 	return &launcher{home: presentation.NewHome(presentation.Config{
@@ -80,7 +81,7 @@ func newLauncher(env platform.Env) platform.App {
 		Notice:  env.Notice,
 		Version: env.Version, Repository: repoOwner + "/" + repoName,
 		SystemInfo: func() []presentation.Fact { return systemFacts(env, root) },
-		Catalog:    catalog, After: env.After,
+		Catalog:    catalog, After: env.After, Progress: progress,
 		CachedCatalog: func(lang string) []domain.Listing {
 			list, _ := catalog.Cached(lang)
 			return list
@@ -130,13 +131,18 @@ func formatBytes(n uint64) string {
 // iconPrefetch fetches the icon of every listing after the catalog answers, so the grid finds
 // them in the cache. It runs in the background fetch of the home screen, never on the event loop.
 type iconPrefetch struct {
-	inner domain.Catalog
-	icons iconcache.Cache
+	inner    domain.Catalog
+	icons    iconcache.Cache
+	progress *domain.Progress // 2 steps for the catalog (the inner one reports them), one per icon
 }
 
 func (c iconPrefetch) List(lang string) ([]domain.Listing, error) {
+	c.progress.Begin(2)
+	defer c.progress.End()
 	list, err := c.inner.List(lang)
+	c.progress.Add(len(list))
 	for _, l := range list {
+		c.progress.Step()
 		if _, ok := c.icons.Cached(l); !ok {
 			if _, ierr := c.icons.Image(l); ierr != nil && ierr != iconcache.ErrNoIcon {
 				platform.Errorf("icon %s: %v", l.ID, ierr)

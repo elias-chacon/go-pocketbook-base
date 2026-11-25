@@ -1,6 +1,8 @@
 {
   "home.title": "My apps",
-  "home.empty": "No apps installed yet.\nCopy an .app file to the applications folder of the reader and open it once: it shows up here.",
+  "home.empty": "No apps installed.\nConnect the reader to Wi-Fi to download the app catalog.",
+  "home.loading": "Downloading the latest catalog… %d%%",
+  "home.failed": "Could not download the catalog.\nCheck the Wi-Fi and open the Launcher again.",
   "home.page": "%d / %d",
   "home.open.failed": "Could not open “%s”: %s",
   "search.placeholder": "Search apps…",

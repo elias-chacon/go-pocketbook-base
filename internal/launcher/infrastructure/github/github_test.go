@@ -8,6 +8,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"go-pocketbook-base/internal/launcher/domain"
 )
 
 const helloManifest = `{"id":"hello","title":{"pt-BR":"Olá","en":"Hello"},"description":{"pt-BR":"Vitrine","en":"Showcase"}}`
@@ -168,3 +170,17 @@ func TestAppAssetsAreZipsAndIconsArePNGs(t *testing.T) {
 type doerFunc func(*http.Request) (*http.Response, error)
 
 func (f doerFunc) Do(r *http.Request) (*http.Response, error) { return f(r) }
+
+func TestTheCatalogReportsOneStepForTheReleaseAndOneForTheCatalog(t *testing.T) {
+	var hits int32
+	srv := server(t, &hits, true)
+	var p domain.Progress
+	p.Begin(2)
+	c := &Catalog{Client: srv.Client(), Owner: "o", Repo: "r", BaseURL: srv.URL, Progress: &p}
+	if _, err := c.List("en"); err != nil {
+		t.Fatal(err)
+	}
+	if f, _ := p.State(); f != 1 {
+		t.Errorf("after the release and the catalog.json the 2 steps are done, got %v", f)
+	}
+}

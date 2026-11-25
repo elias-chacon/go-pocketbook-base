@@ -34,6 +34,7 @@ other (it follows the [contract](13-apps-and-the-contract.md)) and the compositi
   (96 to 240), the **language** (shared by every app: the others read it when they start) and a **background image**, chosen among the pictures
   (PNG, JPG, GIF, BMP) the person copied to `applications/backgrounds` on the reader. The preferences are kept in `applications/.pbgo/launcher.json`; a
   picture is shrunk to the screen when loaded, and the tiles keep a white background so they stay readable over it.
+- **The latest catalog comes with a progress bar**: as soon as the Launcher opens, a bar at the top of the grid follows the fetch (the release, `catalog.json`, then one step per icon; `domain.Progress`, read on the event loop every 0.4 s while the network runs in a goroutine) and goes away when the apps arrive. With no apps installed and no network the screen says to connect to Wi-Fi, it does not ask to copy files. Not yet seen on the reader.
 - Texts in Portuguese (pt-BR) with English as the fallback, in the language chosen in the shared settings.
 
 ## How an app is run, and how it comes back
