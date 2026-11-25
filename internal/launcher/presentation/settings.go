@@ -49,6 +49,7 @@ func (h *Home) CloseSettings() {
 		return
 	}
 	h.settings = nil
+	h.Refresh() // what came while the settings were open (the catalog, the end of the bar) shows now
 	h.show2(h.root)
 }
 

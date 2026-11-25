@@ -157,3 +157,49 @@ func TestALongMessageWrapsAndLeavesTheButtonsOnTheScreen(t *testing.T) {
 		t.Errorf("the message must wrap inside the screen: %+v", note)
 	}
 }
+
+func TestTheDownloadEndsQuietlyWhileTheSettingsAreOpenAndTheBarIsNotLeftBehind(t *testing.T) {
+	cat := slowCatalog{release: make(chan struct{}), list: []domain.Listing{{ID: "web00", Title: "Web 00", Version: "1", AppSHA256: "x"}}}
+	var p domain.Progress
+	var lp loop
+	h := loadingHome(1, cat, &p, &lp)
+	h.Doc.Layout()
+	if find(h, "home-loading") == nil {
+		t.Fatal("the bar is up while the catalog comes")
+	}
+	h.OpenSettings()
+	close(cat.release) // the download ends with the settings open
+	settle(&lp, func() bool { return false })
+	h.CloseSettings()
+	h.Doc.Layout()
+	if find(h, "home-loading") != nil {
+		t.Error("the bar must not stay on the home after the download ended")
+	}
+	if len(tiles(h)) != 2 {
+		t.Errorf("the catalog that came meanwhile shows: %d tiles", len(tiles(h)))
+	}
+}
+
+func TestComingBackFromTheSettingsInTheMiddleOfTheDownloadKeepsTheBarMoving(t *testing.T) {
+	cat := slowCatalog{release: make(chan struct{}), list: []domain.Listing{{ID: "web00", Title: "Web 00", Version: "1", AppSHA256: "x"}}}
+	var p domain.Progress
+	var lp loop
+	h := loadingHome(1, cat, &p, &lp)
+	for _, on := p.State(); !on; _, on = p.State() { // the startup began its job
+		time.Sleep(time.Millisecond)
+	}
+	p.Add(1) // 3 steps in all
+	p.Step()
+	p.Step()
+	h.OpenSettings()
+	h.CloseSettings()
+	h.Doc.Layout()
+	bar, ok := find(h, "home-loading").(*widget.Progress)
+	if !ok || bar.Value != 67 {
+		t.Fatalf("the bar comes back where the download is: %v %v", ok, bar)
+	}
+	close(cat.release)
+	if !settle(&lp, func() bool { return find(h, "home-loading") == nil }) {
+		t.Error("and goes when the download ends")
+	}
+}

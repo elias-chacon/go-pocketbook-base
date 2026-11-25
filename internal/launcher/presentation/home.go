@@ -315,6 +315,12 @@ func (h *Home) startupDone(out application.Outcome) {
 	}
 }
 
+// barPercent is how far the startup is, 0..100.
+func (h *Home) barPercent() int {
+	f, _ := h.cfg.Progress.State()
+	return int(f*100 + 0.5)
+}
+
 // barText is the title of the bar: what the startup is doing now, in real time, and how far it is.
 func (h *Home) barText(pct int) string {
 	phase, detail := h.cfg.Progress.Phase()
@@ -332,8 +338,7 @@ func (h *Home) moveBar() {
 	if !h.loading || h.bar == nil || h.settings != nil {
 		return
 	}
-	f, _ := h.cfg.Progress.State()
-	pct := int(f*100 + 0.5)
+	pct := h.barPercent()
 	if text := h.barText(pct); h.bar.Value == float64(pct) && h.bar.Text == text {
 		return
 	}
@@ -382,7 +387,8 @@ func (h *Home) show() {
 	if h.loading {
 		h.bar = widget.NewProgress(0)
 		h.bar.ID, h.bar.Style.Width = "home-loading", widget.Pct(100)
-		h.bar.Text = h.barText(0)
+		pct := h.barPercent()
+		h.bar.Value, h.bar.Text = float64(pct), h.barText(pct)
 		h.body.AppendChild(paper(h.bar))
 	}
 	tiles := h.grid().Page(h.tiles, h.page)
