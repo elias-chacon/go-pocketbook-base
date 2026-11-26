@@ -109,7 +109,7 @@ func (m *mail) signIn() {
 	m.screen = nil
 	accountsui.NewSignIn(accountsui.SignInConfig{
 		Width: m.env.Width, Height: m.env.Height, Doc: m.doc, Chrome: platform.Chrome(m.env), Tr: accountsui.NewTranslator(m.env.Lang),
-		Accounts: m.accounts, Authorizer: m.auth, Google: m.google, OAuthSetup: filepath.Join(m.dir, oauthFile), OnDone: m.open,
+		Accounts: m.accounts, Authorizer: m.auth, NoGoogle: true, OAuthSetup: filepath.Join(m.dir, oauthFile), OnDone: m.open,
 	})
 	m.doc.ResetFrame()
 }

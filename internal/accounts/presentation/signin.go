@@ -54,6 +54,8 @@ type SignInConfig struct {
 	Authorizer domain.Authorizer
 	// Google signs in to Google (Gmail, Calendar, Tasks) by authorization code (nil: not configured).
 	Google domain.CodeAuthorizer
+	// NoGoogle hides the "Google (OAuth)" choice: Gmail then goes by address and app password.
+	NoGoogle bool
 	// OAuthSetup tells where the client id of the app registration goes, shown when
 	// Authorizer is nil.
 	OAuthSetup string
@@ -147,11 +149,14 @@ func (s *SignIn) showChooser() {
 	items := []widget.Widget{
 		s.heading("signin.title"), intro,
 		s.button("signin-outlook", s.t(keyOutlook), func() { s.choose(providerOutlook) }),
-		s.button("signin-google", s.t("signin.google"), func() { s.choose(providerGoogle) }),
+	}
+	if !s.cfg.NoGoogle {
+		items = append(items, s.button("signin-google", s.t("signin.google"), func() { s.choose(providerGoogle) }))
+	}
+	items = append(items,
 		s.button("signin-gmail", s.t("signin.gmail"), func() { s.choose(providerGmail) }),
 		s.button("signin-icloud", s.t("signin.icloud"), func() { s.choose(providerICloud) }),
-		s.button("signin-other", s.t("signin.other"), func() { s.choose(providerOther) }),
-	}
+		s.button("signin-other", s.t("signin.other"), func() { s.choose(providerOther) }))
 	if s.cfg.OnCancel != nil {
 		items = append(items, s.button("signin-cancel", s.t("signin.cancel"), s.cfg.OnCancel))
 	}

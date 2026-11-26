@@ -153,13 +153,16 @@ func TestTheCalendarConnectsAGoogleOrMicrosoftAccountAndComesBack(t *testing.T) 
 	a.Document().HandlePointer(widget.PointerDown, c.X, c.Y)
 	a.Document().HandlePointer(widget.PointerUp, c.X, c.Y)
 	a.Document().Layout()
-	for _, id := range []string{"connect-email", "oauth-microsoft", "oauth-google", "connect-setup"} {
+	if a.Document().GetElementByID("oauth-google") != nil {
+		t.Error("Google's OAuth sign-in is not offered in the apps")
+	}
+	for _, id := range []string{"connect-email", "oauth-microsoft"} {
 		if a.Document().GetElementByID(id) == nil {
 			t.Fatalf("the sign-in screen lacks %s:\n%s", id, labels(a.Document()))
 		}
 	}
-	if !a.Document().GetElementByID("oauth-google").Elem().Disabled {
-		t.Error("without client ids the providers are disabled")
+	if a.Document().GetElementByID("oauth-microsoft").Elem().Disabled || a.Document().GetElementByID("connect-setup") != nil {
+		t.Error("Microsoft's client id is built in: nothing to set up")
 	}
 	cancel := a.Document().GetElementByID("connect-cancel").Elem().Bounds.Center()
 	a.Document().HandlePointer(widget.PointerDown, cancel.X, cancel.Y)

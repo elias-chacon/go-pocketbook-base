@@ -128,6 +128,8 @@ What each service keeps: Microsoft To Do syncs title, notes, done, importance, d
 
 ### The client ids (built in, `applications/.pbgo/oauth.json` overrides them)
 
+> **The apps offer only the Microsoft sign-in.** Google's OAuth sign-in stays in the library (`oauthcode`, `OAuthLogin`, `ConnectConfig.Providers`, `SignInConfig.NoGoogle`) but no app shows it: the Gmail scope is a restricted one, and for an app that is not verified by Google (a review that needs a published app, a privacy policy and, for Gmail, a paid security assessment) only the test users of the Cloud project can sign in, with tokens that last a week. Gmail goes by address and **app password** (IMAP/SMTP). Whoever has a verified Cloud project turns it on by passing `Google` and the providers to the screens.
+
 The **Microsoft** id of the project is in the code (`oauthconfig.Default`): a client id identifies the app, it is not a secret, and every installed copy signs in through the same registration (each person authorizes their own account). **Google** has no built-in id yet. The file is only for someone who registers their own app: what it sets replaces the built-in value, and what it leaves empty keeps it.
 
 ```json

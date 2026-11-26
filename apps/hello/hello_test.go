@@ -89,7 +89,7 @@ func TestTheAccountPageUsesTheRealSignInsWhenTheClientIDsExist(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := oauthProviders(env, dir, func() string { return "" })
-	if len(got) != 2 || got[0].Label != "Google" || got[1].Label != "Microsoft" || got[0].Start == nil || got[1].Start == nil {
-		t.Errorf("both providers are enabled by their client ids: %+v", got)
+	if len(got) != 1 || got[0].Label != "Microsoft" || got[0].Start == nil {
+		t.Errorf("only Microsoft is offered, enabled by its client id (Google is not offered in the apps): %+v", got)
 	}
 }

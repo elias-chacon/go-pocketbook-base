@@ -351,3 +351,22 @@ func TestGoogleSignsInByQRCodeAndAddsTheGoogleAccount(t *testing.T) {
 		t.Errorf("without a client id it says where to put it:\n%s", labels(none))
 	}
 }
+
+func TestSignInCanHideTheGoogleOAuthChoice(t *testing.T) {
+	f := &fakeRegistrar{}
+	s := NewSignIn(SignInConfig{Width: 1404, Height: 1872, Tr: NewTranslator("en"), Accounts: f, NoGoogle: true})
+	s.Doc.Layout()
+	if s.Doc.GetElementByID("signin-google") != nil {
+		t.Error("the Google (OAuth) choice is hidden")
+	}
+	for _, id := range []string{"signin-outlook", "signin-gmail", "signin-icloud", "signin-other"} {
+		if s.Doc.GetElementByID(id) == nil {
+			t.Errorf("%s stays", id)
+		}
+	}
+	with := NewSignIn(SignInConfig{Width: 1404, Height: 1872, Tr: NewTranslator("en"), Accounts: f})
+	with.Doc.Layout()
+	if with.Doc.GetElementByID("signin-google") == nil {
+		t.Error("by default the choice is there, as before")
+	}
+}

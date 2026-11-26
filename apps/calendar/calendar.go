@@ -111,13 +111,14 @@ func (a *calendar) account() string {
 	return ""
 }
 
-// connect opens the sign-in to a Google or Microsoft account (the shared accounts of the mail, tasks
-// and calendar apps).
+// connect opens the sign-in to a Microsoft account (the shared accounts of the mail, tasks and
+// calendar apps). Google's OAuth sign-in is not offered: its restricted Gmail scope needs a
+// verification only a published app can have.
 func (a *calendar) connect() {
-	microsoft, google := oauthconfig.Sources(a.dir, httpClient(a.env.HTTP))
+	microsoft, _ := oauthconfig.Sources(a.dir, httpClient(a.env.HTTP))
 	accountsui.NewConnect(accountsui.ConnectConfig{
 		Width: a.env.Width, Height: a.env.Height, Doc: a.doc, Chrome: platform.Chrome(a.env),
-		Tr: accountsui.NewTranslator(a.env.Lang), Accounts: a.accounts, Microsoft: microsoft, Google: google,
+		Tr: accountsui.NewTranslator(a.env.Lang), Accounts: a.accounts, Microsoft: microsoft, Providers: []string{accountsui.ProviderMicrosoft},
 		OAuthSetup: filepath.Join(a.dir, oauthconfig.File),
 		OnDone:     func(acc accounts.Account) { a.showScreen(a.tr.T("cal.account.done", acc.Email)) },
 		OnCancel:   func() { a.showScreen("") },

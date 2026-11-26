@@ -22,6 +22,8 @@ type ConnectConfig struct {
 	Microsoft domain.Authorizer
 	// Google signs in by authorization code, shown as a QR code (nil: not configured).
 	Google domain.CodeAuthorizer
+	// Providers are the sign-ins to offer (ProviderMicrosoft, ProviderGoogle); none means both.
+	Providers []string
 	// OAuthSetup tells where the client ids go, shown when a provider is not configured.
 	OAuthSetup string
 	OnDone     func(domain.Account)
@@ -63,7 +65,7 @@ func (c *Connect) field(id, placeholder string) *widget.Input {
 func (c *Connect) show() {
 	c.email = c.field("connect-email", c.t("signin.email"))
 	c.name = c.field("connect-name", c.t("signin.name"))
-	providers := OAuthProviders(c.cfg.Tr, OAuthSources{Microsoft: c.cfg.Microsoft, Google: c.cfg.Google}, c.register)
+	providers := OAuthProviders(c.cfg.Tr, OAuthSources{Microsoft: c.cfg.Microsoft, Google: c.cfg.Google}, c.register, c.cfg.Providers...)
 	for i := range providers {
 		if start := providers[i].Start; start != nil {
 			providers[i].Start = func() (widget.OAuthChallenge, error) {
@@ -81,7 +83,7 @@ func (c *Connect) show() {
 	head := widget.NewLabel(c.t("connect.title"))
 	head.Style.FontSize, head.Style.Bold = widget.FontTitle, true
 	items := []widget.Widget{head, c.email, c.name, c.login.Root}
-	if c.cfg.Microsoft == nil || c.cfg.Google == nil {
+	if c.offers(ProviderMicrosoft) && c.cfg.Microsoft == nil || c.offers(ProviderGoogle) && c.cfg.Google == nil {
 		hint := widget.NewLabel(c.t("connect.setup", c.cfg.OAuthSetup))
 		hint.ID = "connect-setup"
 		hint.Style.FontSize, hint.Style.Color = widget.FontSmall, widget.Muted
@@ -101,6 +103,19 @@ func (c *Connect) show() {
 	c.Doc.SetRoot(c.cfg.Chrome.Wrap(c.Doc, root))
 	c.Doc.ResetFrame()
 	c.Doc.Invalidate()
+}
+
+// offers reports whether a provider is one of those the screen shows.
+func (c *Connect) offers(id string) bool {
+	if len(c.cfg.Providers) == 0 {
+		return true
+	}
+	for _, p := range c.cfg.Providers {
+		if p == id {
+			return true
+		}
+	}
+	return false
 }
 
 // register adds the account with the tokens the provider gave.

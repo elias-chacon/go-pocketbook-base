@@ -114,13 +114,14 @@ func (s service) Run() (application.SyncResult, error) {
 	return application.Sync{AccountID: localAccount, Store: s.app.store.Raw(), Log: s.app.store, Backend: backend}.Run()
 }
 
-// Connect implements presentation.Syncer: the sign-in to Microsoft To Do or Google Tasks.
+// Connect implements presentation.Syncer: the sign-in to Microsoft To Do (Google's OAuth sign-in is
+// not offered: its restricted scopes need a verification only a published app can have).
 func (s service) Connect() {
 	a := s.app
 	accountsui.NewConnect(accountsui.ConnectConfig{
 		Width: a.env.Width, Height: a.env.Height, Doc: a.doc, Chrome: platform.Chrome(a.env),
 		Tr: accountsui.NewTranslator(a.env.Lang), Accounts: a.accounts,
-		Microsoft: a.auth.microsoft, Google: a.auth.google,
+		Microsoft: a.auth.microsoft, Providers: []string{accountsui.ProviderMicrosoft},
 		OAuthSetup: filepath.Join(a.dir, oauthconfig.File),
 		OnDone: func(acc accounts.Account) {
 			_ = writeLink(a.dir, link{Account: acc.ID})

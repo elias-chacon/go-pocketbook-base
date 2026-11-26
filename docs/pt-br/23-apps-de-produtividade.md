@@ -128,6 +128,8 @@ O que cada serviço guarda: o Microsoft To Do sincroniza título, notas, conclu�
 
 ### Os client ids (embutidos; `applications/.pbgo/oauth.json` os substitui)
 
+> **Os apps oferecem só o login da Microsoft.** O login OAuth do Google continua na biblioteca (`oauthcode`, `OAuthLogin`, `ConnectConfig.Providers`, `SignInConfig.NoGoogle`), mas nenhum app o mostra: o escopo do Gmail é restrito, e para um app não verificado pelo Google (uma revisão que exige app publicado, política de privacidade e, para o Gmail, uma avaliação de segurança paga) só os usuários de teste do projeto no Cloud conseguem entrar, com tokens que duram uma semana. O Gmail entra por endereço e **senha de app** (IMAP/SMTP). Quem tem um projeto verificado liga o Google passando `Google` e os provedores às telas.
+
 O id da **Microsoft** do projeto está no código (`oauthconfig.Default`): um client id identifica o app, não é segredo, e toda cópia instalada entra pelo mesmo registro (cada pessoa autoriza a própria conta). O **Google** ainda não tem id embutido. O arquivo é só para quem registra o próprio app: o que ele define substitui o valor embutido, e o que deixa vazio mantém o embutido.
 
 ```json

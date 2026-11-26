@@ -164,3 +164,21 @@ func TestConnectShowsRegistrationAndStartFailures(t *testing.T) {
 	f.tap(t, "oauth-cancel")
 	f.tap(t, "connect-cancel")
 }
+
+func TestConnectOffersOnlyTheProvidersItIsToldTo(t *testing.T) {
+	reg := &fakeRegistrar{}
+	c := NewConnect(ConnectConfig{Width: 1404, Height: 1872, Tr: NewTranslator("en"), Accounts: reg, OAuthSetup: "/x/oauth.json",
+		Microsoft: &fakeAuth{}, Providers: []string{ProviderMicrosoft}})
+	c.Doc.Layout()
+	if c.Doc.GetElementByID("oauth-google") != nil || c.Doc.GetElementByID("oauth-microsoft") == nil {
+		t.Error("only Microsoft is shown")
+	}
+	if c.Doc.GetElementByID("connect-setup") != nil {
+		t.Error("Google is not offered, so its missing client id needs no explanation")
+	}
+	all := NewConnect(ConnectConfig{Width: 1404, Height: 1872, Tr: NewTranslator("en"), Accounts: reg, Microsoft: &fakeAuth{}})
+	all.Doc.Layout()
+	if all.Doc.GetElementByID("oauth-google") == nil {
+		t.Error("with no list both providers are offered, as before")
+	}
+}
