@@ -136,13 +136,19 @@ func TestDownloadReadAndCloseThenEverythingIsStillThereWhenReopened(t *testing.T
 
 	// the next run: the same text, progress, place and settings, and no network at all
 	catalogBase = "http://127.0.0.1:1/never"
+	checkTheNextRun(t, dir)
+}
+
+// checkTheNextRun opens the app again over the same folder, with no network, and checks what was kept.
+func checkTheNextRun(t *testing.T, dir string) {
+	t.Helper()
 	env := testEnv(t, nil)
 	b := newBibleAt(env, dir, noSpeech{})
 	t.Cleanup(b.close)
 	if b.screen == nil {
 		t.Fatal("no screen after reopening")
 	}
-	d = b.Document()
+	d := b.Document()
 	d.Layout()
 	got := b.screen.Prefs()
 	if got.FontSize != 44 || !got.Invert || got.Font != "mono" || got.Version != "almeida-livre" {

@@ -111,13 +111,9 @@ func (c Client) Chapters(version string, books []domain.Book, refs []domain.Chap
 		if end > len(refs) {
 			end = len(refs)
 		}
-		names := make([]string, 0, end-start)
-		for _, r := range refs[start:end] {
-			slug, ok := slugs[r.Book]
-			if !ok {
-				return nil, fmt.Errorf("midvash: unknown book %d", r.Book)
-			}
-			names = append(names, fmt.Sprintf("%s %d", slug, r.Chapter))
+		names, err := passageNames(slugs, refs[start:end])
+		if err != nil {
+			return nil, err
 		}
 		query := url.Values{"refs": {strings.Join(names, ",")}, "version": {version}}
 		var a passagesAnswer
@@ -125,22 +121,38 @@ func (c Client) Chapters(version string, books []domain.Book, refs []domain.Chap
 			return nil, err
 		}
 		for _, p := range a.Data {
-			book, ok := ids[p.Book]
-			if !ok || len(p.Verses) == 0 {
-				continue // a chapter this version does not have
+			if book, ok := ids[p.Book]; ok && len(p.Verses) > 0 { // else: a chapter this version does not have
+				out = append(out, chapterOf(version, book, p.Chapter, p.Verse, p.Verses))
 			}
-			first := p.Verse
-			if first < 1 {
-				first = 1
-			}
-			ch := domain.ChapterText{Version: version, Book: book, Chapter: p.Chapter, Verses: make([]domain.Verse, 0, len(p.Verses))}
-			for i, text := range p.Verses {
-				if text = strings.TrimSpace(text); text != "" {
-					ch.Verses = append(ch.Verses, domain.Verse{Number: first + i, Text: text})
-				}
-			}
-			out = append(out, ch)
 		}
 	}
 	return out, nil
+}
+
+// passageNames writes the references of a batch the way the API asks for them ("john 3").
+func passageNames(slugs map[int]string, refs []domain.ChapterRef) ([]string, error) {
+	names := make([]string, 0, len(refs))
+	for _, r := range refs {
+		slug, ok := slugs[r.Book]
+		if !ok {
+			return nil, fmt.Errorf("midvash: unknown book %d", r.Book)
+		}
+		names = append(names, fmt.Sprintf("%s %d", slug, r.Chapter))
+	}
+	return names, nil
+}
+
+// chapterOf builds a chapter from the verses of the API: they start at verse first (1 when the
+// answer does not say) and a blank one is left out.
+func chapterOf(version string, book, chapter, first int, texts []string) domain.ChapterText {
+	if first < 1 {
+		first = 1
+	}
+	ch := domain.ChapterText{Version: version, Book: book, Chapter: chapter, Verses: make([]domain.Verse, 0, len(texts))}
+	for i, text := range texts {
+		if text = strings.TrimSpace(text); text != "" {
+			ch.Verses = append(ch.Verses, domain.Verse{Number: first + i, Text: text})
+		}
+	}
+	return ch
 }

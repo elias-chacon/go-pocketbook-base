@@ -151,22 +151,12 @@ func TestADownloadRunsInStepsWithABarAndTheScreenStaysUsable(t *testing.T) {
 	if findID(s, "bible") == nil {
 		t.Fatal("the Bible page opens while the task runs")
 	}
-	steps := 0
-	for w.runNext() {
-		steps++
-		if steps == 3 {
+	w.drain(t, func(step int) {
+		if step == 3 {
 			s.Show(0) // and goes Home in the middle of the download
-			if !s.Busy() || s.strip.Hidden {
-				t.Fatal("the strip is on every page")
-			}
-			if s.stripBar.Value <= 0 || !strings.Contains(s.stripLabel.Text, "Baixando") {
-				t.Errorf("the bar moves: %v %q", s.stripBar.Value, s.stripLabel.Text)
-			}
+			checkTheBarFromHome(t, s)
 		}
-		if steps > 50 {
-			t.Fatal("never ends")
-		}
-	}
+	})
 	if s.Busy() || !s.strip.Hidden {
 		t.Error("the strip goes away at the end")
 	}
@@ -257,5 +247,29 @@ func TestThePickersOfLanguageAndVersionAreComboBoxesThatOpenAPopupNotAWindow(t *
 	}
 	if box.SearchPlaceholder != "Buscar" || box.NoMatchText == "" {
 		t.Errorf("the search texts of a long list are the app's: %q %q", box.SearchPlaceholder, box.NoMatchText)
+	}
+}
+
+// drain runs what the screen queued until nothing is left, calling each with the step number.
+func (w *world) drain(t *testing.T, each func(step int)) {
+	t.Helper()
+	for steps := 1; w.runNext(); steps++ {
+		if each != nil {
+			each(steps)
+		}
+		if steps > 50 {
+			t.Fatal("never ends")
+		}
+	}
+}
+
+// checkTheBarFromHome is what the strip shows while a download runs and the Home is open.
+func checkTheBarFromHome(t *testing.T, s *Screen) {
+	t.Helper()
+	if !s.Busy() || s.strip.Hidden {
+		t.Fatal("the strip is on every page")
+	}
+	if s.stripBar.Value <= 0 || !strings.Contains(s.stripLabel.Text, "Baixando") {
+		t.Errorf("the bar moves: %v %q", s.stripBar.Value, s.stripLabel.Text)
 	}
 }

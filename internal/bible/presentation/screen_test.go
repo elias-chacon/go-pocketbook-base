@@ -330,6 +330,17 @@ func TestReadingFlowBookChapterVerseThenTheVersesOnScreenCountAsRead(t *testing.
 		t.Errorf("the place is remembered: %+v", pos)
 	}
 
+}
+
+func TestTurningThePageAndResumingAcrossRunsAndChapters(t *testing.T) {
+	w := newWorld(t)
+	w.ready()
+	s := w.screen("pt-BR")
+	s.Show(1)
+	tap(t, s, "book-43")
+	tap(t, s, "chapter-2")
+	tap(t, s, "verse-17")
+
 	// turning the page counts the verses of the next page too
 	s.OpenReader(1, 3, 1)
 	read, _ := w.bible.Progress("almeida-livre")
