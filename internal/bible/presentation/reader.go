@@ -19,8 +19,10 @@ const pagerFooter = 72.0
 // OpenReader opens the text of a chapter at a verse. The verses on the screen count as read.
 func (s *Screen) OpenReader(book, chapter, verse int) {
 	s.view, s.book, s.chapter, s.verse = viewReader, book, chapter, verse
-	if err := s.cfg.Bible.Remember(domain.Position{Book: book, Chapter: chapter, Verse: verse}); err != nil {
-		s.fail(err)
+	if verse != endOfChapter { // that one is no place: the verses on the screen set it
+		if err := s.cfg.Bible.Remember(domain.Position{Book: book, Chapter: chapter, Verse: verse}); err != nil {
+			s.fail(err)
+		}
 	}
 	s.rebuildBible()
 	s.startReading()
@@ -33,12 +35,15 @@ func (s *Screen) startReading() {
 		return
 	}
 	s.Doc.Layout()
+	last := len(s.text.Verses) - 1
 	for i, v := range s.text.Verses {
 		if v.Number >= s.verse {
 			s.reader.GoToParagraph(i)
-			break
+			s.markVisible()
+			return
 		}
 	}
+	s.reader.GoToParagraph(last) // past the last verse: the last page
 	s.markVisible()
 }
 
@@ -56,10 +61,39 @@ func (s *Screen) markVisible() {
 	for i := first; i <= last && i < len(s.text.Verses); i++ {
 		numbers = append(numbers, s.text.Verses[i].Number)
 	}
+	if len(numbers) > 0 {
+		s.verse = numbers[0] // the place a new layout (a font change) goes back to
+	}
 	if err := s.cfg.Bible.Seen(s.book, s.chapter, numbers); err != nil {
 		s.fail(err)
 	}
 }
+
+// readerNext turns the page of the chapter; on its last page it goes on to the first page of the
+// next chapter (crossing into the next book), so reading never needs the list again.
+func (s *Screen) readerNext() {
+	s.Doc.Layout()
+	if s.reader.Page < s.reader.Pages()-1 {
+		s.reader.Next()
+		return
+	}
+	s.openNeighbor(1)
+}
+
+// readerPrevious turns the page back; on the first page it goes to the last page of the previous
+// chapter.
+func (s *Screen) readerPrevious() {
+	if s.reader.Page > 0 {
+		s.reader.Prev()
+		return
+	}
+	if b, c, ok := s.neighbor(-1); ok {
+		s.OpenReader(b, c, endOfChapter)
+	}
+}
+
+// endOfChapter is a verse number past any chapter: the reader opens on the last page.
+const endOfChapter = 1 << 20
 
 // readerLines is how many lines of text the reader's page holds at the size chosen.
 func (s *Screen) readerLines() int {

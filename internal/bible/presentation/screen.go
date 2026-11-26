@@ -293,9 +293,9 @@ func (s *Screen) Key(previous bool) bool {
 	}
 	if s.tabs.Current() == 1 && s.view == viewReader && s.reader != nil {
 		if previous {
-			s.reader.Prev()
+			s.readerPrevious()
 		} else {
-			s.reader.Next()
+			s.readerNext()
 		}
 		return true
 	}

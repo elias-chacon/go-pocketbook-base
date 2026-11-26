@@ -273,3 +273,68 @@ func checkTheBarFromHome(t *testing.T, s *Screen) {
 		t.Errorf("the bar moves: %v %q", s.stripBar.Value, s.stripLabel.Text)
 	}
 }
+
+// lastPage turns the pages of the reader until the last one.
+func lastPage(t *testing.T, s *Screen) {
+	t.Helper()
+	s.Doc.Layout()
+	for i := 0; s.reader.Page < s.reader.Pages()-1; i++ {
+		if i > 100 {
+			t.Fatal("the chapter never ends")
+		}
+		if !s.Key(false) {
+			t.Fatal("the key was not taken")
+		}
+	}
+}
+
+func TestTheNextKeyOnTheLastPageGoesToTheNextChapterAndThePreviousOnTheFirstToTheOneBefore(t *testing.T) {
+	w := newWorld(t)
+	w.ready()
+	s := w.screen("pt-BR")
+	s.OpenReader(43, 1, 1)
+	lastPage(t, s)
+	if s.chapter != 1 {
+		t.Fatalf("still in the chapter: %d", s.chapter)
+	}
+	s.Key(false)
+	if s.book != 43 || s.chapter != 2 || s.reader == nil || s.reader.Page != 0 {
+		t.Fatalf("the next key on the last page opens the next chapter: %d:%d page %d", s.book, s.chapter, s.reader.Page)
+	}
+	pos, _ := w.bible.Resume()
+	if pos.Book != 43 || pos.Chapter != 2 || pos.Verse != 1 {
+		t.Errorf("the place follows: %+v", pos)
+	}
+	s.Key(true)
+	if s.chapter != 1 || s.reader.Page != s.reader.Pages()-1 {
+		t.Errorf("the previous key on the first page opens the end of the chapter before: %d page %d of %d", s.chapter, s.reader.Page, s.reader.Pages())
+	}
+	if pos, _ = w.bible.Resume(); pos.Verse >= endOfChapter || pos.Verse < 1 {
+		t.Errorf("the place is a real verse: %+v", pos)
+	}
+}
+
+func TestTheKeysCrossBooksAndStopAtTheEndsOfTheBible(t *testing.T) {
+	w := newWorld(t)
+	w.ready()
+	s := w.screen("pt-BR")
+	s.OpenReader(1, 3, 1) // the last chapter of Genesis
+	lastPage(t, s)
+	s.Key(false)
+	if s.book != 19 || s.chapter != 1 {
+		t.Errorf("after Genesis comes Psalms: %d:%d", s.book, s.chapter)
+	}
+	s.Key(true)
+	if s.book != 1 || s.chapter != 3 {
+		t.Errorf("back to the end of Genesis: %d:%d", s.book, s.chapter)
+	}
+	s.OpenReader(1, 1, 1)
+	if !s.Key(true) || s.book != 1 || s.chapter != 1 {
+		t.Errorf("nothing before Genesis 1: %d:%d", s.book, s.chapter)
+	}
+	s.OpenReader(43, 3, 1)
+	lastPage(t, s)
+	if !s.Key(false) || s.book != 43 || s.chapter != 3 {
+		t.Errorf("nothing after the last chapter: %d:%d", s.book, s.chapter)
+	}
+}

@@ -31,7 +31,7 @@ está pronta. Cancelar guarda o que já foi gravado, e começar de novo continua
 em relação ao UTC, a porcentagem lida e o último versículo lido (com o texto), e um botão para ir direto a ele.
 
 **Ler.** Livro → capítulo (a lista mostra o início de cada capítulo, ou só o número, conforme as configurações) → a grade com os
-números dos versículos, para saltar direto a um deles, ou **Ler o capítulo**. A leitura é por páginas (as teclas de página do
+números dos versículos, para saltar direto a um deles, ou **Ler o capítulo**. A leitura é por páginas (a tecla de próxima página na última página de um capítulo passa ao capítulo seguinte, mesmo de um livro para outro, e a de página anterior na primeira página vai ao fim do capítulo anterior; as teclas de página do
 leitor também viram); cada versículo que **aparece na tela** conta como lido, e as setas do alto passam ao capítulo anterior ou
 seguinte, mesmo de um livro para outro. A lista de livros vem na ordem original e o botão **Ordem alfabética** alterna.
 

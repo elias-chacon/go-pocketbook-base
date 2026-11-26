@@ -31,7 +31,7 @@ is ready. Cancelling keeps what was stored, and starting again goes on from ther
 **time** with the offset from UTC, the percentage read and the last verse read (with its text), and a button to go straight to it.
 
 **Reading.** Book → chapter (the list shows the start of each chapter, or just the number, as the settings say) → the grid of verse
-numbers, to jump straight to one, or **Read the chapter**. Reading is by pages (the reader's page keys turn them too); every verse
+numbers, to jump straight to one, or **Read the chapter**. Reading is by pages (the reader's page keys turn them too, and the next-page key on the last page of a chapter goes on to the next chapter, crossing into the next book; the previous-page key on the first page goes to the end of the chapter before); every verse
 that **appears on the screen** counts as read, and the arrows at the top go to the previous or next chapter, even across books. The
 list of books is in the original order and the **Alphabetical order** button toggles it.
 
