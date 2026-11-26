@@ -81,7 +81,56 @@ The repo is organized by **bounded contexts** under `internal/`, with one depend
 
 - **Each app has its own version** (`apps/<id>/.version`; the root `.version` is the release/tag): `build.ps1` runs `bumpversion -app <id> auto`, which bumps BUILD only when the code that app is built from changed (fingerprint on the file's second line); the release workflow runs `-app <id> check`; `catalog.json` carries the app's own version. An unchanged app keeps its version. Apps are built with `-trimpath -ldflags "-s -w -buildid="` so the same code gives the same bytes (measured: without them two builds of the same code differ, and the update check, which compares the `.app` SHA-256, would offer every app at every release); the stripped binaries have not been run on the reader yet.
 - Versioning is `.version` = `MAJOR.MINOR.BUILD` (starts 1.0.0): every build bumps BUILD, a **finished task** bumps MINOR (BUILD -> 0), only big changes bump MAJOR. Tasks are the checkbox list in the README.
-- **When a task is finished**: review and update the docs (`docs/en` and `docs/pt-br`, README tasks/architecture/links, `docgen` pictures, `docsync` + `-check`), mark the task, bump MINOR, run tests (and Sonar when code changed; the goal is 0 smells, quality gate OK), then **commit without being asked**. Do not push. Commit messages end with the `Co-Authored-By` trailer.
+- **When a task is finished**: review and update the docs (`docs/en` and `docs/pt-br`, README tasks/architecture/links, `docgen` pictures, `docsync` + `-check`), mark the task, bump MINOR, run tests (and Sonar when code changed; the goal is 0 smells, quality gate OK), then **commit without being asked**. The maintainer also authorized **pushing and tagging a release without asking** (2026-11-19; a `v*` tag publishes the GitHub Release). Commit messages end with the `Co-Authored-By` trailer.
 - **Never create git worktrees.**
 - **Components are shared.** Every app uses the widgets of `internal/toolkit/widget`. A missing component is created there, generic and with no knowledge of any app (tests, an example in `examples/components`, docs, the touch-accuracy rule), never inside an app or a feature context. Check first whether an existing component, or a composition of them, already solves it.
 - Apply SOLID/KISS/DRY pragmatically. Say plainly when something is untested on the device, and ask before changing anything on a connected reader outside its `applications/` folder (diagnostic code must be announced and removed).
+
+## Decisions log (what was decided, and why)
+
+Each line is a decision already taken with the maintainer. Do not re-open one without a new reason; "open" items at the end are the ones still waiting for an answer. Nothing here was verified on the reader unless it says so.
+
+### Updates, versions and builds
+- **The checksum decides an update, never the version.** The app compares the SHA-256 of its own `.app` with `app_sha256` of the release `catalog.json`. The wording of the modal ("available (this is the same version)") comes from that: a locally built app differs from the CI build by hash.
+- **Each app has its own update state**: `applications/.pbgo/update/<id>.json`. The old shared `update.json` let the Launcher's "checked less than 10 minutes ago" stand in for every other app, so only the Launcher was ever offered. The old file is ignored.
+- **Each app has its own version** (`apps/<id>/.version`, fingerprint of the sources on its second line); the root `.version` is the release/tag. Reason: the version string is inside the binary, so one shared number changed every app's hash at every release.
+- **Reproducible builds**: apps are built with `-trimpath -ldflags "-s -w -buildid="`. Measured: without them two builds of the same code differ. Same flags in `build.ps1`, `Makefile` and `release.yml`. Not run on the reader yet (if an app fails to start after an update, suspect the stripped binary first); the fingerprint does not cover build flags; that the CI gives the same bytes as the local Docker is not confirmed.
+- **Code shared by every app** (toolkit, platform, kernel) changes every fingerprint, so every app goes up together; that is expected.
+- **A `.version` file's first line is the version**; the tool keeps the other lines (`version.ReadFile`, `BumpFile`).
+
+### Registration, icons and the home screen
+- **Registering always replaces**: `desktop.Register` rewrites the app's whole `view.json` entry in its place and the icon BMPs when they differ, at the app's own start too (not only on install), so nothing an older version left stays. Same input changes nothing (no write, no "registered" notice).
+- **Icon formats are two on purpose**: BMP in `applications/icons/` (what the home screen reads) and PNG in the Launcher's cache (what the release publishes). Nothing converts back and forth.
+- **The catalog icon cache keeps one picture per app**: `<id>.png` + `<id>.src` (the address it came from; replaced when the release's address changes), pruned of what the catalog no longer lists. **Never name a file `.url`**: Windows shows it as an Internet Shortcut.
+- **Orphan home screen entries are removed at the Launcher's start** (`desktop.RemoveOrphans`: `U_…` entries whose `.app` is missing, with their icons; one backup, one write, nothing written when none). The home screen only shows the change after the USB cable is unplugged: it keeps its own copy (checked on the reader: the Launcher's removal had written the file, the screen still showed the app).
+- **Removing an entry is one write for all orphans**, not one per entry (a backup per entry within the same second would overwrite the original backup). So the per-entry names in the bar title may pass too fast to read; the durable record is the footer note and the log.
+
+### Launcher
+- **Startup work is one group** (`application.Startup`: `PruneHomeScreen` first, `FetchCatalog` after), run in a goroutine and polled on the event loop; every task is tried even if one fails; one shared progress bar whose title says the phase (checking, removing <id>, downloading the catalog). New startup work is a `Task` in `apps/launcher`, never code inside the screen.
+- **Progress counts steps, not bytes**, for the startup (release, `catalog.json`, one per icon, one per removed entry); installing counts the bytes of the zip. `domain.Progress` is safe on nil and from another goroutine.
+- **Never touch a widget off the event loop**: background work reports through a mutex-guarded result that `Env.After` polls (0.4 s with a bar, 2 s without).
+- **Installing and updating have their own window** (name, bar following the bytes, then the result or the error until closed; no cancel). The old one-line footer note and the frozen screen are gone.
+- **A download that ends while the settings are open ends quietly**; leaving the settings rebuilds the home so the catalog that came shows and the bar is not left stuck.
+- **The footer message has its own wrapping line above the buttons**; a long one must not push the buttons off the screen.
+- **An empty home never asks to copy a `.app`**: with no apps and no network it says to connect to Wi-Fi; with the bar running it shows the bar.
+
+### Repaint, scroll and measuring
+- **`Scroll` slides pixels** and paints only the uncovered strip (v1.50.2); offsets are whole device pixels; it falls back to a full repaint under a popup/modal, for a Scroll inside a Scroll, or a jump past the window. The gain (about 24 ms to 8 ms per step, 300 rows) was measured **on the PC only**; the reader's effect is unknown until `paint` events from `eng.log` say so.
+- **A2/fast update modes in `Scroll` are deferred** until there is device data. Possible next steps, not done: skip the signature of off-screen rows, skip a full Layout on pure-scroll frames, speed the 24-bit blit loop.
+- **The `eng` app logs every repaint** (`paint` and `scroll_step`: layout, snapshot, diff, paint, show, slid, painted/sent pixels) so tuning is driven by measurements.
+- **`go test ./...` runs on the PC and in CI.** The qemu-arm Go 1.17 test script was removed (the pbemu firmware emulator replaced it); the lost check is only "tests under Go 1.17 on ARM". pbemu does not run `go test` and cannot show panel timing/A2.
+- **The `eng` app is not an MCP server** (considered, dropped by the maintainer).
+
+### Architecture and working style
+- **Each app is two parts**: `apps/<id>` (composition root, builds the `.app`) and `internal/<context>` (logic, tested on the PC): bible/bible, calendar/calendar, tasks/tasks, mail/mail(+accounts), launcher/launcher, eng/engineering, hello/showcase. DDD with a dependency rule checked by `internal/architecture`. This is a project choice, not the usual Go layout (the usual would be `cmd/<name>`); renaming `apps/` to `cmd/` is a mechanical option, not decided.
+- **The maintainer is a Java developer**: when explaining Go, map to Java (interfaces are implicit, errors are values, composition instead of inheritance, `internal/` enforced by the compiler, manual wiring instead of Spring). A "Go for Java developers" page in `docs/` was offered, not written.
+- **Report honestly**: a change is "verified" only when the device log or a test shows it; say "not seen on the reader" otherwise. Ask before touching a connected reader outside `applications/`; reads are fine.
+- **Tooling**: the Bash tool blocks commands containing `--rm`/flags it reads as removals (write a script file and run it); heredocs with apostrophes break (use Write); files are CRLF (normalize before matching).
+
+### Open (waiting for the maintainer, or not done)
+- Wording of the update modal when the version is the same and only the hash differs.
+- The `eng` icon in `view.json` (needs pbinstaller; it is outside `applications/`, ask first).
+- The five orphan entries on the reader's `view.json` (`eng`, `tasks`, `mail`, `calendar`, `hello`): the Launcher removes them itself at its next start; not touched by hand.
+- Per-entry removal with a backup each (to make the bar title readable) vs the single write used now.
+- Checksum stored in each app's record (`<id>.json` holds the manifest, version and paths, not a hash): not done.
+- Real-account OAuth verification, two-way calendar sync, A2 modes in `Scroll`: not done.
